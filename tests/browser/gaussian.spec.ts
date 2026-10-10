@@ -1,0 +1,264 @@
+import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+const step = (page: Page) =>
+  page.getByRole('button', { name: 'Step', exact: true });
+const density = (page: Page) =>
+  page
+    .getByRole('img', {
+      name: 'Gaussian probability density and segment histograms',
+    })
+    .first();
+async function apply(page: Page, a: string, h: string) {
+  const input = page.getByLabel('Quadratic coefficient');
+  if (!(await input.isVisible()))
+    await page.getByText('Model & sampler settings', { exact: true }).click();
+  await input.fill(a);
+  await page.getByLabel('Source h', { exact: true }).fill(h);
+  await page
+    .getByRole('button', { name: 'Apply parameters', exact: true })
+    .click();
+}
+async function sampleBatch(page: Page) {
+  await page.getByRole('button', { name: '▷ Run', exact: true }).click();
+  await expect
+    .poll(async () =>
+      Number(await page.getByTestId('sample-count').textContent()),
+    )
+    .toBeGreaterThanOrEqual(128);
+  await page.getByRole('button', { name: 'Ⅱ Pause', exact: true }).click();
+  await expect(page.getByTestId('run-status')).toHaveText('Paused');
+}
+
+test('production subpath loads workers and locally bundled accessible math', async ({
+  page,
+}) => {
+  const errors: string[] = [],
+    assets: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  page.on('response', (response) => {
+    if (response.status() >= 400)
+      errors.push(`${response.status()} ${response.url()}`);
+    if (response.url().includes('/assets/')) assets.push(response.url());
+  });
+  await page.goto('./#small-systems');
+  await expect(step(page)).toBeEnabled();
+  await page.reload();
+  await step(page).click();
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  await expect(page.locator('.katex-mathml math').first()).toBeAttached();
+  await page.evaluate(() => document.fonts.ready);
+  expect(errors).toEqual([]);
+  expect(assets.some((url) => url.includes('simulation.worker'))).toBe(true);
+  expect(assets.some((url) => /KaTeX.*woff/.test(url))).toBe(true);
+  expect(assets.every((url) => url.includes('/lattice/assets/'))).toBe(true);
+  await expect(
+    page.getByRole('navigation', { name: 'Workspaces' }).getByRole('link'),
+  ).toHaveCount(1);
+});
+
+test('settings, display changes, and keyboard controls preserve seed replay', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await step(page).click();
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  const first = await page.getByTestId('current-value').textContent();
+  const settings = page.getByText('Model & sampler settings', { exact: true });
+  await settings.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByLabel('Seed on Reset')).toBeVisible();
+  await settings.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByLabel('Seed on Reset')).not.toBeVisible();
+  await page.getByLabel('Histogram', { exact: true }).uncheck();
+  await page.getByLabel('Histogram', { exact: true }).check();
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await expect(step(page)).toBeEnabled();
+  await step(page).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  await expect(page.getByTestId('current-value')).toHaveText(first!);
+});
+
+test('parameter switching preserves old segments, current value, and axes; Reset clears and recenters', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await step(page).click();
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  const current = await page.getByTestId('current-value').textContent();
+  const before = JSON.parse(
+    (await density(page).getAttribute('data-viewport'))!,
+  );
+  await apply(page, '0', '0');
+  await expect(page.getByRole('alert')).toContainText('a must be positive');
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  await apply(page, '4', '2');
+  await expect(page.getByTestId('active-segment')).toHaveText('Segment 2');
+  await expect(page.getByTestId('exact-mean')).toHaveText('0.5');
+  await expect(page.getByTestId('exact-variance')).toHaveText('0.25');
+  await expect(page.getByTestId('sample-count')).toHaveText('0');
+  await expect(page.getByTestId('total-updates')).toHaveText('1');
+  await expect(page.getByTestId('segment-1')).toContainText('N=1');
+  await expect(page.getByTestId('current-value')).toHaveText(current!);
+  const after = JSON.parse(
+    (await density(page).getAttribute('data-viewport'))!,
+  );
+  expect(after.min).toBe(before.min);
+  expect(after.max).toBe(before.max);
+  expect(after.yMax).toBeGreaterThanOrEqual(before.yMax);
+  await step(page).click();
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  await expect(page.getByTestId('total-updates')).toHaveText('2');
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await expect(step(page)).toBeEnabled();
+  await expect(page.getByTestId('segment-2')).toHaveCount(0);
+  await expect(page.getByTestId('total-updates')).toHaveText('0');
+  const reset = JSON.parse(
+    (await density(page).getAttribute('data-viewport'))!,
+  );
+  expect(reset.min).toBe(-1.5);
+  expect(reset.max).toBe(2.5);
+  await expect(page.getByTestId('current-value')).toHaveText('—');
+});
+
+test('Fit All adjusts only the viewport and leaves history and RNG untouched', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await step(page).click();
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  const tall = JSON.parse(
+    (await density(page).getAttribute('data-viewport'))!,
+  ).yMax;
+  await sampleBatch(page);
+  const count = await page.getByTestId('sample-count').textContent(),
+    value = await page.getByTestId('current-value').textContent();
+  const history = await page
+    .getByRole('region', { name: 'Recent measurement segments' })
+    .textContent();
+  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        JSON.parse((await density(page).getAttribute('data-viewport'))!).yMax,
+    )
+    .toBeLessThan(tall);
+  await expect(page.getByTestId('sample-count')).toHaveText(count!);
+  await expect(page.getByTestId('current-value')).toHaveText(value!);
+  await expect(
+    page.getByRole('region', { name: 'Recent measurement segments' }),
+  ).toHaveText(history!);
+});
+
+test('four compact slots assign, close, open, and rearrange without sampling', async ({
+  page,
+}, testInfo) => {
+  await page.goto('./');
+  await sampleBatch(page);
+  const count = await page.getByTestId('sample-count').textContent();
+  const value = await page.getByTestId('current-value').textContent();
+  await expect(
+    page.getByRole('article', { name: /Plot slot/, includeHidden: true }),
+  ).toHaveCount(4);
+  await expect(page.getByLabel('Plot for slot 1')).toHaveValue('x:density');
+  await expect(page.getByLabel('Plot for slot 2')).toHaveValue('x:mean');
+  for (const n of [3, 4]) {
+    const box = await page
+      .getByRole('article', { name: `Plot slot ${n}`, exact: true })
+      .boundingBox();
+    expect(box!.height).toBeLessThan(75);
+  }
+  await page.screenshot({
+    path: testInfo.outputPath('default.png'),
+    fullPage: true,
+  });
+  const mobile = testInfo.project.name !== 'desktop';
+  if (mobile) {
+    await page.getByLabel('Plot for slot 3').selectOption('x:error');
+    await expect(
+      page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
+    ).toBeVisible();
+    await page.getByLabel('Plot for slot 3').selectOption('');
+  }
+  if (mobile)
+    await page
+      .getByRole('button', { name: '2 × 2 overview', exact: true })
+      .click();
+  await page.getByLabel('Plot for slot 3').selectOption('x:error');
+  await expect(
+    page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Close plot 3' }).click();
+  await expect(
+    page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'Open plot 3' }).click();
+  await page.getByRole('button', { name: 'Move slot 3 up' }).click();
+  await expect(page.getByLabel('Plot for slot 2')).toHaveValue('x:error');
+  await expect(page.getByLabel('Plot for slot 3')).toHaveValue('x:mean');
+  await expect(page.getByTestId('sample-count')).toHaveText(count!);
+  await expect(page.getByTestId('current-value')).toHaveText(value!);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath('overview.png'),
+    fullPage: true,
+  });
+  if (mobile) {
+    await page
+      .getByRole('button', { name: 'Single detail', exact: true })
+      .click();
+    await page.getByRole('button', { name: 'Slot 2', exact: true }).click();
+    await expect(
+      page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
+    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath('detail.png'),
+      fullPage: true,
+    });
+    await page.setViewportSize({ width: 780, height: 360 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+    await expect(page.getByTestId('sample-count')).toHaveText(count!);
+  }
+});
+
+test('Run, parameter Apply, Pause, and Step use distinct segments in order', async ({
+  page,
+}) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: '▷ Run', exact: true }).click();
+  await expect
+    .poll(async () =>
+      Number(await page.getByTestId('total-updates').textContent()),
+    )
+    .toBeGreaterThan(0);
+  await apply(page, '2', '3');
+  await expect(page.getByTestId('active-segment')).toHaveText('Segment 2');
+  await page.getByRole('button', { name: 'Ⅱ Pause', exact: true }).click();
+  await expect(page.getByTestId('run-status')).toHaveText('Paused');
+  const paused = Number(await page.getByTestId('sample-count').textContent());
+  await step(page).click();
+  await expect(page.getByTestId('sample-count')).toHaveText(String(paused + 1));
+  await expect(page.getByTestId('segment-1')).toBeVisible();
+});
+
+test('worker failure is visible and Reset can recover', async ({ page }) => {
+  await page.route('**/simulation.worker-*.js', (route) => route.abort());
+  await page.goto('./');
+  await expect(page.getByRole('alert')).toContainText('Reset');
+  await expect(step(page)).toBeDisabled();
+  await page.unroute('**/simulation.worker-*.js');
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await step(page).click();
+  await expect(page.getByTestId('sample-count')).toHaveText('1');
+  await expect(page.getByRole('alert')).toHaveCount(0);
+});
