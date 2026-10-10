@@ -4,11 +4,11 @@
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results wherever possible.
 
-The project lives in a separate repository from [SOL](https://gantemur.github.io/sol/). It is intended to be published as a static GitHub Pages site, without a backend or user accounts.
+The project lives at [gantemur/lattice](https://github.com/gantemur/lattice), separate from [SOL](https://gantemur.github.io/sol/). Its intended static GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/), without a backend or user accounts. The project name remains **Lattice Lab**.
 
 ## Workspaces
 
-- **Small Systems:** 1–4 site variables or a selectable collection of edge variables on tiny graphs/cell complexes. Inspect local plots, equilibrium distributions, and individual sampling steps. Initial graph presets include a path, open square, four-site periodic ring, complete graph, and a genuine periodic 2×2 square lattice.
+- **Small Systems:** four principal variable-plot slots, independent of the number of physical variables. Select which four variables to inspect when there are more than four; the graph/lattice visualization is separate. Planned graph presets include a path, open square, four-site periodic ring, complete graph, and a genuine periodic 2×2 square lattice (eight oriented link variables for a link-based gauge model).
 - **Lattice Systems:** interactive 1D and 2D lattices with configuration views, numerical samplers, and observables.
 - **Experiments:** stored runs, parameter sweeps, theory/simulation comparisons, error analysis, and exports (delivered incrementally, not all at launch).
 
@@ -27,7 +27,7 @@ The documents describe an intended implementation, not features already availabl
 
 ## Hosting and technology (proposed)
 
-A TypeScript/Vite static application, with an accessible component UI, Web Worker computation, canvas/SVG rendering, and lightweight charting. The framework and plotting-library choices are implementation preferences, not mathematical contracts. GitHub Actions will build, test, and deploy the static output to GitHub Pages. For a repository site named `lattice-lab`, configure Vite's production base path as `/lattice-lab/`.
+A TypeScript/Vite static application, with an accessible component UI, Web Worker computation, canvas/SVG rendering, and lightweight charting. The framework and plotting-library choices are implementation preferences, not mathematical contracts. GitHub Actions will build, test, and deploy the static output to GitHub Pages. For the repository `gantemur/lattice`, configure Vite's base path as `/lattice/`.
 
 ## Conventions
 

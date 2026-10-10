@@ -45,12 +45,12 @@ All workspaces use the same model specification, simulation state, measurement i
 
 ### 2.1 Small Systems
 
-Purpose: detailed inspection of 1–4 node variables or, for edge-based models, four **selected** variables on a tiny graph/cell complex. Other variables may exist in an edge model (e.g., the periodic 2×2 U(1) lattice has eight oriented links).
+Purpose: detailed inspection through **four principal variable-plot slots**, independent of the number of underlying degrees of freedom. When a model has more than four variables, users select which four to inspect. For example, a periodic 2×2 square U(1) gauge lattice has four sites but **eight oriented link variables**, while the interface still offers four slots. Topology, physical variables, and display slots are separate concepts.
 
 Core UI:
 
-- Geometry view: graph/cell diagram, visible edge multiplicities and orientations when relevant; tap/click to select a node/edge.
-- Four-panel variable inspector: up to four detailed plots simultaneously. Slots can be assigned to nodes, edges, or observables. Default: one slot per variable when there are at most four.
+- Geometry view: a graph/cell diagram **separate from the four plots**, with visible edge multiplicities and orientations when relevant; tap/click to select a node/edge.
+- Four-panel variable inspector: always offer four slots in a configurable 2×2 overview. Assign slots to physical variables carried by sites, links, or faces as appropriate to the model. Default: one slot per variable when there are at most four, with remaining slots explicitly unassigned (they may repeat a variable; they do not create new degrees of freedom). For larger models, select four variables while retaining the full physical state. Auxiliary observable plots do not replace the four principal slots.
 - Configurable panels: current value; bare on-site potential; conditional energy holding neighbors fixed; exact/reference marginal; empirical marginal/histogram; discrete probability bars. Do not put energy and probability density on a falsely common axis—use separate axes with units, tabs, or explicit labeled overlays.
 - One-step simulator: proposal details, local energy difference, acceptance probability, actual random uniform deviate when relevant, acceptance/rejection, and resulting configuration.
 - A small observable gallery: joint scatter/density for two variables, correlation matrix, total energy, transition trace, or enumeration table.
@@ -358,7 +358,7 @@ Each model may link to relevant graduate lecture notes, but these are optional r
 
 Recommended initial stack (changeable after prototype): TypeScript + Vite; React or equivalent component UI; Canvas 2D for high-frequency lattice rendering; SVG for tiny graph editor; maintained charting library for plots; Web Worker for simulation. Unit tests with Vitest; smoke/responsiveness tests with Playwright or equivalent.
 
-The site is built into static assets and deployed with GitHub Actions → GitHub Pages. For `https://gantemur.github.io/lattice-lab/`, Vite's `base` should be `/lattice-lab/` in production. Build/test should run on pull requests; deploy only from the chosen protected/default branch. Never hard-code root-relative URLs that break the project subpath.
+The repository is [gantemur/lattice](https://github.com/gantemur/lattice); the project name remains Lattice Lab. The site is built into static assets and deployed with GitHub Actions → GitHub Pages. For `https://gantemur.github.io/lattice/`, Vite's `base` must be `/lattice/`. Build/test should run on pull requests; deploy only from the chosen protected/default branch. Never hard-code root-relative URLs that break the project subpath.
 
 Useful authoritative deployment references: [Vite static deployment guide](https://vite.dev/guide/static-deploy.html), [GitHub Pages publishing sources](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
@@ -435,7 +435,7 @@ Correctness is a release requirement, not optional polish.
 - Basic model usable at narrow smartphone width, desktop width, portrait/landscape; drawer controls operate without overlapping charts or clearing state.
 - Keyboard-accessible core controls, visible legends and basic contrast.
 - Plot axes and sample-status labels present; graph editing has touch targets.
-- GitHub Pages deep link, JS chunks, worker URLs, static assets, and base-path deployment work under `/lattice-lab/`.
+- GitHub Pages deep link, JS chunks, worker URLs, static assets, and base-path deployment work under `/lattice/`.
 - Smoke test on a real browser before a feature is marked delivered.
 
 ## 11. Stages and acceptance

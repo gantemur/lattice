@@ -45,7 +45,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 
 **Explicitly out of scope:** generic formula editor, periodic lattices, coupled quartic integrals, gauge variables, parameter sweeps, advanced charts.
 
-## M1 — Small Systems: four variables and true tiny lattices
+## M1 — Small Systems: four plot slots and true tiny lattices
 
 **Objective:** make the first distinctive teaching instrument: a four-plot micro-laboratory backed by exact calculations and inspectable MCMC.
 
@@ -57,7 +57,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 - Generic finite-graph Ising, including nonuniform couplings and external fields.
 - Exact enumeration for up to four spins (16 states): partition function, energy, moments and selected correlations; enumerate even if a sampler is never run.
 - Local Metropolis and discrete heat bath. Inspection trace includes selected spin, local neighborhood contribution, `ΔS`, proposal/conditional probability, RNG sample, and resulting state.
-- Four assignable inspection panels for discrete spins (state probability bars/histograms, local conditional distributions); configurable display of exact vs sampled values.
+- Four assignable inspection slots, independent of physical variable count, for discrete spins (state probability bars/histograms, local conditional distributions); configurable display of exact vs sampled values. The graph visualization remains separate from the slots.
 
 **Acceptance gate M1a**
 
