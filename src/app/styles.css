@@ -5,6 +5,7 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  --ink: #263b3a;
   --teal: #14625a;
   --muted: #637270;
   --line: #dce1db;
@@ -1257,4 +1258,200 @@ footer {
   .model-notes .math-display {
     font-size: 12px;
   }
+}
+
+/* M0.5: model/sampler controls and exact transition inspection. */
+.model-select {
+  width: 100%;
+  min-height: 44px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.3;
+  margin: 8px 0;
+  padding: 8px 4px;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.model-card > small {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.model-card > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.settings select {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--ink);
+  border-radius: 5px;
+  font: inherit;
+  margin-top: 6px;
+}
+.seed-settings {
+  margin-top: 12px;
+}
+.seed-settings > summary {
+  padding: 8px 0;
+}
+.step-inspector {
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  font-size: 12px;
+}
+.step-inspector summary,
+.trajectory-options summary {
+  min-height: 44px;
+  padding: 12px 0;
+  cursor: pointer;
+  color: var(--teal);
+}
+.step-inspector p {
+  line-height: 1.6;
+  margin: 8px 0;
+}
+.transition-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.transition-grid div {
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.transition-grid dt {
+  color: var(--muted);
+  font-size: 11px;
+}
+.transition-grid dd {
+  margin: 5px 0 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.outcome-rejected {
+  color: #a25721;
+}
+.outcome-accepted {
+  color: var(--teal);
+}
+.plot-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  padding: 6px 0;
+}
+.plot-controls label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.plot-controls select,
+.plot-controls input[type='number'] {
+  min-height: 44px;
+  max-width: 130px;
+  min-width: 0;
+  padding: 5px;
+  font: inherit;
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.trajectory-options {
+  font-size: 11px;
+}
+.trajectory-options .checkbox-label {
+  font-size: 11px;
+  white-space: normal;
+}
+.acceptance-plot {
+  padding: 10px 0;
+  font-size: 12px;
+}
+.acceptance-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px;
+  margin-bottom: 16px;
+}
+.acceptance-row small,
+.acceptance-bar {
+  grid-column: 1 / -1;
+}
+.acceptance-bar {
+  display: flex;
+  min-height: 18px;
+  background: #edf0e9;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.accepted-part {
+  background: #14625a;
+}
+.rejected-part {
+  background: #b8652b;
+}
+.self-part {
+  background: #98a3a0;
+}
+@media (max-width: 560px) {
+  .transition-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .settings form {
+    max-height: 65dvh;
+    overflow-y: auto;
+  }
+  .show-overview .plot-controls label {
+    flex-wrap: wrap;
+  }
+  .show-overview .plot-controls select {
+    max-width: 100%;
+  }
+  .show-overview .acceptance-row {
+    display: block;
+  }
+  .show-overview .acceptance-row > span {
+    display: block;
+    margin: 6px 0;
+  }
+  .show-overview .acceptance-bar {
+    display: flex;
+    margin: 8px 0;
+  }
+}
+
+.run-readings {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  margin-top: 12px;
+  color: var(--muted);
+}
+.run-readings strong {
+  font-size: 16px;
+  color: var(--teal);
+  font-variant-numeric: tabular-nums;
+}
+
+.moments-table th,
+.moments-table td {
+  padding-right: 8px;
+}
+.moments-table th .math-inline {
+  display: inline-block;
 }

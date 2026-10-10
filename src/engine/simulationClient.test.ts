@@ -1,5 +1,10 @@
+import type { GaussianParameters } from '../models/gaussian';
+const settings = (parameters: GaussianParameters) => ({
+  model: { kind: 'gaussian' as const, parameters },
+  sampler: { kind: 'direct' as const },
+});
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { GaussianEngine } from './gaussianEngine';
+import { SimulationEngine } from './simulationEngine';
 import { standardGaussianPreset } from './preset';
 import type { WorkerRequest, WorkerResponse } from './protocol';
 import { SimulationClient } from './simulationClient';
@@ -11,7 +16,7 @@ class FakeWorker implements WorkerPort {
   onmessageerror: WorkerPort['onmessageerror'] = null;
   terminated = false;
   responses: WorkerResponse[] = [];
-  private engine = new GaussianEngine();
+  private engine = new SimulationEngine();
   postMessage(request: WorkerRequest) {
     this.responses.push(this.engine.handle(request));
   }
@@ -125,7 +130,7 @@ it('queues parameter changes after an in-flight batch, then resumes the same str
   vi.useFakeTimers();
   const { client, worker, view } = setup();
   client.start();
-  client.changeParameters({ a: 4, h: 2 });
+  client.changeSettings(settings({ a: 4, h: 2 }));
   expect(worker.responses).toHaveLength(1);
   worker.deliver();
   expect(view().busy).toBe(true);
@@ -149,7 +154,7 @@ it('queues parameter changes after an in-flight batch, then resumes the same str
 it('Reset cancels a queued parameter change and stale in-flight replies', () => {
   const { client, worker, view } = setup();
   client.step();
-  client.changeParameters({ a: 4, h: 2 });
+  client.changeSettings(settings({ a: 4, h: 2 }));
   client.initialize(standardGaussianPreset.configuration);
   worker.deliver();
   worker.deliver();
@@ -157,7 +162,7 @@ it('Reset cancels a queued parameter change and stale in-flight replies', () => 
     runId: 2,
     updates: 0,
     activeSegmentId: 1,
-    configuration: { parameters: { a: 1, h: 0 } },
+    configuration: { model: { kind: 'gaussian', parameters: { a: 1, h: 0 } } },
   });
   expect(worker.responses).toHaveLength(0);
   client.dispose();

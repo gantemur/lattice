@@ -1,19 +1,26 @@
-import type { GaussianParameters } from '../models/gaussian';
+import type { Settings } from '../algorithms/transitions';
 import type { Histogram } from '../observables/histogram';
 import type { summarizeMoments } from '../observables/moments';
 import type { Checkpoint } from '../observables/convergence';
+import type { TransitionRecord } from '../observables/trajectory';
 
-export type RunConfiguration = Readonly<{
-  parameters: GaussianParameters;
-  seed: number;
-}>;
-export type SegmentSnapshot = {
+export const MAX_SEGMENTS = 8;
+export type RunConfiguration = Settings & Readonly<{ seed: number }>;
+export type SegmentSnapshot = Settings & {
   id: number;
-  parameters: GaussianParameters;
   startUpdate: number;
+  initialValue: number | null;
+  initialization: string;
+  updates: number;
+  warmupUpdates: number;
+  warmupTarget: number;
+  accepted: number;
+  rejected: number;
+  self: number;
   moments: ReturnType<typeof summarizeMoments>;
   histogram: Histogram;
   convergence: Checkpoint[];
+  trajectory: TransitionRecord[];
 };
 export type Snapshot = {
   runId: number;
@@ -22,7 +29,7 @@ export type Snapshot = {
   currentValue: number | null;
   currentAction: number | null;
   updates: number;
-  warmupUpdates: 0;
+  warmupUpdates: number;
   strideUpdates: 1;
   moments: SegmentSnapshot['moments'];
   histogram: Histogram;
@@ -32,7 +39,7 @@ export type Snapshot = {
 };
 export type WorkerRequest =
   | { type: 'initialize'; runId: number; configuration: RunConfiguration }
-  | { type: 'changeParameters'; runId: number; parameters: GaussianParameters }
+  | { type: 'changeSettings'; runId: number; settings: Settings }
   | { type: 'advance'; runId: number; count: number }
   | { type: 'snapshot'; runId: number };
 export type WorkerResponse =

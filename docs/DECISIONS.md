@@ -96,6 +96,22 @@ Keep the latest eight segments, each with 32 fixed histogram bins over its own `
 
 This is bounded, in-memory M0 comparison, not full M3 experiment management: no named saved runs, persistence, import/export, sweeps, notes, or generic registry.
 
+## Accepted M0.5 conventions — 2026-10-10
+
+### D-019 — Comparative one-variable kernels before tiny graphs
+
+Insert M0.5 between M0 and M1. Use explicit Gaussian / spin / binomial model and direct / heat-bath / Metropolis sampler unions, sharing references, measurements, worker execution and plots. No universal plugin registry or new dependency is needed. Keep Gaussian conventions and RNG algorithms unchanged. Single spin uses `S(s)=-hs`, `|h|≤10`; binomial uses `S(k)=-hk-log C(n,k)`, `h=log(p)-log1p(-p)`, `log Z=-n log1p(-p)`, `1≤n≤100`, `0.001≤p≤0.999`. These finite teaching ranges exclude singular endpoint fields; PMFs use log combinatorics. K is an aggregate count with degeneracy, not one Bernoulli microstate.
+
+### D-020 — Explicit transitions, warm-up and limited error claims
+
+Gaussian Metropolis uses `x'=x+δ(2u−1)`, `0.01≤δ≤50`. Spin Metropolis proposes staying with probability 1/2 and flipping with probability 1/2, so the zero-field chain is aperiodic. Binomial proposes ±1 equiprobably, mapping out-of-range attempts to self-proposals; the resulting proposal is symmetric. Every Metropolis update consumes one proposal uniform and one acceptance uniform, even on self/automatic-accept steps. Distinguish accepted moves, rejected proposals and deliberate self-proposals; acceptance rate includes accepted self-proposals, and movement rate excludes them.
+
+Direct binomial draws sum n independent Bernoulli draws; single-spin direct and heat bath use the exact two-state probabilities. Single-spin heat bath is an exact resampling kernel with identical rows, hence independent equilibrium draws despite being presented as a heat-bath transition. Do not invent Metropolis acceptance fields for either direct or heat-bath draws.
+
+Metropolis defaults to 200 discarded warm-up updates per new segment, configurable from 0 to 10000; this is a budget, not a mixing guarantee. Direct and single-spin heat bath require zero. Preserve compatible configurations and the RNG stream on parameter/algorithm/proposal/warm-up changes, start fresh segment statistics, and rerun the configured warm-up. If decreasing binomial n excludes the current K, clamp K to the new support and disclose it; incompatible model families start a new session with the selected seed. Reset initializes Gaussian chains at 0, spin at +1, binomial at round(np); these initial states are not measurements.
+
+Extend D-017/D-018’s accumulator-only history with bounded exact transition records. Keep up to eight segments, each with its latest 1000 exact transitions (including warm-up), full online counters/moments/histograms and logarithmic mean checkpoints. Trajectory windows are display-only and gaps/eviction must be disclosed. Global update numbers are algorithmic, not physical time. Independent-Gaussian pointwise bands remain restricted to direct Gaussian segments; other models/samplers show means and exact references without confidence bands. M3 retains autocorrelation-adjusted uncertainty and saved experiment management.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

@@ -1,13 +1,37 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Snapshot } from '../engine/protocol';
 import type { Slots, PlotAssignment } from '../plotting/slots';
 import { assignSlot, defaultSlots, swapSlots } from '../plotting/slots';
-import { GaussianPlot } from '../plotting/GaussianPlot';
+import { DistributionPlot } from '../plotting/DistributionPlot';
+import { TrajectoryPlot } from '../plotting/TrajectoryPlot';
+import { AcceptancePlot } from '../plotting/AcceptancePlot';
+import { variableName } from '../models/singleVariable';
+import { standardGaussianPreset } from '../engine/preset';
 import { ConvergencePlot } from '../plotting/ConvergencePlot';
 import { useViewport } from '../plotting/useViewport';
 
 export function Inspector({ snapshot }: { snapshot: Snapshot | null }) {
-  const [slots, setSlots] = useState<Slots>(defaultSlots);
+  const [slots, setSlots] = useState<Slots>(() =>
+    defaultSlots(
+      snapshot?.configuration ?? standardGaussianPreset.configuration,
+    ),
+  );
+  const target = variableName(
+    snapshot?.configuration.model ?? standardGaussianPreset.configuration.model,
+  );
+  const [customized, setCustomized] = useState(false);
+  const hasMetropolis =
+    snapshot?.segments.some((s) => s.sampler.kind === 'metropolis') ?? false;
+  useEffect(() => {
+    if (!customized)
+      setSlots((slots) =>
+        assignSlot(
+          slots,
+          3,
+          hasMetropolis ? { target, plot: 'acceptance' } : null,
+        ),
+      );
+  }, [hasMetropolis, customized, target]);
   const [closed, setClosed] = useState<boolean[]>([false, false, false, false]);
   const [activeSlot, setActiveSlot] = useState(0);
   const [overview, setOverview] = useState(false);
@@ -15,6 +39,7 @@ export function Inspector({ snapshot }: { snapshot: Snapshot | null }) {
   const { range, fitAll } = useViewport(snapshot);
   const expanded = slots.filter((slot, index) => slot && !closed[index]).length;
   function moveSlot(from: number, to: number) {
+    setCustomized(true);
     setSlots(swapSlots(slots, from, to));
     const reordered = [...closed];
     [reordered[from], reordered[to]] = [closed[to]!, closed[from]!];
@@ -94,13 +119,14 @@ export function Inspector({ snapshot }: { snapshot: Snapshot | null }) {
                   }
                   onChange={(e) => {
                     const value = e.target.value;
+                    setCustomized(true);
                     setSlots(
                       assignSlot(
                         slots,
                         index,
                         value
                           ? {
-                              target: 'x',
+                              target,
                               plot: value.split(
                                 ':',
                               )[1] as PlotAssignment['plot'],
@@ -113,9 +139,21 @@ export function Inspector({ snapshot }: { snapshot: Snapshot | null }) {
                   }}
                 >
                   <option value="">Unassigned</option>
-                  <option value="x:density">x · Density / histogram</option>
-                  <option value="x:mean">x · Running mean</option>
-                  <option value="x:error">x · Absolute error (log–log)</option>
+                  <option value={`${target}:density`}>
+                    {target} · Distribution / histogram
+                  </option>
+                  <option value={`${target}:trajectory`}>
+                    {target} · Sample trajectory
+                  </option>
+                  <option value={`${target}:mean`}>
+                    {target} · Running mean
+                  </option>
+                  <option value={`${target}:error`}>
+                    {target} · Absolute error (log–log)
+                  </option>
+                  <option value={`${target}:acceptance`}>
+                    Acceptance diagnostics
+                  </option>
                 </select>
               </div>
               {assignment && (
@@ -151,11 +189,18 @@ export function Inspector({ snapshot }: { snapshot: Snapshot | null }) {
                 range &&
                 snapshot &&
                 (assignment.plot === 'density' ? (
-                  <GaussianPlot
+                  <DistributionPlot
                     segments={snapshot.segments}
                     viewport={range}
                     showHistogram={showHistogram}
                   />
+                ) : assignment.plot === 'trajectory' ? (
+                  <TrajectoryPlot
+                    segments={snapshot.segments}
+                    bounds={range.trajectory}
+                  />
+                ) : assignment.plot === 'acceptance' ? (
+                  <AcceptancePlot segments={snapshot.segments} />
                 ) : (
                   <ConvergencePlot
                     segments={snapshot.segments}

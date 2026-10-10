@@ -1,5 +1,5 @@
 import type { SegmentSnapshot } from '../engine/protocol';
-import { gaussianReference } from '../models/gaussian';
+import { modelReference } from '../models/singleVariable';
 import { InlineMath } from '../ui/Math';
 import { PlotFrame, tick } from './PlotFrame';
 import { segmentColor } from './viewport';
@@ -15,17 +15,26 @@ export function ConvergencePlot({
   absoluteError: boolean;
 }) {
   const bounds = absoluteError ? viewport.error : viewport.mean;
+  const hasIndependent = segments.some(
+    (s) =>
+      s.model.kind === 'gaussian' &&
+      s.sampler.kind === 'direct' &&
+      s.moments.count > 0,
+  );
+  const hasOther = segments.some(
+    (s) => s.model.kind !== 'gaussian' || s.sampler.kind !== 'direct',
+  );
   let zeros = 0;
   for (const s of segments)
     for (const p of s.convergence)
-      if (p.mean === gaussianReference(s.parameters).mean) zeros += 1;
+      if (p.mean === modelReference(s.model).mean) zeros += 1;
   return (
     <>
       <PlotFrame
         label={
           absoluteError
             ? 'Log–log absolute error of running mean'
-            : 'Running mean with exact mean and pointwise one-standard-error bands'
+            : 'Running mean and exact reference'
         }
         viewport={JSON.stringify({ ...bounds, nMax: viewport.nMax })}
       >
@@ -66,7 +75,7 @@ export function ConvergencePlot({
                 );
               })}
               {segments.map((segment) => {
-                const ref = gaussianReference(segment.parameters),
+                const ref = modelReference(segment.model),
                   color = segmentColor(segment.id);
                 if (!segment.moments.count) return null;
                 const n = segment.moments.count;
@@ -96,26 +105,33 @@ export function ConvergencePlot({
                 return (
                   <g key={segment.id}>
                     {absoluteError ? (
-                      <path
-                        d={line(
-                          grid,
-                          (v) => ref.standardDeviation / Math.sqrt(v),
-                        )}
-                        fill="none"
-                        stroke={color}
-                        strokeDasharray="5 3"
-                      />
+                      segment.model.kind === 'gaussian' &&
+                      segment.sampler.kind === 'direct' && (
+                        <path
+                          d={line(
+                            grid,
+                            (v) => ref.standardDeviation / Math.sqrt(v),
+                          )}
+                          fill="none"
+                          stroke={color}
+                          strokeDasharray="5 3"
+                        />
+                      )
                     ) : (
                       <>
-                        <path
-                          d={`${line(grid, (v) => ref.mean + se(v))} ${grid
-                            .slice()
-                            .reverse()
-                            .map((v) => `L${x(v)},${y(ref.mean - se(v))}`)
-                            .join(' ')} Z`}
-                          fill={color}
-                          fillOpacity="0.1"
-                        />
+                        {segment.model.kind === 'gaussian' &&
+                          segment.sampler.kind === 'direct' && (
+                            <path
+                              data-testid="independent-band"
+                              d={`${line(grid, (v) => ref.mean + se(v))} ${grid
+                                .slice()
+                                .reverse()
+                                .map((v) => `L${x(v)},${y(ref.mean - se(v))}`)
+                                .join(' ')} Z`}
+                              fill={color}
+                              fillOpacity="0.1"
+                            />
+                          )}
                         <line
                           x1={left}
                           x2={x(n)}
@@ -165,7 +181,7 @@ export function ConvergencePlot({
                 </text>
               ))}
               <text x={width / 2} y={height - 3} textAnchor="middle">
-                N · segment draws (log)
+                N · retained samples (log)
               </text>
             </>
           );
@@ -174,20 +190,30 @@ export function ConvergencePlot({
       <p className="plot-note">
         {absoluteError ? (
           <>
-            Solid: absolute error. Dashed:{' '}
-            <InlineMath>{String.raw`\sigma N^{-1/2}`}</InlineMath> RMS reference
-            (slope −½).{' '}
-            {zeros > 0 &&
-              `${zeros} zero-error checkpoints omitted from the logarithmic view. `}
+            Solid: absolute error.{' '}
+            {hasIndependent && (
+              <>
+                Dashed: <InlineMath>{String.raw`\sigma N^{-1/2}`}</InlineMath>{' '}
+                RMS reference, direct Gaussian only.{' '}
+              </>
+            )}
+            {zeros > 0 && `${zeros} zero-error checkpoints omitted. `}
           </>
         ) : (
           <>
-            Solid: running mean. Dashed: exact mean. Shading:{' '}
-            <InlineMath>{String.raw`\mu\pm\sigma/\sqrt{N}`}</InlineMath> (≈68%
-            pointwise coverage).{' '}
+            Solid: running mean. Dashed: exact mean.{' '}
+            {hasIndependent && (
+              <>
+                Shading:{' '}
+                <InlineMath>{String.raw`\mu\pm\sigma/\sqrt N`}</InlineMath>,
+                ≈68% pointwise, direct Gaussian only; not simultaneous.{' '}
+              </>
+            )}
           </>
         )}
-        Single-trajectory error is not monotone. Bands are not simultaneous.
+        {hasOther &&
+          'No uncertainty bands for discrete or Metropolis segments. '}
+        Single-trajectory error need not decrease monotonically.
       </p>
       {!segments.some((s) => s.moments.count) && (
         <p className="plot-note">

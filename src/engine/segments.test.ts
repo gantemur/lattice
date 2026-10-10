@@ -1,5 +1,11 @@
+import type { GaussianParameters } from '../models/gaussian';
+const settings = (parameters: GaussianParameters) => ({
+  model: { kind: 'gaussian' as const, parameters },
+  sampler: { kind: 'direct' as const },
+});
+import { MAX_SEGMENTS } from './protocol';
 import { expect, it } from 'vitest';
-import { GaussianRun, MAX_SEGMENTS } from './gaussianEngine';
+import { SimulationRun } from './simulationEngine';
 import { createHistogram, recordHistogram } from '../observables/histogram';
 import { gaussianReference } from '../models/gaussian';
 import { createRng } from '../algorithms/rng';
@@ -9,14 +15,18 @@ import {
   emptyMoments,
   summarizeMoments,
 } from '../observables/moments';
-const initial = { parameters: { a: 1, h: 0 }, seed: 9 };
+const initial = { ...settings({ a: 1, h: 0 }), seed: 9 };
 it('preserves configuration and RNG across switches, isolating every measurement', () => {
-  const run = new GaussianRun(1, initial),
+  const run = new SimulationRun(1, initial),
     rng = createRng(9);
-  const parameters = [initial.parameters, { a: 4, h: 2 }, initial.parameters];
+  const parameters = [
+    initial.model.parameters,
+    { a: 4, h: 2 },
+    initial.model.parameters,
+  ];
   parameters.forEach((p, i) => {
     const before = run.snapshot();
-    run.changeParameters(p);
+    run.changeSettings(settings(p));
     expect(run.snapshot().currentValue).toBe(before.currentValue);
     expect(run.snapshot().updates).toBe(before.updates);
     if (i > 0) {
@@ -60,15 +70,15 @@ it('preserves configuration and RNG across switches, isolating every measurement
   expect(run.snapshot().updates).toBe(339);
 });
 it('replays switching schedules independently of batches and snapshot frequency', () => {
-  const one = new GaussianRun(1, initial),
-    batched = new GaussianRun(1, initial);
+  const one = new SimulationRun(1, initial),
+    batched = new SimulationRun(1, initial);
   for (const p of [
     { a: 1, h: 0 },
     { a: 2, h: 5 },
     { a: 1, h: 0 },
   ]) {
-    one.changeParameters(p);
-    batched.changeParameters(p);
+    one.changeSettings(settings(p));
+    batched.changeSettings(settings(p));
     for (let i = 0; i < 800; i++) {
       one.advance(1);
       one.snapshot();
@@ -78,12 +88,12 @@ it('replays switching schedules independently of batches and snapshot frequency'
   }
 });
 it('bounds old segments without pooling or changing the stream', () => {
-  const run = new GaussianRun(1, initial),
+  const run = new SimulationRun(1, initial),
     rng = createRng(initial.seed);
   let value = 0;
   for (let i = 0; i < 20; i++) {
     const p = { a: 1, h: i % 2 };
-    run.changeParameters(p);
+    run.changeSettings(settings(p));
     run.advance(1);
     value = sampleGaussian(p, rng);
   }
@@ -96,20 +106,20 @@ it('bounds old segments without pooling or changing the stream', () => {
   expect(s.currentValue).toBe(value);
 });
 it('does not change state on invalid parameters or identical Apply', () => {
-  const run = new GaussianRun(1, initial);
+  const run = new SimulationRun(1, initial);
   run.advance(16);
   const before = run.snapshot();
-  run.changeParameters(initial.parameters);
+  run.changeSettings(settings(initial.model.parameters));
   expect(run.snapshot()).toEqual(before);
-  expect(() => run.changeParameters({ a: 0, h: 0 })).toThrow();
+  expect(() => run.changeSettings(settings({ a: 0, h: 0 }))).toThrow();
   expect(run.snapshot()).toEqual(before);
 });
 it('Reset creates empty history and replays the chosen seed with current parameters', () => {
-  const old = new GaussianRun(1, initial);
+  const old = new SimulationRun(1, initial);
   old.advance(10);
-  old.changeParameters({ a: 4, h: 2 });
+  old.changeSettings(settings({ a: 4, h: 2 }));
   old.advance(8);
-  const fresh = new GaussianRun(2, old.snapshot().configuration);
+  const fresh = new SimulationRun(2, old.snapshot().configuration);
   expect(fresh.snapshot()).toMatchObject({
     updates: 0,
     currentValue: null,
