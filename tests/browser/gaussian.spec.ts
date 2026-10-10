@@ -5,7 +5,7 @@ const step = (page: Page) =>
 const density = (page: Page) =>
   page
     .getByRole('img', {
-      name: 'Gaussian probability density and segment histograms',
+      name: 'Exact distribution and sampled histogram',
     })
     .first();
 async function apply(page: Page, a: string, h: string) {
@@ -15,7 +15,7 @@ async function apply(page: Page, a: string, h: string) {
   await input.fill(a);
   await page.getByLabel('Source h', { exact: true }).fill(h);
   await page
-    .getByRole('button', { name: 'Apply parameters', exact: true })
+    .getByRole('button', { name: 'Apply settings', exact: true })
     .click();
 }
 async function sampleBatch(page: Page) {
@@ -66,6 +66,7 @@ test('settings, display changes, and keyboard controls preserve seed replay', as
   const settings = page.getByText('Model & sampler settings', { exact: true });
   await settings.focus();
   await page.keyboard.press('Enter');
+  await page.getByText('Reset seed', { exact: true }).click();
   await expect(page.getByLabel('Seed on Reset')).toBeVisible();
   await settings.focus();
   await page.keyboard.press('Enter');
@@ -163,8 +164,9 @@ test('four compact slots assign, close, open, and rearrange without sampling', a
     page.getByRole('article', { name: /Plot slot/, includeHidden: true }),
   ).toHaveCount(4);
   await expect(page.getByLabel('Plot for slot 1')).toHaveValue('x:density');
-  await expect(page.getByLabel('Plot for slot 2')).toHaveValue('x:mean');
-  for (const n of [3, 4]) {
+  await expect(page.getByLabel('Plot for slot 2')).toHaveValue('x:trajectory');
+  await expect(page.getByLabel('Plot for slot 3')).toHaveValue('x:mean');
+  for (const n of [4]) {
     const box = await page
       .getByRole('article', { name: `Plot slot ${n}`, exact: true })
       .boundingBox();
@@ -176,11 +178,11 @@ test('four compact slots assign, close, open, and rearrange without sampling', a
   });
   const mobile = testInfo.project.name !== 'desktop';
   if (mobile) {
-    await page.getByLabel('Plot for slot 3').selectOption('x:error');
+    await page.getByLabel('Plot for slot 4').selectOption('x:error');
     await expect(
       page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
     ).toBeVisible();
-    await page.getByLabel('Plot for slot 3').selectOption('');
+    await page.getByLabel('Plot for slot 4').selectOption('');
   }
   if (mobile)
     await page
@@ -197,7 +199,7 @@ test('four compact slots assign, close, open, and rearrange without sampling', a
   await page.getByRole('button', { name: 'Open plot 3' }).click();
   await page.getByRole('button', { name: 'Move slot 3 up' }).click();
   await expect(page.getByLabel('Plot for slot 2')).toHaveValue('x:error');
-  await expect(page.getByLabel('Plot for slot 3')).toHaveValue('x:mean');
+  await expect(page.getByLabel('Plot for slot 3')).toHaveValue('x:trajectory');
   await expect(page.getByTestId('sample-count')).toHaveText(count!);
   await expect(page.getByTestId('current-value')).toHaveText(value!);
   expect(

@@ -1,15 +1,22 @@
+import type { Settings } from '../algorithms/transitions';
+import { variableName } from '../models/singleVariable';
 export type PlotAssignment = {
-  target: 'x';
-  plot: 'density' | 'mean' | 'error';
+  target: 'x' | 's' | 'K';
+  plot: 'density' | 'trajectory' | 'mean' | 'error' | 'acceptance';
 };
 export type Slot = PlotAssignment | null;
 export type Slots = [Slot, Slot, Slot, Slot];
-export const defaultSlots: Slots = [
-  { target: 'x', plot: 'density' },
-  { target: 'x', plot: 'mean' },
-  null,
-  null,
-];
+export function defaultSlots(settings: Settings): Slots {
+  const target = variableName(settings.model);
+  return [
+    { target, plot: 'density' },
+    { target, plot: 'trajectory' },
+    { target, plot: 'mean' },
+    settings.sampler.kind === 'metropolis'
+      ? { target, plot: 'acceptance' }
+      : null,
+  ];
+}
 export function assignSlot(
   slots: Slots,
   index: number,

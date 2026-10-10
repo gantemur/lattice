@@ -53,6 +53,8 @@ export function PlotFrame({
   );
 }
 export function formatNumber(value: number | null): string {
+  if (value !== null && value !== 0 && Math.abs(value) < 0.0001)
+    return value.toExponential(3);
   return value === null
     ? '—'
     : new Intl.NumberFormat('en', { maximumFractionDigits: 4 }).format(value);

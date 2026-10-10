@@ -1,11 +1,16 @@
-import { gaussianDensity, gaussianReference } from '../models/gaussian';
+import {
+  modelReference,
+  probability,
+  support,
+  variableName,
+} from '../models/singleVariable';
 import type { SegmentSnapshot } from '../engine/protocol';
 import type { PlotViewport } from './viewport';
 import { segmentColor } from './viewport';
 import { PlotFrame, tick } from './PlotFrame';
 export { formatNumber } from './PlotFrame';
 
-export function GaussianPlot({
+export function DistributionPlot({
   segments,
   viewport,
   showHistogram,
@@ -22,17 +27,25 @@ export function GaussianPlot({
   return (
     <>
       <PlotFrame
-        label="Gaussian probability density and segment histograms"
+        label="Exact distribution and sampled histogram"
         viewport={JSON.stringify(viewport.density)}
       >
         {({ left, right, top, bottom, width, height, compact }) => {
+          const axisValue = (t: number) =>
+            segments[0]!.model.kind === 'gaussian'
+              ? min + t * (max - min)
+              : Math.round(
+                  Math.ceil(min) + t * (Math.floor(max) - Math.ceil(min)),
+                );
           const x = (v: number) =>
             left + ((v - min) / (max - min)) * (right - left);
           const y = (v: number) => bottom - (v / yMax) * (bottom - top);
           return (
             <>
               <text x={compact ? 0 : left} y="16">
-                Density p(x)
+                {segments[0]!.model.kind === 'gaussian'
+                  ? 'Density p(x)'
+                  : 'Probability mass'}
               </text>
               {[0, 0.5, 1].map((t) => (
                 <g key={t}>
@@ -52,11 +65,47 @@ export function GaussianPlot({
                 const color = segmentColor(segment.id);
                 const hist = segment.histogram;
                 const bw = (hist.max - hist.min) / hist.bins.length;
-                const ref = gaussianReference(segment.parameters);
+                const ref = modelReference(segment.model);
+                if (segment.model.kind !== 'gaussian') {
+                  return (
+                    <g key={segment.id} aria-label={`Segment ${segment.id}`}>
+                      {support(segment.model).map((state, i) => {
+                        const w = ((right - left) / (max - min)) * 0.7;
+                        const mass = probability(segment.model, state);
+                        const sampled = segment.moments.count
+                          ? hist.bins[i]! / segment.moments.count
+                          : 0;
+                        return (
+                          <g key={state}>
+                            <rect
+                              x={x(state) - w / 2}
+                              y={y(mass)}
+                              width={w}
+                              height={bottom - y(mass)}
+                              fill="none"
+                              stroke={color}
+                              strokeWidth="1.5"
+                            />
+                            {showHistogram && (
+                              <rect
+                                x={x(state) - w * 0.32}
+                                y={y(sampled)}
+                                width={w * 0.64}
+                                height={bottom - y(sampled)}
+                                fill={color}
+                                fillOpacity="0.35"
+                              />
+                            )}
+                          </g>
+                        );
+                      })}
+                    </g>
+                  );
+                }
                 const path = Array.from({ length: 161 }, (_, i) => {
                   const v =
                     ref.mean + ((i / 160) * 8 - 4) * ref.standardDeviation;
-                  return `${i ? 'L' : 'M'}${x(v)},${y(gaussianDensity(v, segment.parameters))}`;
+                  return `${i ? 'L' : 'M'}${x(v)},${y(probability(segment.model, v))}`;
                 }).join(' ');
                 const sampled = hist.bins
                   .map((n, i) => {
@@ -90,26 +139,39 @@ export function GaussianPlot({
               {(compact ? [0, 1] : [0, 0.5, 1]).map((t) => (
                 <text
                   key={t}
-                  x={x(min + t * (max - min))}
+                  x={x(axisValue(t))}
                   y={bottom + 20}
                   textAnchor={t === 0 ? 'start' : t === 1 ? 'end' : 'middle'}
                 >
-                  {tick(min + t * (max - min))}
+                  {tick(axisValue(t))}
                 </text>
               ))}
               <text x={width / 2} y={height - 3} textAnchor="middle">
-                x · dimensionless
+                {variableName(segments[0]!.model)} · dimensionless
               </text>
             </>
           );
         }}
       </PlotFrame>
       <p className="plot-note">
-        Dashed: analytic density.{' '}
-        {showHistogram
-          ? 'Filled: sampled, normalized per segment.'
-          : 'Histograms hidden.'}{' '}
-        {tails} draws outside ±4σ bins; included in moments and normalization.
+        {segments[0]!.model.kind === 'gaussian' ? (
+          <>
+            Dashed: analytic density.{' '}
+            {showHistogram
+              ? 'Filled: sampled, normalized per segment.'
+              : 'Histograms hidden.'}{' '}
+            {tails} draws outside ±4σ bins; included in moments and
+            normalization.
+          </>
+        ) : (
+          <>
+            Outline: exact probability mass.{' '}
+            {showHistogram
+              ? 'Filled bars: sampled mass per segment.'
+              : 'Sampled bars hidden.'}{' '}
+            Warm-up excluded.
+          </>
+        )}
       </p>
     </>
   );

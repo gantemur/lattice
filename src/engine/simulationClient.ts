@@ -1,6 +1,6 @@
 import { validateSeed } from '../algorithms/rng';
-import { validateGaussian } from '../models/gaussian';
-import type { GaussianParameters } from '../models/gaussian';
+import { validateSettings } from '../algorithms/transitions';
+import type { Settings } from '../algorithms/transitions';
 import type {
   RunConfiguration,
   Snapshot,
@@ -37,7 +37,7 @@ export class SimulationClient {
   private runId = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
-  private pendingParameters: GaussianParameters | null = null;
+  private pendingSettings: Settings | null = null;
 
   constructor(
     private readonly createWorker: () => WorkerPort,
@@ -45,10 +45,10 @@ export class SimulationClient {
   ) {}
 
   initialize(configuration: RunConfiguration): void {
-    validateGaussian(configuration.parameters);
+    validateSettings(configuration);
     validateSeed(configuration.seed);
     this.cancelTimer();
-    this.pendingParameters = null;
+    this.pendingSettings = null;
     this.runId += 1;
     this.view = { snapshot: null, running: false, busy: true, error: null };
     this.emit();
@@ -79,25 +79,25 @@ export class SimulationClient {
     this.advance(128);
   }
 
-  changeParameters(parameters: GaussianParameters): void {
-    validateGaussian(parameters);
+  changeSettings(settings: Settings): void {
+    validateSettings(settings);
     if (!this.worker || this.view.error || !this.view.snapshot)
       throw new Error('Wait for the worker, or Reset to recover it.');
     this.cancelTimer();
-    this.pendingParameters = { ...parameters };
-    if (!this.view.busy) this.sendParameters();
+    this.pendingSettings = structuredClone(settings);
+    if (!this.view.busy) this.sendSettings();
   }
 
-  private sendParameters(): void {
-    const parameters = this.pendingParameters!;
-    this.pendingParameters = null;
+  private sendSettings(): void {
+    const settings = this.pendingSettings!;
+    this.pendingSettings = null;
     this.view.busy = true;
     this.emit();
     try {
       this.worker!.postMessage({
-        type: 'changeParameters',
+        type: 'changeSettings',
         runId: this.runId,
-        parameters,
+        settings,
       });
     } catch {
       this.fail('Could not apply parameters. Reset to restart the worker.');
@@ -156,8 +156,8 @@ export class SimulationClient {
       return;
     this.view.snapshot = snapshot;
     this.view.busy = false;
-    if (this.pendingParameters) {
-      this.sendParameters();
+    if (this.pendingSettings) {
+      this.sendSettings();
       return;
     }
     this.emit();

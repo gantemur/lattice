@@ -1,28 +1,44 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { singleSite } from '../domain/singleSite';
+import { useRef, useState } from 'react';
 import { standardGaussianPreset } from '../engine/preset';
-import { MAX_SEGMENTS } from '../engine/gaussianEngine';
-import { gaussianReference } from '../models/gaussian';
+import type { RunConfiguration } from '../engine/protocol';
+import { MAX_SEGMENTS } from '../engine/protocol';
+import {
+  defaultModel,
+  modelNames,
+  modelReference,
+  modelSummary,
+  variableName,
+} from '../models/singleVariable';
+import type { ModelKind } from '../models/singleVariable';
+import { samplerName } from '../algorithms/transitions';
+import type { Settings } from '../algorithms/transitions';
 import { formatNumber } from '../plotting/PlotFrame';
 import { segmentColor } from '../plotting/viewport';
-import { InlineMath, DisplayMath } from '../ui/Math';
+import { InlineMath } from '../ui/Math';
 import { useSimulation } from './useSimulation';
 import { Inspector } from './Inspector';
+import { SettingsPanel } from './SettingsPanel';
+import { ModelFormula, ModelNotes } from './ModelNotes';
+import { StepInspector } from './StepInspector';
 
 export function App() {
   const { view, client } = useSimulation();
   const snapshot = view.snapshot;
-  const configuration =
-    snapshot?.configuration ?? standardGaussianPreset.configuration;
-  const [a, setA] = useState('1'),
-    [h, setH] = useState('0');
+  const lastConfiguration = useRef<RunConfiguration>(
+    standardGaussianPreset.configuration,
+  );
+  if (snapshot) lastConfiguration.current = snapshot.configuration;
+  const configuration = snapshot?.configuration ?? lastConfiguration.current;
+  const { model, sampler } = configuration;
+  const current = snapshot?.segments.at(-1);
   const [seed, setSeed] = useState(
     String(standardGaussianPreset.configuration.seed),
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState('Draw one sample or start a run.');
-  const reference = gaussianReference(configuration.parameters);
+  const [inspectOpen, setInspectOpen] = useState(false);
+  const reference = modelReference(model),
+    variable = variableName(model);
   const status = view.error
     ? 'Worker unavailable'
     : view.running
@@ -30,7 +46,6 @@ export function App() {
       : view.busy
         ? 'Finishing update'
         : 'Paused';
-
   function attempt(action: () => void, message: string) {
     try {
       action();
@@ -42,40 +57,34 @@ export function App() {
       );
     }
   }
-  function apply(event: FormEvent) {
-    event.preventDefault();
-    if (!a.trim() || !h.trim()) {
-      setFormError('Complete both parameter fields before applying.');
-      return;
-    }
+  function apply(settings: Settings) {
     attempt(
-      () => client.current?.changeParameters({ a: Number(a), h: Number(h) }),
-      'Parameter changes start a separate segment. Earlier measurements and the RNG stream are preserved; unchanged parameters keep the current segment.',
+      () => client.current?.changeSettings(settings),
+      'Apply preserves compatible history and the RNG stream. Changed settings begin separate measurements; unchanged settings keep the segment.',
     );
   }
   function reset() {
-    if (!seed.trim()) {
-      setFormError('Enter the seed to use on Reset.');
-      return;
-    }
     attempt(
       () =>
         client.current?.initialize({
-          parameters: configuration.parameters,
-          seed: Number(seed),
+          ...configuration,
+          seed: seed.trim() ? Number(seed) : NaN,
         }),
-      'Reset cleared history and refitted plots. Sampling restarts with the current parameters and the selected seed.',
+      'Reset cleared history and refitted plots. Applied settings restart with the selected seed.',
     );
   }
-  function preset() {
-    setA('1');
-    setH('0');
+  function selectModel(kind: ModelKind) {
+    if (kind === model.kind) return;
     attempt(
-      () => client.current?.changeParameters({ a: 1, h: 0 }),
-      'Standard Gaussian parameters applied. Earlier segments and the RNG stream are preserved.',
+      () =>
+        client.current?.initialize({
+          model: defaultModel(kind),
+          sampler: { kind: 'direct' },
+          seed: seed.trim() ? Number(seed) : NaN,
+        }),
+      'New model session: previous model history cleared, default parameters and direct sampler selected, RNG restarted with the selected seed.',
     );
   }
-
   return (
     <>
       <a className="skip-link" href="#laboratory">
@@ -116,120 +125,72 @@ export function App() {
           aria-labelledby="workspace-title"
         >
           <div>
-            <p className="eyebrow">A numerical playground / 00</p>
+            <p className="eyebrow">A numerical playground / 00.5</p>
             <h1 id="workspace-title">
               Small systems. <span>Clear ideas.</span>
             </h1>
             <p className="intro-copy">
-              Explore one variable. Compare distributions, follow convergence,
-              and keep the mathematics in view.
+              Compare distributions and samplers. Follow each transition, and
+              keep the mathematics in view.
             </p>
           </div>
-          <span className="milestone">M0 · Gaussian foundation</span>
+          <span className="milestone">M0.5 · Comparative sampling</span>
         </section>
         <div className="lab-layout">
           <aside className="sidebar" aria-label="Model and settings">
             <section className="model-card">
-              <p className="eyebrow">Current model</p>
-              <h2>0D Gaussian</h2>
-              <div className="formula">
-                <DisplayMath>{String.raw`S(x)=\frac{a x^2}{2}-hx`}</DisplayMath>
-              </div>
-              <p className="model-convention">
-                <InlineMath>{String.raw`x\in\mathbb R,\quad a>0`}</InlineMath>
-                <br />
-                Weight <InlineMath>{String.raw`e^{-S(x)}`}</InlineMath>.
-                Dimensionless; no extra β factor.
-              </p>
-              <a href="#model-notes">Model notes & exercise ↓</a>
+              <label className="eyebrow" htmlFor="model">
+                Probability model
+              </label>
+              <select
+                id="model"
+                className="model-select"
+                value={model.kind}
+                onChange={(e) => selectModel(e.target.value as ModelKind)}
+                disabled={!snapshot || !!view.error}
+              >
+                {Object.entries(modelNames).map(([kind, name]) => (
+                  <option key={kind} value={kind}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <ModelFormula model={model} />
+              <small>
+                Changing model starts a new session. Applied:{' '}
+                {samplerName(sampler)}.
+              </small>
+              <a href="#model-notes">Model notes & experiments ↓</a>
             </section>
-            <details className="settings">
-              <summary>Model & sampler settings</summary>
-              <form onSubmit={apply} noValidate>
-                <label htmlFor="coefficient">
-                  Quadratic coefficient <strong>a</strong>
-                  <input
-                    id="coefficient"
-                    inputMode="decimal"
-                    type="number"
-                    min="0.05"
-                    max="20"
-                    step="any"
-                    value={a}
-                    onChange={(e) => setA(e.target.value)}
-                  />
-                </label>
-                <small>0.05–20 · larger a narrows the density</small>
-                <label htmlFor="source">
-                  Source <strong>h</strong>
-                  <input
-                    id="source"
-                    inputMode="decimal"
-                    type="number"
-                    min="-10"
-                    max="10"
-                    step="any"
-                    value={h}
-                    onChange={(e) => setH(e.target.value)}
-                  />
-                </label>
-                <small>
-                  −10–10 · shifts the mean to <InlineMath>{'h/a'}</InlineMath>
-                </small>
-                <p className="settings-warning">
-                  Apply keeps earlier segments and continues the random stream.
-                  Statistics are never pooled across parameters.
-                </p>
-                <button
-                  type="submit"
-                  className="button primary"
-                  disabled={!snapshot || !!view.error}
-                >
-                  Apply parameters
-                </button>
-                <button
-                  type="button"
-                  className="button full"
-                  onClick={preset}
-                  disabled={!snapshot || !!view.error}
-                >
-                  Standard Gaussian preset
-                </button>
-                <label htmlFor="seed">
-                  Seed on Reset
-                  <input
-                    id="seed"
-                    inputMode="numeric"
-                    type="number"
-                    min="0"
-                    max="4294967295"
-                    step="1"
-                    value={seed}
-                    onChange={(e) => setSeed(e.target.value)}
-                  />
-                </label>
-                <small>
-                  Integer 0–4294967295. Apply does not change the seed. Reset
-                  uses the applied parameters and this seed.
-                </small>
-              </form>
-            </details>
+            <SettingsPanel
+              key={model.kind}
+              settings={configuration}
+              seed={seed}
+              setSeed={setSeed}
+              apply={apply}
+              disabled={!snapshot || !!view.error}
+            />
             <section className="geometry-card" aria-labelledby="geometry-title">
               <p className="eyebrow" id="geometry-title">
-                Geometry · single site
+                {model.kind === 'binomial'
+                  ? 'Domain · aggregate count'
+                  : 'Geometry · single site'}
               </p>
               <div
                 className="site-diagram"
                 role="img"
-                aria-label="One site v0 carrying one real variable x, with no links"
+                aria-label={`Current variable ${variable}: ${formatNumber(snapshot?.currentValue ?? null)}`}
               >
-                <span>x</span>
+                <span>{variable}</span>
               </div>
-              <p>
-                {singleSite.vertices.length} site · {singleSite.edges.length}{' '}
-                links · 1 physical variable
+              <p data-testid="variable-state">
+                {variable} = {formatNumber(snapshot?.currentValue ?? null)}
               </p>
-              <small>Geometry is separate from plot slots.</small>
+              <small>
+                {model.kind === 'binomial'
+                  ? `${model.parameters.n} Bernoulli trials → one aggregate count K. No lattice is implied.`
+                  : '1 site · 0 links · 1 physical variable. Geometry is separate from plot slots.'}
+              </small>
             </section>
             <div className="local-note">
               ◌ Computation stays in your browser.
@@ -249,9 +210,7 @@ export function App() {
                     Segment {snapshot?.activeSegmentId ?? '…'}
                   </span>
                 </div>
-                <span className="algorithm-label">
-                  Independent Gaussian draws
-                </span>
+                <span className="algorithm-label">{samplerName(sampler)}</span>
               </div>
               <div className="command-row">
                 <button
@@ -269,7 +228,10 @@ export function App() {
                 </button>
                 <button
                   className="button"
-                  onClick={() => client.current?.step()}
+                  onClick={() => {
+                    setInspectOpen(true);
+                    client.current?.step();
+                  }}
                   disabled={
                     view.running || view.busy || !snapshot || !!view.error
                   }
@@ -283,16 +245,22 @@ export function App() {
                   <strong data-testid="sample-count">
                     {snapshot?.moments.count ?? 0}
                   </strong>
-                  <span>segment samples</span>
+                  <span>retained in segment</span>
                 </div>
               </div>
               <div className="run-meta">
                 <span>
-                  Warm-up: <strong>0 · not needed</strong>
+                  Segment updates{' '}
+                  <strong data-testid="segment-updates">
+                    {current?.updates ?? 0}
+                  </strong>
                 </span>
-                <span>1 update = 1 retained draw</span>
                 <span>
-                  Seed <strong>{configuration.seed}</strong>
+                  Warm-up{' '}
+                  <strong data-testid="warmup-count">
+                    {current?.warmupUpdates ?? 0} / {current?.warmupTarget ?? 0}
+                  </strong>
+                  {sampler.kind !== 'metropolis' && ' · not needed'}
                 </span>
                 <span>
                   All updates{' '}
@@ -300,40 +268,68 @@ export function App() {
                     {snapshot?.updates ?? 0}
                   </strong>
                 </span>
-              </div>
-              <div className="current-value">
                 <span>
-                  Current x{' '}
+                  Seed <strong>{configuration.seed}</strong>
+                </span>
+              </div>
+              {sampler.kind === 'metropolis' && (
+                <div className="run-meta" data-testid="acceptance-counts">
+                  <span>
+                    Accepted moves <strong>{current?.accepted ?? 0}</strong>
+                  </span>
+                  <span>
+                    Rejected <strong>{current?.rejected ?? 0}</strong>
+                  </span>
+                  <span>
+                    Self <strong>{current?.self ?? 0}</strong>
+                  </span>
+                  <span>
+                    Accept rate{' '}
+                    <strong>
+                      {current?.updates
+                        ? `${((100 * (current.accepted + current.self)) / current.updates).toFixed(1)}%`
+                        : '—'}
+                    </strong>{' '}
+                    · includes self & warm-up
+                  </span>
+                </div>
+              )}
+              <div className="run-readings">
+                <span>
+                  Current {variable}{' '}
                   <strong data-testid="current-value">
                     {formatNumber(snapshot?.currentValue ?? null)}
                   </strong>
                 </span>
                 <span>
-                  Action <InlineMath>{'S(x)'}</InlineMath>{' '}
+                  Action <InlineMath>{'S'}</InlineMath>{' '}
                   {formatNumber(snapshot?.currentAction ?? null)}
                 </span>
               </div>
-              {snapshot?.currentValue !== null &&
-                snapshot?.moments.count === 0 && (
-                  <p className="plot-note">
-                    Carried configuration; no measurements yet in this segment.
-                  </p>
-                )}
-              {view.error && (
-                <p role="alert" className="error">
-                  {view.error}{' '}
-                  {snapshot &&
-                    'Displayed measurements are the last confirmed state.'}
+              {current && current.moments.count === 0 && (
+                <p className="plot-note">
+                  {current.initialization}{' '}
+                  {current.warmupUpdates < current.warmupTarget
+                    ? 'Warm-up is excluded from equilibrium estimates.'
+                    : 'No retained measurements yet.'}
                 </p>
               )}
               {formError && (
-                <p className="error" role="alert">
+                <p className="error-message" role="alert">
                   {formError}
                 </p>
               )}
-              <p className="run-notice" aria-live="polite">
-                {notice}
-              </p>
+              {view.error && (
+                <p className="error-message" role="alert">
+                  {view.error} Displayed values are the last confirmed state.
+                </p>
+              )}
+              <p className="run-notice">{notice}</p>
+              <StepInspector
+                record={current?.trajectory.at(-1)}
+                open={inspectOpen}
+                setOpen={setInspectOpen}
+              />
             </section>
             <section
               className="segment-history"
@@ -352,31 +348,41 @@ export function App() {
                       {segment.id === snapshot.activeSegmentId
                         ? ' · current'
                         : ''}
-                    </strong>{' '}
-                    a={segment.parameters.a}, h={segment.parameters.h} · N=
-                    {segment.moments.count}
+                    </strong>
+                    {modelSummary(segment.model)} ·{' '}
+                    {samplerName(segment.sampler)}
+                    {segment.sampler.kind === 'metropolis' &&
+                    segment.model.kind === 'gaussian'
+                      ? ` δ=${segment.sampler.width}`
+                      : ''}{' '}
+                    · N={segment.moments.count}
                   </span>
                 ))}
               </div>
               <details>
                 <summary>Segment statistics & retention</summary>
                 <p>
-                  Latest {MAX_SEGMENTS} segments retained.{' '}
+                  Latest {MAX_SEGMENTS} segments;{' '}
                   {snapshot?.droppedSegments ?? 0} older segments removed. Each
-                  segment has its own histogram, moments, and convergence
-                  trajectory; no individual samples are stored.
+                  has separate statistics and up to 1000 exact recent
+                  transitions. Histograms and mean checkpoints exclude warm-up.
+                  No pooling across targets or algorithms.
                 </p>
-                <div className="segment-statistics">
-                  {snapshot?.segments.map((segment) => (
-                    <p key={segment.id}>
-                      <strong>S{segment.id}</strong> · starts after update{' '}
-                      {segment.startUpdate} · mean{' '}
-                      {formatNumber(segment.moments.mean)} · variance{' '}
-                      {formatNumber(segment.moments.variance)} · last
-                      convergence N={segment.convergence.at(-1)?.count ?? 0}
-                    </p>
-                  ))}
-                </div>
+                {snapshot?.segments.map((segment) => (
+                  <p key={segment.id}>
+                    <strong>S{segment.id}</strong> · starts after update{' '}
+                    {segment.startUpdate} · {segment.updates} updates · warm-up{' '}
+                    {segment.warmupUpdates}/{segment.warmupTarget} · N=
+                    {segment.moments.count} · mean{' '}
+                    {formatNumber(segment.moments.mean)} · variance{' '}
+                    {formatNumber(segment.moments.variance)} · last convergence
+                    N={segment.convergence.at(-1)?.count ?? 0}
+                    <br />
+                    {segment.initialization}
+                    {segment.updates > segment.trajectory.length &&
+                      ` ${segment.updates - segment.trajectory.length} older transition records removed; all retained measurements remain in statistics.`}
+                  </p>
+                ))}
               </details>
               {!!snapshot?.droppedSegments && (
                 <p role="status">
@@ -385,14 +391,11 @@ export function App() {
                 </p>
               )}
             </section>
-            <Inspector snapshot={snapshot} />
+            <Inspector key={model.kind} snapshot={snapshot} />
             <section className="moments-panel" aria-labelledby="moments-title">
               <div className="section-heading">
                 <h2 id="moments-title">Current segment · exact & sampled</h2>
-                <span className="parameter-chip">
-                  a = {configuration.parameters.a} · h ={' '}
-                  {configuration.parameters.h}
-                </span>
+                <span className="parameter-chip">{modelSummary(model)}</span>
               </div>
               <table className="moments-table">
                 <caption className="sr-only">
@@ -409,7 +412,7 @@ export function App() {
                   <tr>
                     <th scope="row">
                       Mean{' '}
-                      <InlineMath>{String.raw`\langle x\rangle`}</InlineMath>
+                      <InlineMath>{String.raw`\langle ${variable}\rangle`}</InlineMath>
                     </th>
                     <td data-testid="exact-mean">
                       {formatNumber(reference.mean)}
@@ -428,7 +431,7 @@ export function App() {
                   <tr>
                     <th scope="row">
                       Second moment{' '}
-                      <InlineMath>{String.raw`\langle x^2\rangle`}</InlineMath>
+                      <InlineMath>{String.raw`\langle ${variable}^2\rangle`}</InlineMath>
                     </th>
                     <td>{formatNumber(reference.secondMoment)}</td>
                     <td>
@@ -437,82 +440,21 @@ export function App() {
                   </tr>
                 </tbody>
               </table>
-              <p className="table-note">
-                Sample variance uses <InlineMath>{'N-1'}</InlineMath> and needs
-                two draws. The convergence bands use the known analytic
-                variance, not an estimated uncertainty.
+              <p className="plot-note">
+                Exact <InlineMath>{String.raw`\log Z`}</InlineMath> ={' '}
+                {formatNumber(reference.logPartition)}. Sample variance uses N −
+                1 and needs two retained measurements; this does not remove
+                finite-chain correlation bias. No autocorrelation-adjusted
+                uncertainty or ESS is estimated.
               </p>
             </section>
-            <details className="model-notes" id="model-notes">
-              <summary>The mathematics & a small experiment</summary>
-              <div>
-                <h3>A normalized Gaussian, on the full real line</h3>
-                <DisplayMath>{String.raw`\mu=\frac ha,\qquad\sigma^2=\frac1a`}</DisplayMath>
-                <DisplayMath>{String.raw`p(x)=\sqrt{\frac{a}{2\pi}}\exp\!\left[-\frac{a(x-\mu)^2}{2}\right]`}</DisplayMath>
-                <DisplayMath>{String.raw`\log Z=\frac12\log\frac{2\pi}{a}+\frac{h^2}{2a}`}</DisplayMath>
-                <p>
-                  Each update uses Box–Muller with two seeded Mulberry32 v1
-                  uniforms. Draws are independent of the current configuration,
-                  so no warm-up is discarded, even after parameters change. One
-                  update (also one sweep here) produces one retained sample.
-                  Updates are not physical time; a rendered frame may summarize
-                  many draws.
-                </p>
-                <h3>Convergence is statistical</h3>
-                <DisplayMath>{String.raw`\overline x_N=\frac1N\sum_{i=1}^{N}x_i,\qquad\operatorname{SE}(\overline x_N)=\frac{\sigma}{\sqrt N}`}</DisplayMath>
-                <p>
-                  At each fixed sample count, the mean of independent Gaussian
-                  draws is Gaussian with exact mean{' '}
-                  <InlineMath>{'\u03bc'}</InlineMath> and variance{' '}
-                  <InlineMath>{String.raw`\sigma^2/N`}</InlineMath>. The shaded
-                  one-standard-error envelope around the exact mean has about
-                  68% pointwise coverage. It is not a simultaneous confidence
-                  band or a guarantee for the whole trajectory.
-                </p>
-                <p>
-                  The log–log absolute-error view compares a single random
-                  trajectory with the RMS reference{' '}
-                  <InlineMath>{String.raw`\sigma N^{-1/2}`}</InlineMath>.
-                  Individual errors can rise, fall, or cross zero; they need not
-                  decrease monotonically. Exact zero-error checkpoints are
-                  omitted on the log axis. Lines connect retained checkpoints
-                  and do not display every intermediate fluctuation.
-                </p>
-                <p>
-                  Checkpoints are collected inside the worker at counts{' '}
-                  <InlineMath>{String.raw`n_{k+1}=\lceil 1.125 n_k\rceil,\quad n_0=1`}</InlineMath>
-                  , plus the latest count. At most 320 scheduled checkpoints
-                  plus one current endpoint per segment cover the safe-integer
-                  counter range. Display changes do not affect this schedule.
-                </p>
-                <h3>Try it: shift, then narrow</h3>
-                <p>
-                  Run with <InlineMath>{'a=1,h=0'}</InlineMath>, then apply{' '}
-                  <InlineMath>{'h=2'}</InlineMath>. Run again and compare both
-                  distributions. Set <InlineMath>{'a=4'}</InlineMath>: the new
-                  exact mean is 0.5 and variance 0.25. Each change begins a
-                  separate trajectory with its own count. Fit All adjusts axes
-                  only; Reset clears all segments, refits axes, and restarts the
-                  selected seed with the currently applied parameters.
-                </p>
-                <p>
-                  Each segment keeps 32 fixed bins over its own{' '}
-                  <InlineMath>{String.raw`\mu\pm4\sigma`}</InlineMath>. Tail
-                  samples still enter that segment’s moments and normalization.
-                  Up to eight recent segments remain in memory; older ones are
-                  removed with notice. No saved-run manager, export, or general
-                  MCMC error analysis is implemented. Seed replay requires the
-                  same parameter-change/update sequence and build; browser math
-                  can differ in the last bits.
-                </p>
-              </div>
-            </details>
+            <ModelNotes model={model} />
           </div>
         </div>
       </main>
       <footer>
         <span>Lattice Lab / Small systems, explicit mathematics.</span>
-        <span>0D Gaussian available · more models planned</span>
+        <span>Gaussian · Single spin · Binomial</span>
       </footer>
     </>
   );

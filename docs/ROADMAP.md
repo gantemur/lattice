@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.3, 2026-10-10
+**Version:** 0.4, 2026-10-10
 
-**Status:** M0 implemented; live Pages acceptance pending approved merge/deployment. M1–M6 remain planned or exploratory.
+**Status:** M0 completed and deployed. M0.5 implemented and locally validated; M1–M6 remain planned or exploratory.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -16,7 +16,8 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 
 | Milestone | User-visible result | Scientific baseline | Status |
 |---|---|---|---|
-| **M0: deployable foundation** | Responsive app shell, one 0D Gaussian with density/convergence and segment comparisons | Exact moments, seeded sample, static Pages deploy | Implemented; live deployment acceptance pending |
+| **M0: deployable foundation** | Responsive app shell, one 0D Gaussian with density/convergence and segment comparisons | Exact moments, seeded sample, static Pages deploy | Completed and deployed |
+| **M0.5: Comparative Sampling Laboratory** | Gaussian, single-spin and binomial models; direct/Markov sampling, trajectories and transition inspection | Exact distributions, transition-matrix balance, warm-up exclusion and seeded replay | Implemented; feature-branch validation complete |
 | **M1: Small Systems** | Four plot slots, tiny graph presets/editor, detailed Metropolis inspection | Full enumeration of 4-spin Ising; 1×4 ring and 2×2 torus checks; 0D quartic reference | Planned |
 | **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Planned |
 | **M3: Measurements & Experiments** | Saved comparisons, autocorrelation, error analysis, exports and finite sweeps | Reference-estimator tests, reproducibility metadata | Planned |
@@ -58,7 +59,32 @@ Tooling: npm lockfile, Vitest, TypeScript, Prettier, production-build Playwright
 
 Local refinement validation: formatting and TypeScript checks, production build, **63 unit tests**, and **21 browser tests**. Numerical tests cover Gaussian action/normalization/moments, RNG vectors/replay, batching and snapshot invariance, logarithmic checkpoint bounds, ensemble RMS scaling and pointwise coverage, parameter switching and segment isolation, bounded retention, Reset, viewport expansion, and slot assignment. Browser tests cover local math/fonts/worker loading, hash reload, desktop and phone overflow, keyboard controls, compact slots, assignment/close/open/rearrange without sampling, Run/Apply/Pause/Step ordering, stable axes, Reset/Fit All, seed replay, invalid inputs, and worker recovery. Desktop and phone screenshots are visually reviewed. `npm run check` runs the full pipeline.
 
-The complete M0 acceptance gate remains open until an approved merge and successful Pages deployment confirm the live URL and hash reload. No automatic merge or feature-branch deployment is intended. License selection and physical-phone performance measurements remain open. Periodic 1×4, 2×2, parallel-edge and self-link tests belong to M1, when those geometries exist; M0 does not claim to implement or validate them.
+M0 was merged in PR #1 and is deployed at https://gantemur.github.io/lattice/. Physical-phone performance measurements and license selection remain open. Periodic geometry tests belong to M1, when those geometries exist.
+
+## M0.5 — Comparative Sampling Laboratory
+
+**Objective:** compare exact one-variable distributions and sampling algorithms while preserving the M0 design, history, mathematical typesetting, static deployment and reproducibility.
+
+**Deliverables**
+
+- Gaussian direct and random-walk Metropolis; single-spin direct, heat bath and lazy Metropolis; binomial direct and boundary-safe nearest-neighbor Metropolis.
+- Small explicit model/sampler types, separate numerical kernels, exact references and worker-owned accumulators.
+- Exactly four plot slots: distribution, recent sample trajectory, running mean, and Metropolis acceptance when applicable (otherwise collapsed).
+- Exact bounded recent transition histories, adjustable windows, step inspection, acceptance/self/rejection counters, configurable discarded Metropolis warm-up.
+- Separate parameter/algorithm segments; preserve compatible configurations and RNG, stable physical axes, Reset and display-only Fit All. Incompatible models start a new session.
+- No independent-Gaussian uncertainty bands on MCMC segments. No advanced autocorrelation/ESS, graph editing, coupled fields, lattice generation, exports or experiment manager.
+
+**Acceptance gate**
+
+Exact formulas and extremes; discrete transition-matrix stationarity/detailed balance/aperiodicity; correct proposal boundaries and rejection/self semantics; independent and post-warm-up Metropolis equilibrium benchmarks; batching/Step/RNG replay; segment and warm-up isolation; trajectory/counter consistency; full formatting/typecheck/unit/build/desktop and phone browser pipeline; visual screenshot review.
+
+### M0.5 delivery record — 2026-10-10
+
+Implemented on `codex/m05-comparative-sampling`, branched from current `main` after M0 PR #1. All three models and their requested samplers are available with separate settings, exact references, recent trajectories, Step inspection, warm-up exclusion and acceptance counters. Compatible settings changes retain segments and the RNG stream; model-family changes start an explicit new session. No M1 graphs/lattices or full M3 experiment management were introduced, and no runtime dependency was added.
+
+Validation: **103 unit tests** cover exact formulas/normalization/extremes, independent sampler moments, discrete transition-matrix stationarity/detailed balance/aperiodicity, Metropolis frequencies using exact matrix covariance bounds, Gaussian Metropolis ensemble moments, warm-up exclusion, bounded exact histories, seeded Step/batch replay, segment isolation, settings changes, Reset, viewport stability and conditional uncertainty rendering. **36 production browser tests** pass across desktop Chromium, 360px phone Chromium and emulated iPhone WebKit. They include thousands of updates followed by Pause/Step/Resume, trajectory browsing without numerical mutation, all models and samplers, current-state/inspection agreement, compact slots, Reset/Fit All, keyboard controls, invalid inputs, local math/worker loading, and portrait/landscape overflow. Formatting, typecheck and production build pass under `/lattice/`.
+
+Desktop and phone screenshots are reviewed and included in [the review evidence](M05_REVIEW.md). M0.5 is not deployed by the feature branch. Remaining limits: fixed warm-up is not a mixing guarantee; latest eight segments and 1000 exact transitions per segment only; finite binomial parameter range excludes p=0/1; no autocorrelation/ESS, saved runs or exports; no physical-phone performance benchmark. M0 remains the live deployment until this work is reviewed and merged.
 
 ## M1 — Small Systems: four plot slots and true tiny lattices
 
@@ -190,7 +216,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-The first Codex task should implement **M0 only**. Give the agent the whole documentation package for context, but do not instruct it to implement the entire roadmap in one pass. A good M0 PR creates a working deployed mini-lab; it does not produce an elaborate untested framework.
+M0 is complete; the current feature branch implements **M0.5 only**. Keep later roadmap stages as context, not implied scope. Prefer a working, tested comparative laboratory to infrastructure for hypothetical future models.
 
 ## Definition of done for the initial public usable release
 
