@@ -1,7 +1,9 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.1, 2026-10-10  
-**Status:** Proposed initial plan, not a claim of implementation  
+**Version:** 0.2, 2026-10-10
+
+**Status:** M0 implemented; live Pages acceptance pending approved merge/deployment. M1–M6 remain planned or exploratory.
+
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
 ## Guiding delivery rule
@@ -14,7 +16,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 
 | Milestone | User-visible result | Scientific baseline | Status |
 |---|---|---|---|
-| **M0: deployable foundation** | Responsive app shell, one single-variable 0D Gaussian view | Exact moments, seeded sample, static Pages deploy | Planned |
+| **M0: deployable foundation** | Responsive app shell, one single-variable 0D Gaussian view | Exact moments, seeded sample, static Pages deploy | Implemented; live deployment acceptance pending |
 | **M1: Small Systems** | Four plot slots, tiny graph presets/editor, detailed Metropolis inspection | Full enumeration of 4-spin Ising; 1×4 ring and 2×2 torus checks; 0D quartic reference | Planned |
 | **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Planned |
 | **M3: Measurements & Experiments** | Saved comparisons, autocorrelation, error analysis, exports and finite sweeps | Reference-estimator tests, reproducibility metadata | Planned |
@@ -44,6 +46,16 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 - Basic Build/Typecheck/Unit/Browser pipeline passes.
 
 **Explicitly out of scope:** generic formula editor, periodic lattices, coupled quartic integrals, gauge variables, parameter sweeps, advanced charts.
+
+### M0 delivery record — 2026-10-10
+
+Implemented in the M0 feature branch: TypeScript/Vite/React shell, separate single-site topology and scalar model, four display slots with one initially assigned Gaussian, collapsible settings, phone detail/2×2 modes, analytic density/moments, seeded independent draws, online moments and tail-aware histograms, Run/Pause/Step/Reset, a standard preset, and a typed worker protocol. Numerical and UI state remain separate. Coefficient/source edits explicitly replace measurements. Independent draws have zero warm-up, clearly labeled. No M1 models, periodic geometry generators, formula editors, exports, or saved runs were added.
+
+Tooling: npm lockfile, Vitest tests, TypeScript checks, Prettier, production-build Playwright smoke tests for desktop Chromium and emulated phones in Chromium/WebKit, and a GitHub Actions validation/Pages workflow. Vite uses `/lattice/`; navigation uses hash anchors for direct/reload access on static hosting.
+
+Local validation: formatting and TypeScript checks pass; **49 unit tests** pass (Gaussian action/normalization/moments, seeded sample moments, RNG vectors/range/replay, exact batch/step/snapshot equivalence, histogram tails, segment isolation, and worker/client ordering/failure recovery). **18 production browser tests** pass across desktop Chromium, 360px mobile Chromium, and emulated iPhone WebKit. They exercise `/lattice/` assets and worker loading, direct hash navigation/reload, keyboard controls, invalid parameter rejection, new segments, seed replay, Run/Pause/Step/Reset, worker recovery, control visibility, four slots, and portrait/landscape overflow. Desktop and phone screenshots are visually reviewed. `npm run check` runs the full local pipeline, including the production build.
+
+The complete M0 acceptance gate remains open until an approved merge and successful Pages deployment confirm the live URL and hash reload. No automatic merge or feature-branch deployment is intended. License selection and physical-phone performance measurements remain open. Periodic 1×4, 2×2, parallel-edge and self-link tests belong to M1, when those geometries exist; M0 does not claim to implement or validate them.
 
 ## M1 — Small Systems: four plot slots and true tiny lattices
 

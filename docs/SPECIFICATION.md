@@ -1,11 +1,21 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.1 (initial design, 2026-10-10)  
-**Status:** Proposed; implementation has not begun  
+**Version:** 0.2 (M0 implementation, 2026-10-10)
+
+**Status:** M0 implemented; later-stage requirements remain planned. Live deployment acceptance is tracked in the roadmap.
+
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
 
 > **How to use this document.** This specifies intended behavior and key mathematical invariants. A feature is not implemented just because it appears here. The roadmap identifies what belongs in the next milestone. Change the specification in the same pull request as an intentional behavior change, and record consequential architectural decisions in the decision log. Do not freeze incidental visual details or library choices prematurely.
+
+### Implemented scope at M0
+
+The current application implements only the single-site 0D Gaussian and the responsive Small Systems shell. Four assignable display slots are always available; initially only slot 1 is assigned to `x`, and the others may remain unassigned or inspect that same variable. A separate single-site diagram represents topology. Phone detail mode and a 2×2 overview are available. Multi-variable assignment, graph editing, periodic domains, Ising, quartic models, and other workspaces remain later milestones.
+
+The model uses dimensionless `S(x)=a x²/2−h x`, `p∝exp(−S)`, `μ=h/a`, `σ²=1/a`, and `log Z=½log(2π/a)+h²/(2a)`. Supported teaching ranges are `0.05≤a≤20` and `−10≤h≤10`; validation rejects non-finite or out-of-range parameters. Analytic density is evaluated in centered form to avoid overflowing the unnormalized weight. A seeded independent Box–Muller sampler requires no discarded warm-up: one update is one retained sample (stride 1). Histogram tails outside `μ±4σ` remain in all moments and the denominator. M0 provides estimates without uncertainty bars.
+
+Run/Pause/Step/Reset and a versioned standard Gaussian preset are implemented. Apply/Reset/preset selection explicitly replaces the current segment and clears measurements; saved runs and exports are deferred. Settings and display changes preserve numerical state. A worker owns samples and bounded-memory accumulators; a small client schedules at most one batch at a time and waits for its acknowledgment when pausing. M0 uses hash navigation and `/lattice/` asset/worker paths; CI builds and tests feature PRs, while Pages deployment is restricted to `main`.
 
 ## 1. Mission and positioning
 
@@ -219,14 +229,16 @@ The RNG and sampler update sequence must not depend on how often the UI redraws.
 
 ### 5.3 Algorithms by delivery stage
 
-- First: local Metropolis with symmetric proposals for Ising/real scalars, and heat-bath for finite discrete spins.
-- Soon after: exact enumeration for tiny discrete systems; independent exact Gaussian sampling when appropriate.
+- M0 (implemented): independent Gaussian draws using Box–Muller v1 and Mulberry32 midpoint v1, with an unsigned 32-bit seed, exactly two uniforms per draw, no cached second variate, zero warm-up, and stride 1.
+- M1: local Metropolis with symmetric proposals for Ising/real scalars, heat-bath for finite discrete spins, and exact enumeration for tiny discrete systems.
 - Later: Wolff or Swendsen–Wang/FK cluster updates for compatible models; HMC with reversible symplectic integrator and Metropolis correction for smooth continuous fields.
 - Advanced samplers should be exposed only on models for which their validity has been implemented and tested; no universal algorithm picker with invalid choices.
 
 ### 5.4 Worker messaging and event traces
 
 A minimal worker API can include `initialize`, `runBatch`, `step`, `pause`, `reset`, and `measure`, with acknowledgments carrying a run ID and monotonically increasing state version. Messages should reject stale run IDs. Use compact typed state arrays and transfer/copy strategies that do not accidentally detach the only authoritative state.
+
+M0 deliberately implements only `initialize`, `advance(count)`, and read-only `snapshot`. Initialize creates a fresh run with an increasing run ID; version counts completed updates. Step advances once, Run schedules batches of 128 (protocol limit 1024), and Pause stops further scheduling and waits for any in-flight acknowledgment. The worker has no autonomous timer to race with Pause. Reset uses Initialize; stale commands and stale/regressing replies are rejected or ignored. Rendering and snapshot reads consume no RNG draws. Worker failures stop scheduling and label any displayed state as last confirmed; Reset can recreate the worker.
 
 One possible trace payload is:
 
@@ -358,6 +370,8 @@ Each model may link to relevant graduate lecture notes, but these are optional r
 
 Recommended initial stack (changeable after prototype): TypeScript + Vite; React or equivalent component UI; Canvas 2D for high-frequency lattice rendering; SVG for tiny graph editor; maintained charting library for plots; Web Worker for simulation. Unit tests with Vitest; smoke/responsiveness tests with Playwright or equivalent.
 
+M0 adopts TypeScript/Vite/React, native accessible controls, a small SVG Gaussian plot, Vitest, Playwright (Chromium and WebKit), and Prettier. No charting/component framework is needed for the one-dimensional density, and no graph/lattice framework is implemented ahead of M1. See D-013/D-014 for the accepted implementation choices.
+
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice); the project name remains Lattice Lab. The site is built into static assets and deployed with GitHub Actions → GitHub Pages. For `https://gantemur.github.io/lattice/`, Vite's `base` must be `/lattice/`. Build/test should run on pull requests; deploy only from the chosen protected/default branch. Never hard-code root-relative URLs that break the project subpath.
 
 Useful authoritative deployment references: [Vite static deployment guide](https://vite.dev/guide/static-deploy.html), [GitHub Pages publishing sources](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
@@ -398,7 +412,7 @@ Start with modest lattice sizes (illustratively 16²–128² for 2D Ising, depen
 
 - Reject invalid geometry and non-finite action/parameter values with actionable errors.
 - Pause and recover from worker exceptions without showing stale data as current.
-- Preserve results of previous runs in memory unless explicitly replaced, subject to reasonable memory limits.
+- Preserve results of previous runs in memory unless explicitly replaced, subject to reasonable memory limits. M0 only has the current run: Apply, Reset, and preset selection explicitly replace it and disclose clearing measurements; multi-run retention is M3.
 - Avoid hidden dependencies on network availability after static assets load (an installable/offline service worker can come later).
 
 ## 10. Validation and quality gates
@@ -440,7 +454,7 @@ Correctness is a release requirement, not optional polish.
 
 ## 11. Stages and acceptance
 
-See `ROADMAP.md` for implementation milestones. A minimal first usable edition need not include every model or plot in this document. It **must**:
+See `ROADMAP.md` for implementation milestones. The following describes the initial public usable edition **after M1**, not the M0 acceptance gate. That edition need not include every model or plot in this document. It **must**:
 
 - Deploy as a static site on its own repository.
 - Show a working small-system model with four configurable inspection slots and touch-friendly collapsible controls.
