@@ -153,83 +153,78 @@ test('Fit All adjusts only the viewport and leaves history and RNG untouched', a
   ).toHaveText(history!);
 });
 
-test('four compact slots assign, close, open, and rearrange without sampling', async ({
+test('dynamic plots add, remove, collapse, expand and rearrange without sampling', async ({
   page,
-}, testInfo) => {
+}, info) => {
   await page.goto('./');
   await sampleBatch(page);
-  const count = await page.getByTestId('sample-count').textContent();
-  const value = await page.getByTestId('current-value').textContent();
+  const count = await page.getByTestId('sample-count').textContent(),
+    value = await page.getByTestId('current-value').textContent();
   await expect(
-    page.getByRole('article', { name: /Plot slot/, includeHidden: true }),
-  ).toHaveCount(4);
-  await expect(page.getByLabel('Plot for slot 1')).toHaveValue('x:density');
-  await expect(page.getByLabel('Plot for slot 2')).toHaveValue('x:trajectory');
-  await expect(page.getByLabel('Plot for slot 3')).toHaveValue('x:mean');
-  for (const n of [4]) {
-    const box = await page
-      .getByRole('article', { name: `Plot slot ${n}`, exact: true })
-      .boundingBox();
-    expect(box!.height).toBeLessThan(75);
-  }
-  await page.screenshot({
-    path: testInfo.outputPath('default.png'),
-    fullPage: true,
-  });
-  const mobile = testInfo.project.name !== 'desktop';
-  if (mobile) {
-    await page.getByLabel('Plot for slot 4').selectOption('x:error');
-    await expect(
-      page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
-    ).toBeVisible();
-    await page.getByLabel('Plot for slot 4').selectOption('');
-  }
+    page.getByRole('article', { name: /Plot /, includeHidden: true }),
+  ).toHaveCount(2);
+  await expect(page.getByLabel('View for plot 1')).toHaveValue('density');
+  const mobile = info.project.name !== 'desktop';
   if (mobile)
     await page
-      .getByRole('button', { name: '2 × 2 overview', exact: true })
+      .getByRole('button', { name: 'Compact overview', exact: true })
       .click();
-  await page.getByLabel('Plot for slot 3').selectOption('x:error');
+  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
+  await page.getByLabel('View for plot 3').selectOption('error');
   await expect(
     page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
   ).toBeVisible();
-  await page.getByRole('button', { name: 'Close plot 3' }).click();
+  await page
+    .getByRole('button', { name: 'Collapse plot 3', exact: true })
+    .click();
   await expect(
     page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
+  ).not.toBeVisible();
+  await page.getByRole('button', { name: 'Open plot 3', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Move plot 3 up', exact: true })
+    .click();
+  await expect(page.getByLabel('View for plot 2')).toHaveValue('error');
+  await page
+    .getByRole('button', { name: 'Expand plot 2', exact: true })
+    .click();
+  await expect(
+    page.getByRole('article', { name: 'Plot 2', exact: true }),
+  ).toHaveClass(/expanded-plot/);
+  if (mobile)
+    await page
+      .getByRole('button', { name: 'Compact overview', exact: true })
+      .click();
+  for (let i = 0; i < 3; i++)
+    await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Add Plot', exact: true }),
+  ).toBeDisabled();
+  for (let i = 6; i >= 1; i--)
+    await page
+      .getByRole('button', { name: `Remove plot ${i}`, exact: true })
+      .click();
+  await expect(
+    page.getByRole('article', { name: /Plot /, includeHidden: true }),
   ).toHaveCount(0);
-  await page.getByRole('button', { name: 'Open plot 3' }).click();
-  await page.getByRole('button', { name: 'Move slot 3 up' }).click();
-  await expect(page.getByLabel('Plot for slot 2')).toHaveValue('x:error');
-  await expect(page.getByLabel('Plot for slot 3')).toHaveValue('x:trajectory');
+  await expect(
+    page.getByText('No plots open.', { exact: false }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
   await expect(page.getByTestId('sample-count')).toHaveText(count!);
   await expect(page.getByTestId('current-value')).toHaveText(value!);
   expect(
     await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
+      () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  await page.screenshot({
-    path: testInfo.outputPath('overview.png'),
-    fullPage: true,
-  });
   if (mobile) {
-    await page
-      .getByRole('button', { name: 'Single detail', exact: true })
-      .click();
-    await page.getByRole('button', { name: 'Slot 2', exact: true }).click();
-    await expect(
-      page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
-    ).toBeVisible();
-    await page.screenshot({
-      path: testInfo.outputPath('detail.png'),
-      fullPage: true,
-    });
     await page.setViewportSize({ width: 780, height: 360 });
     expect(
       await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
+        () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    await expect(page.getByTestId('sample-count')).toHaveText(count!);
   }
 });
 

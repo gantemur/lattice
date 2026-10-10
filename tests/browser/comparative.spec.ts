@@ -27,7 +27,7 @@ async function model(page: Page, kind: string) {
 }
 async function overview(page: Page) {
   const toggle = page.getByRole('button', {
-    name: '2 × 2 overview',
+    name: 'Compact overview',
     exact: true,
   });
   if (await toggle.isVisible()) await toggle.click();
@@ -111,9 +111,12 @@ test('Metropolis excludes warm-up and displays a complete consistent transition'
     /Accepted|Rejected/,
   );
   await overview(page);
-  await expect(page.getByLabel('Plot for slot 4')).toHaveValue('x:acceptance');
+  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
+  await page.getByLabel('View for plot 3').selectOption('acceptance');
   await expect(
-    page.getByRole('group', { name: 'Metropolis acceptance diagnostics' }),
+    page.getByRole('group', {
+      name: 'Sampling acceptance and movement diagnostics',
+    }),
   ).toBeVisible();
   await expect(page.getByTestId('independent-band')).toHaveCount(0);
   await noOverflow(page);
@@ -173,7 +176,7 @@ test('binomial parameter histories, support changes and Reset stay in the correc
   });
   await model(page, 'spin');
   await expect(page.getByTestId('total-updates')).toHaveText('0');
-  await expect(page.getByLabel('Plot for slot 1')).toHaveValue('s:density');
+  await expect(page.getByLabel('Variable for plot 1')).toHaveValue('s');
 });
 
 test('thousands of updates, Pause, Step and retained trajectory browsing preserve numerical state', async ({
@@ -202,7 +205,7 @@ test('thousands of updates, Pause, Step and retained trajectory browsing preserv
   const value = await page.getByTestId('current-value').textContent();
   await overview(page);
   const trajectory = page.getByRole('article', {
-    name: 'Plot slot 2',
+    name: 'Plot 2',
     exact: true,
   });
   await expect(trajectory.getByTestId('trajectory-retention')).toContainText(

@@ -32,7 +32,8 @@ export function DistributionPlot({
       >
         {({ left, right, top, bottom, width, height, compact }) => {
           const axisValue = (t: number) =>
-            segments[0]!.model.kind === 'gaussian'
+            segments[0]!.model.kind === 'gaussian' ||
+            segments[0]!.model.kind === 'ising'
               ? min + t * (max - min)
               : Math.round(
                   Math.ceil(min) + t * (Math.floor(max) - Math.ceil(min)),
@@ -70,7 +71,19 @@ export function DistributionPlot({
                   return (
                     <g key={segment.id} aria-label={`Segment ${segment.id}`}>
                       {support(segment.model).map((state, i) => {
-                        const w = ((right - left) / (max - min)) * 0.7;
+                        const states = support(segment.model);
+                        const spacing =
+                          states.length > 1
+                            ? Math.min(
+                                ...states
+                                  .slice(1)
+                                  .map((v, j) => v - states[j]!),
+                              )
+                            : 1;
+                        const w =
+                          ((right - left) / (max - min)) *
+                          Math.min(1, spacing) *
+                          0.7;
                         const mass = probability(segment.model, state);
                         const sampled = segment.moments.count
                           ? hist.bins[i]! / segment.moments.count

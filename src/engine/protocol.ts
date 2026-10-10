@@ -1,3 +1,4 @@
+import type { IsingMeasurementSnapshot } from '../observables/isingMeasurements';
 import type { Settings } from '../algorithms/transitions';
 import type { Histogram } from '../observables/histogram';
 import type { summarizeMoments } from '../observables/moments';
@@ -7,6 +8,7 @@ import type { TransitionRecord } from '../observables/trajectory';
 export const MAX_SEGMENTS = 8;
 export type RunConfiguration = Settings & Readonly<{ seed: number }>;
 export type SegmentSnapshot = Settings & {
+  ising?: IsingMeasurementSnapshot;
   id: number;
   startUpdate: number;
   initialValue: number | null;

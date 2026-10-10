@@ -9,33 +9,22 @@ import { SimulationRun } from '../engine/simulationEngine';
 import { fitSegments, expandViewport } from './viewport';
 import {
   assignSlot,
+  addSlot,
   defaultSlots as makeDefaultSlots,
   swapSlots,
 } from './slots';
 const defaultSlots = makeDefaultSlots(settings({ a: 1, h: 0 }));
-it('defaults to distribution, trajectory and convergence with exactly four independent slots', () => {
-  expect(defaultSlots.map((s) => s?.plot ?? null)).toEqual([
-    'density',
-    'trajectory',
-    'mean',
-    null,
-  ]);
-  const assigned = assignSlot(defaultSlots, 3, { target: 'x', plot: 'error' });
-  expect(swapSlots(assigned, 0, 3)).toEqual([
-    { target: 'x', plot: 'error' },
-    defaultSlots[1],
-    defaultSlots[2],
-    defaultSlots[0],
-  ]);
-  expect(defaultSlots[3]).toBeNull();
-  expect(assignSlot(assigned, 0, null)).toHaveLength(4);
+it('defaults to two views and supports zero to six independent plots', () => {
+  expect(defaultSlots.map((s) => s.plot)).toEqual(['density', 'trajectory']);
+  const assigned = assignSlot(defaultSlots, 1, { target: 'x', plot: 'error' });
+  expect(swapSlots(assigned, 0, 1)[0]).toEqual({ target: 'x', plot: 'error' });
+  expect(defaultSlots[1]!.plot).toBe('trajectory');
+  expect(assignSlot(assignSlot(defaultSlots, 0, null), 0, null)).toEqual([]);
+  let six = defaultSlots;
+  for (let i = 0; i < 4; i++) six = addSlot(six, { target: 'x', plot: 'mean' });
+  expect(six).toHaveLength(6);
+  expect(() => addSlot(six, { target: 'x', plot: 'mean' })).toThrow();
   expect(() => assignSlot(defaultSlots, 4, null)).toThrow();
-  expect(
-    makeDefaultSlots({
-      model: { kind: 'spin', parameters: { h: 0 } },
-      sampler: { kind: 'metropolis', width: 1, warmup: 10 },
-    })[3],
-  ).toEqual({ target: 's', plot: 'acceptance' });
 });
 it('preserves axes on switching, only expands automatically, and Fit All never changes measurements', () => {
   const run = new SimulationRun(1, { ...settings({ a: 1, h: 0 }), seed: 1 });
@@ -60,7 +49,7 @@ it('preserves axes on switching, only expands automatically, and Fit All never c
   expect(retained.density.max).toBeLessThan(wider.density.max);
   const state = run.snapshot();
   fitSegments(state.segments);
-  assignSlot(defaultSlots, 3, { target: 'x', plot: 'error' });
+  assignSlot(defaultSlots, 1, { target: 'x', plot: 'error' });
   expect(run.snapshot()).toEqual(state);
   const reset = new SimulationRun(2, { ...settings({ a: 1, h: 0 }), seed: 1 });
   expect(fitSegments(reset.snapshot().segments).density).toMatchObject({

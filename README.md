@@ -1,12 +1,25 @@
 # Lattice Lab
 
-**Status:** M0 is completed and deployed. M0.5 — Comparative Sampling Laboratory is implemented on its feature branch; validation and remaining limits are tracked in the [roadmap](docs/ROADMAP.md). M1 and later remain planned.
+**Status:** M0 and M0.5 are merged. M1a — Interactive Small Graphs and Exact Ising Models is implemented on its feature branch; validation and limits are tracked in the [roadmap](docs/ROADMAP.md). M1b and later remain planned.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
-The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The live M0 GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
+The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
-## Available in M0.5
+## New in M1a
+
+Explore **one to four interacting Ising spins** on a single site, open/periodic four-site chain, open 2×2 square, star, K4 or true periodic 2×2 square lattice. The torus has **eight distinct bonds and four oriented faces**; dashed wrap bonds remain separately selectable. A lightweight SVG graph view is separate from scientific plots. Select a site or bond directly or through accessible selectors; edit individual fields/couplings numerically in a compact list. K4’s six pairwise couplings can realize any simple four-site interaction graph by setting unwanted weights to zero. No graphical topology creation/deletion or dragging. Changing geometry presets starts a fresh session; weight edits retain every bond/face record.
+
+The action is `S=−Σ_e K_e s_tail s_head−Σ_i b_i s_i`, weight `exp(−S)` (beta absorbed). Support positive, negative and zero K and b in [−10,10]. The numerical domain accepts at most 16 distinct bonds; the UI preserves preset topology. Every bond contributes separately; self-links add constants and zero spin-flip difference. Exact enumeration of at most 16 configurations provides log Z, full configuration probabilities, site marginals, magnetization/energy distributions, moments and correlations immediately.
+
+- **Samplers:** direct independent exact configuration draws, local lazy Metropolis and local heat bath. Local updates choose sites uniformly with replacement; N elementary attempts are one nominal sweep, not physical time. Metropolis uses site/proposal/acceptance uniforms; graph heat bath uses site/resampling uniforms. Step shows the actual site, incident contributions, draws and resulting configuration.
+- **Dynamic plots:** two defaults, distribution and trajectory (total M for graph Ising). Add, remove, collapse, expand or reorder **zero to six** independently selected views. Desktop normally uses two columns; phone uses one detail plot or a compact overview. Six limits the interface, not model size. Select a site and use “Plot selected spin” to inspect it.
+- **Graph observables:** M, m=M/N, |M|, total dimensionless action E=S and each spin; distributions, exact/sample running means, trajectories, local conditionals and connected correlations. Configuration probability tables show exact and sampled masses. Local conditionals are explicitly distinct from equilibrium marginals.
+- **Measurements:** local warm-up defaults to 200 updates (0–10000), excluded from all estimates; a fixed budget is not a mixing guarantee. Coupling/field/sampler changes preserve compatible configurations/RNG and create separate segments. Topology changes explicitly restart/reseed. Reset clears/reseeds/refits; Fit All is display-only. Eight segments retain 1000 exact transitions each plus full configuration counts and bounded per-observable summaries. No MCMC confidence bands, ESS or saved-run manager.
+
+[Review notes and screenshots](docs/M1A_REVIEW.md) record the numerical and desktop/phone validation. M1b continuous-variable models, larger lattices, gauge dynamics and cluster algorithms are deferred.
+
+## Preserved single-variable laboratory
 
 Choose a probability model and its sampling algorithm independently:
 
@@ -18,7 +31,7 @@ Choose a probability model and its sampling algorithm independently:
 
 All actions are dimensionless, with target proportional to `exp(−S)` and no extra β. Binomial K aggregates n Bernoulli variables; its action includes the combinatorial degeneracy. Discrete distributions use probability-mass bars. Supported teaching ranges: Gaussian `0.05≤a≤20`, field `−10≤h≤10`, binomial integer `1≤n≤100` and `0.001≤p≤0.999` (finite log-odds). Exact references use stable centered densities, log combinatorics and log partition functions.
 
-- **Four configurable slots**, independent of physical variable count: distribution/histogram, sample trajectory, running mean, and Metropolis acceptance when applicable (otherwise a compact unassigned selector). Repeat targets, close/reopen, rearrange, or choose absolute error. Phones retain single-detail and optional 2×2 overview modes.
+- **Dynamic plot collection**, shared with graph Ising: two default distribution/trajectory plots, optional running mean, absolute error and acceptance views; graph and display state remain independent.
 - **Run/Pause/Step inspection:** the same worker kernel and seeded stream drive batches and single steps. Metropolis displays before/proposed/result states, ΔS, acceptance probability, uniform draw and accepted/rejected/self outcome. Direct draws have no invented acceptance test; single-spin heat bath shows its exact probability and resampling draw.
 - **Sample trajectories:** direct draws are unconnected points; chain states use steps, including repeated states after rejection. Crosses mark rejections, squares self-proposals, faint marks warm-up. Browse windows of 100, 500 or 1000 global algorithmic updates, with optional exact mean/distribution-scale references. Update number is **not physical time**.
 - **Separate histories:** Apply preserves compatible configurations, the RNG stream and earlier segment estimates. Target, algorithm, proposal or warm-up changes start a labeled segment. A model-family change explicitly starts a new session. Decreasing binomial n clamps an excluded K to the new support, with notice.
@@ -37,7 +50,7 @@ Each of the latest **eight segments** keeps its settings, start index, update/wa
 
 Mulberry32 midpoint v1 remains the RNG. Direct Gaussian Box–Muller v1 still consumes exactly two uniforms per draw; spin direct/heat bath uses one, direct binomial uses n, and Metropolis uses two per update. Reset initializes chains at 0 (Gaussian), +1 (spin), or round(np) (binomial); initialization is not a measurement. Reproducibility requires the same seed, settings/update sequence, algorithm and build; browser transcendental functions can differ in their last bits. Run posts batches of 128 with at most one in flight. Apply and Pause respect the batch acknowledgment boundary. Plotting, history browsing, snapshot frequency and Step inspection never consume RNG values.
 
-**Planned:** tiny graph editing, coupled variables, periodic geometries, lattice Ising, quartic fields, gauge models, saved experiments and exports. A future periodic 2×2 square gauge lattice has eight oriented link variables but still four plot slots. None of these later models is implemented in M0.5.
+**Planned:** quartic/coupled continuous variables, larger lattice systems, gauge dynamics, saved experiments and exports. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
 
 ## Read first
 
@@ -76,17 +89,17 @@ Browser tests serve the **production build**, so run `npm run build` before `npm
 
 TypeScript + Vite + React, native accessible form controls, small SVG plots, locally bundled KaTeX (including fonts), and one browser Web Worker. Runtime packages are React, React DOM, and KaTeX. No backend, accounts, telemetry, CDN assets, plotting framework, or persistent service.
 
-- `src/domain/`: single-site topology, separate from physical variable descriptors.
-- `src/models/`: explicit single-variable model union, actions, validation, exact densities/masses and moments.
+- `src/domain/`: finite graph/cell topology, stable incidence IDs, seven presets and separate drawing coordinates.
+- `src/models/`: scalar and finite Ising model union, actions, local differences, validation, exact densities/masses and independent enumeration.
 - `src/algorithms/`: seeded RNG, direct/heat-bath/Metropolis kernels and discriminated transition traces; no UI dependencies.
 - `src/observables/`: online moments, histogram counters, and bounded convergence checkpoints and exact transition rings.
 - `src/engine/`, `src/workers/`: authoritative run state, typed messages, stale-run handling, and bounded scheduling.
-- `src/app/`, `src/plotting/`: input/display state, four-slot assignments, stable viewports, and reusable SVG plotting.
+- `src/app/`, `src/plotting/`: input/display state, dynamic plot assignments, stable viewports, and reusable SVG plotting.
 - `src/ui/`: reusable inline/display math with HTML + MathML output.
 
 Vite uses **`base: '/lattice/'`** in development and production. Navigation uses hash anchors, so `/lattice/#small-systems` can load directly or reload on GitHub Pages without server rewrites.
 
-[CI/Pages workflow](.github/workflows/ci-pages.yml) validates pull requests and pushes to `main`. It uploads and deploys `dist` **only from `main`, after validation passes**. Hosting uses **Settings → Pages → Source → GitHub Actions**. M0 is deployed; an approved M0.5 merge and successful workflow are required to publish this feature branch. This follows the [Vite Pages guide](https://vite.dev/guide/static-deploy.html#github-pages) and [GitHub publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Feature-branch validation does not establish that the live site is deployed; the live URL and hash reload must be checked after deployment.
+[CI/Pages workflow](.github/workflows/ci-pages.yml) validates pull requests and pushes to `main`. It uploads and deploys `dist` **only from `main`, after validation passes**. Hosting uses **Settings → Pages → Source → GitHub Actions**. M0/M0.5 are merged; an approved M1a merge and successful workflow are required to publish this feature branch. This follows the [Vite Pages guide](https://vite.dev/guide/static-deploy.html#github-pages) and [GitHub publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Feature-branch validation does not establish that the live site is deployed; the live URL and hash reload must be checked after deployment.
 
 ## License
 

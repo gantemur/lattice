@@ -1,3 +1,7 @@
+import { GraphWorkspace, ExactIsingPanel } from './GraphWorkspace';
+import { topologyKey } from '../domain/graph';
+import { observableValue, spins } from '../models/ising';
+import type { IsingModel } from '../models/ising';
 import { useRef, useState } from 'react';
 import { standardGaussianPreset } from '../engine/preset';
 import type { RunConfiguration } from '../engine/protocol';
@@ -36,6 +40,7 @@ export function App() {
   );
   const [formError, setFormError] = useState<string | null>(null);
   const [notice, setNotice] = useState('Draw one sample or start a run.');
+  const [selectedSite, setSelectedSite] = useState('v0');
   const [inspectOpen, setInspectOpen] = useState(false);
   const reference = modelReference(model),
     variable = variableName(model);
@@ -62,6 +67,26 @@ export function App() {
       () => client.current?.changeSettings(settings),
       'Apply preserves compatible history and the RNG stream. Changed settings begin separate measurements; unchanged settings keep the segment.',
     );
+  }
+  function applyGraph(next: IsingModel) {
+    if (model.kind !== 'ising') return;
+    if (
+      topologyKey(next.parameters.domain) ===
+      topologyKey(model.parameters.domain)
+    )
+      apply({ model: next, sampler });
+    else {
+      setSelectedSite('v0');
+      attempt(
+        () =>
+          client.current?.initialize({
+            model: next,
+            sampler,
+            seed: seed.trim() ? Number(seed) : NaN,
+          }),
+        'Topology changed: new session, history cleared and selected seed restarted.',
+      );
+    }
   }
   function reset() {
     attempt(
@@ -125,7 +150,7 @@ export function App() {
           aria-labelledby="workspace-title"
         >
           <div>
-            <p className="eyebrow">A numerical playground / 00.5</p>
+            <p className="eyebrow">A numerical playground / 01a</p>
             <h1 id="workspace-title">
               Small systems. <span>Clear ideas.</span>
             </h1>
@@ -134,7 +159,7 @@ export function App() {
               keep the mathematics in view.
             </p>
           </div>
-          <span className="milestone">M0.5 · Comparative sampling</span>
+          <span className="milestone">M1a · Interactive Ising graphs</span>
         </section>
         <div className="lab-layout">
           <aside className="sidebar" aria-label="Model and settings">
@@ -170,28 +195,33 @@ export function App() {
               apply={apply}
               disabled={!snapshot || !!view.error}
             />
-            <section className="geometry-card" aria-labelledby="geometry-title">
-              <p className="eyebrow" id="geometry-title">
-                {model.kind === 'binomial'
-                  ? 'Domain · aggregate count'
-                  : 'Geometry · single site'}
-              </p>
-              <div
-                className="site-diagram"
-                role="img"
-                aria-label={`Current variable ${variable}: ${formatNumber(snapshot?.currentValue ?? null)}`}
+            {model.kind !== 'ising' && (
+              <section
+                className="geometry-card"
+                aria-labelledby="geometry-title"
               >
-                <span>{variable}</span>
-              </div>
-              <p data-testid="variable-state">
-                {variable} = {formatNumber(snapshot?.currentValue ?? null)}
-              </p>
-              <small>
-                {model.kind === 'binomial'
-                  ? `${model.parameters.n} Bernoulli trials → one aggregate count K. No lattice is implied.`
-                  : '1 site · 0 links · 1 physical variable. Geometry is separate from plot slots.'}
-              </small>
-            </section>
+                <p className="eyebrow" id="geometry-title">
+                  {model.kind === 'binomial'
+                    ? 'Domain · aggregate count'
+                    : 'Geometry · single site'}
+                </p>
+                <div
+                  className="site-diagram"
+                  role="img"
+                  aria-label={`Current variable ${variable}: ${formatNumber(snapshot?.currentValue ?? null)}`}
+                >
+                  <span>{variable}</span>
+                </div>
+                <p data-testid="variable-state">
+                  {variable} = {formatNumber(snapshot?.currentValue ?? null)}
+                </p>
+                <small>
+                  {model.kind === 'binomial'
+                    ? `${model.parameters.n} Bernoulli trials → one aggregate count K. No lattice is implied.`
+                    : '1 site · 0 links · 1 physical variable. Geometry is separate from plot slots.'}
+                </small>
+              </section>
+            )}
             <div className="local-note">
               ◌ Computation stays in your browser.
             </div>
@@ -298,7 +328,13 @@ export function App() {
                 <span>
                   Current {variable}{' '}
                   <strong data-testid="current-value">
-                    {formatNumber(snapshot?.currentValue ?? null)}
+                    {formatNumber(
+                      model.kind === 'ising' &&
+                        snapshot?.currentValue !== null &&
+                        snapshot?.currentValue !== undefined
+                        ? observableValue(model, snapshot.currentValue)
+                        : (snapshot?.currentValue ?? null),
+                    )}
                   </strong>
                 </span>
                 <span>
@@ -326,11 +362,36 @@ export function App() {
               )}
               <p className="run-notice">{notice}</p>
               <StepInspector
+                model={model}
                 record={current?.trajectory.at(-1)}
                 open={inspectOpen}
                 setOpen={setInspectOpen}
               />
             </section>
+            {model.kind === 'ising' && (
+              <GraphWorkspace
+                key={`graph:${topologyKey(model.parameters.domain)}`}
+                model={model}
+                state={snapshot?.currentValue ?? null}
+                record={current?.trajectory.at(-1)}
+                selected={selectedSite}
+                setSelected={setSelectedSite}
+                apply={applyGraph}
+                disabled={!snapshot || !!view.error}
+              />
+            )}
+            {model.kind === 'ising' && snapshot?.currentValue != null && (
+              <p className="plot-note">
+                <span data-testid="spin-configuration">
+                  Configuration:{' '}
+                  {spins(model, snapshot.currentValue).join(', ')}
+                </span>{' '}
+                ·{' '}
+                {sampler.kind === 'direct'
+                  ? `${current?.updates ?? 0} whole-configuration draws in this segment`
+                  : `${formatNumber((current?.updates ?? 0) / model.parameters.domain.vertices.length)} nominal sweeps in this segment (N local attempts per sweep)`}
+              </p>
+            )}
             <section
               className="segment-history"
               aria-label="Recent measurement segments"
@@ -391,70 +452,87 @@ export function App() {
                 </p>
               )}
             </section>
-            <Inspector key={model.kind} snapshot={snapshot} />
-            <section className="moments-panel" aria-labelledby="moments-title">
-              <div className="section-heading">
-                <h2 id="moments-title">Current segment · exact & sampled</h2>
-                <span className="parameter-chip">{modelSummary(model)}</span>
-              </div>
-              <table className="moments-table">
-                <caption className="sr-only">
-                  Current segment analytic moments and Monte Carlo estimates
-                </caption>
-                <thead>
-                  <tr>
-                    <th scope="col">Moment</th>
-                    <th scope="col">Analytic exact</th>
-                    <th scope="col">Sampled estimate</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th scope="row">
-                      Mean{' '}
-                      <InlineMath>{String.raw`\langle ${variable}\rangle`}</InlineMath>
-                    </th>
-                    <td data-testid="exact-mean">
-                      {formatNumber(reference.mean)}
-                    </td>
-                    <td data-testid="sample-mean">
-                      {formatNumber(snapshot?.moments.mean ?? null)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <th scope="row">Variance</th>
-                    <td data-testid="exact-variance">
-                      {formatNumber(reference.variance)}
-                    </td>
-                    <td>{formatNumber(snapshot?.moments.variance ?? null)}</td>
-                  </tr>
-                  <tr>
-                    <th scope="row">
-                      Second moment{' '}
-                      <InlineMath>{String.raw`\langle ${variable}^2\rangle`}</InlineMath>
-                    </th>
-                    <td>{formatNumber(reference.secondMoment)}</td>
-                    <td>
-                      {formatNumber(snapshot?.moments.secondMoment ?? null)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <p className="plot-note">
-                Exact <InlineMath>{String.raw`\log Z`}</InlineMath> ={' '}
-                {formatNumber(reference.logPartition)}. Sample variance uses N −
-                1 and needs two retained measurements; this does not remove
-                finite-chain correlation bias. No autocorrelation-adjusted
-                uncertainty or ESS is estimated.
-              </p>
-            </section>
+            <Inspector
+              key={
+                model.kind === 'ising'
+                  ? `plots:${topologyKey(model.parameters.domain)}`
+                  : model.kind
+              }
+              snapshot={snapshot}
+              selectedSite={model.kind === 'ising' ? selectedSite : undefined}
+            />
+            {model.kind === 'ising' && current ? (
+              <ExactIsingPanel segment={current} />
+            ) : (
+              <section
+                className="moments-panel"
+                aria-labelledby="moments-title"
+              >
+                <div className="section-heading">
+                  <h2 id="moments-title">Current segment · exact & sampled</h2>
+                  <span className="parameter-chip">{modelSummary(model)}</span>
+                </div>
+                <table className="moments-table">
+                  <caption className="sr-only">
+                    Current segment analytic moments and Monte Carlo estimates
+                  </caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">Moment</th>
+                      <th scope="col">Analytic exact</th>
+                      <th scope="col">Sampled estimate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <th scope="row">
+                        Mean{' '}
+                        <InlineMath>{String.raw`\langle ${variable}\rangle`}</InlineMath>
+                      </th>
+                      <td data-testid="exact-mean">
+                        {formatNumber(reference.mean)}
+                      </td>
+                      <td data-testid="sample-mean">
+                        {formatNumber(snapshot?.moments.mean ?? null)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">Variance</th>
+                      <td data-testid="exact-variance">
+                        {formatNumber(reference.variance)}
+                      </td>
+                      <td>
+                        {formatNumber(snapshot?.moments.variance ?? null)}
+                      </td>
+                    </tr>
+                    <tr>
+                      <th scope="row">
+                        Second moment{' '}
+                        <InlineMath>{String.raw`\langle ${variable}^2\rangle`}</InlineMath>
+                      </th>
+                      <td>{formatNumber(reference.secondMoment)}</td>
+                      <td>
+                        {formatNumber(snapshot?.moments.secondMoment ?? null)}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p className="plot-note">
+                  Exact <InlineMath>{String.raw`\log Z`}</InlineMath> ={' '}
+                  {formatNumber(reference.logPartition)}. Sample variance uses N
+                  − 1 and needs two retained measurements; this does not remove
+                  finite-chain correlation bias. No autocorrelation-adjusted
+                  uncertainty or ESS is estimated.
+                </p>
+              </section>
+            )}
             <ModelNotes model={model} />
           </div>
         </div>
       </main>
       <footer>
         <span>Lattice Lab / Small systems, explicit mathematics.</span>
-        <span>Gaussian · Single spin · Binomial</span>
+        <span>Gaussian · Spin · Binomial · Graph Ising</span>
       </footer>
     </>
   );

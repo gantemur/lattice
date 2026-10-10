@@ -1,3 +1,6 @@
+import { topologyKey } from '../domain/graph';
+import { observableValue } from '../models/ising';
+import { IsingMeasurements } from '../observables/isingMeasurements';
 import { createRng } from '../algorithms/rng';
 import { transition, validateSettings } from '../algorithms/transitions';
 import type { Settings } from '../algorithms/transitions';
@@ -26,6 +29,8 @@ import type {
 } from './protocol';
 
 function settingsKey({ model, sampler }: Settings) {
+  if (model.kind === 'ising')
+    return JSON.stringify([model.parameters, sampler]);
   return `${model.kind}:${modelSummary(model)}:${sampler.kind}:${sampler.kind === 'metropolis' ? `${model.kind === 'gaussian' ? sampler.width : 1}:${sampler.warmup}` : ''}`;
 }
 function newSegment(
@@ -43,15 +48,23 @@ function newSegment(
           reference.mean - 4 * reference.standardDeviation,
           reference.mean + 4 * reference.standardDeviation,
         )
-      : model.kind === 'spin'
-        ? createHistogram(-2, 2, 2)
-        : createHistogram(
-            -0.5,
-            model.parameters.n + 0.5,
-            model.parameters.n + 1,
-          );
+      : model.kind === 'ising'
+        ? createHistogram(
+            -model.parameters.domain.vertices.length - 1,
+            model.parameters.domain.vertices.length + 1,
+            model.parameters.domain.vertices.length + 1,
+          )
+        : model.kind === 'spin'
+          ? createHistogram(-2, 2, 2)
+          : createHistogram(
+              -0.5,
+              model.parameters.n + 0.5,
+              model.parameters.n + 1,
+            );
   return {
     id,
+    isingMeasurements:
+      model.kind === 'ising' ? new IsingMeasurements(model) : undefined,
     model,
     sampler,
     startUpdate,
@@ -59,7 +72,12 @@ function newSegment(
     initialization,
     updates: 0,
     warmupUpdates: 0,
-    warmupTarget: sampler.kind === 'metropolis' ? sampler.warmup : 0,
+    warmupTarget:
+      sampler.kind === 'metropolis'
+        ? sampler.warmup
+        : sampler.kind === 'heat-bath' && model.kind === 'ising'
+          ? (sampler.warmup ?? 200)
+          : 0,
     accepted: 0,
     rejected: 0,
     self: 0,
@@ -110,6 +128,13 @@ export class SimulationRun {
     validateSettings(settings);
     if (settings.model.kind !== this.current.model.kind)
       throw new Error('Changing model family requires a new session.');
+    if (
+      settings.model.kind === 'ising' &&
+      this.current.model.kind === 'ising' &&
+      topologyKey(settings.model.parameters.domain) !==
+        topologyKey(this.current.model.parameters.domain)
+    )
+      throw new Error('Topology changes require a new session.');
     if (settingsKey(settings) === settingsKey(this.current)) return;
     let initialization = 'Configuration and RNG stream preserved.';
     if (
@@ -164,12 +189,19 @@ export class SimulationRun {
       segment.updates++;
       const warmup = segment.updates <= segment.warmupTarget;
       if (result.kind === 'metropolis') segment[result.outcome]++;
+      else if (result.kind === 'heat-bath' && segment.model.kind === 'ising')
+        segment[result.result === result.current ? 'self' : 'accepted']++;
       if (warmup) {
         segment.warmupUpdates++;
         this.warmupUpdates++;
       } else {
-        recordMoment(segment.moments, this.currentValue);
-        recordHistogram(segment.histogram, this.currentValue);
+        const measured =
+          segment.model.kind === 'ising'
+            ? observableValue(segment.model, this.currentValue)
+            : this.currentValue;
+        segment.isingMeasurements?.record(this.currentValue);
+        recordMoment(segment.moments, measured);
+        recordHistogram(segment.histogram, measured);
         segment.convergence.record(segment.moments.count, segment.moments.mean);
       }
       segment.trajectory.record({
@@ -185,7 +217,15 @@ export class SimulationRun {
 
   snapshot(): Snapshot {
     const segments: SegmentSnapshot[] = this.segments.map(
-      ({ convergence, trajectory, moments, histogram, ...segment }) => ({
+      ({
+        convergence,
+        trajectory,
+        moments,
+        histogram,
+        isingMeasurements,
+        ...segment
+      }) => ({
+        ising: isingMeasurements?.snapshot(),
         ...structuredClone(segment),
         moments: summarizeMoments(moments),
         histogram: { ...histogram, bins: [...histogram.bins] },
