@@ -1,4 +1,12 @@
 import {
+  isingPreset,
+  validateIsing,
+  isingAction,
+  isingReference,
+  isingDistribution,
+} from './ising';
+import type { IsingModel } from './ising';
+import {
   gaussianAction,
   gaussianDensity,
   gaussianReference,
@@ -7,17 +15,21 @@ import {
 import type { GaussianParameters } from './gaussian';
 
 export type Model =
+  | IsingModel
   | { kind: 'gaussian'; parameters: GaussianParameters }
   | { kind: 'spin'; parameters: Readonly<{ h: number }> }
   | { kind: 'binomial'; parameters: Readonly<{ n: number; p: number }> };
 export type ModelKind = Model['kind'];
 export const modelNames: Record<ModelKind, string> = {
+  ising: 'Graph Ising',
   gaussian: '0D Gaussian',
   spin: 'Single Ising spin',
   binomial: 'Binomial count',
 };
 export function defaultModel(kind: ModelKind): Model {
   switch (kind) {
+    case 'ising':
+      return isingPreset();
     case 'gaussian':
       return { kind, parameters: { a: 1, h: 0 } };
     case 'spin':
@@ -26,11 +38,15 @@ export function defaultModel(kind: ModelKind): Model {
       return { kind, parameters: { n: 20, p: 0.5 } };
   }
 }
-export function variableName(model: Model): 'x' | 's' | 'K' {
+export function variableName(model: Model): string {
+  if (model.kind === 'ising') return model.observable ?? 'M';
   return model.kind === 'gaussian' ? 'x' : model.kind === 'spin' ? 's' : 'K';
 }
 export function validateModel(model: Model): void {
   switch (model.kind) {
+    case 'ising':
+      validateIsing(model);
+      return;
     case 'gaussian':
       validateGaussian(model.parameters);
       return;
@@ -69,6 +85,12 @@ export function logChoose(n: number, k: number): number {
   return logFactorials[n]! - logFactorials[k]! - logFactorials[n - k]!;
 }
 export function validState(model: Model, value: number): boolean {
+  if (model.kind === 'ising')
+    return (
+      Number.isInteger(value) &&
+      value >= 0 &&
+      value < 2 ** model.parameters.domain.vertices.length
+    );
   return (
     Number.isFinite(value) &&
     (model.kind === 'gaussian' ||
@@ -82,6 +104,8 @@ export function modelAction(model: Model, value: number): number {
   switch (model.kind) {
     case 'gaussian':
       return gaussianAction(value, model.parameters);
+    case 'ising':
+      return isingAction(model, value);
     case 'spin':
       return -model.parameters.h * value;
     case 'binomial': {
@@ -105,6 +129,7 @@ export function actionDifference(
 }
 export function modelReference(model: Model) {
   validateModel(model);
+  if (model.kind === 'ising') return isingReference(model);
   if (model.kind === 'gaussian') return gaussianReference(model.parameters);
   let mean: number, variance: number, logPartition: number;
   if (model.kind === 'spin') {
@@ -128,6 +153,10 @@ export function modelReference(model: Model) {
   };
 }
 export function probability(model: Model, value: number): number {
+  if (model.kind === 'ising')
+    return (
+      isingDistribution(model).find((d) => d.value === value)?.probability ?? 0
+    );
   if (!validState(model, value)) return 0;
   switch (model.kind) {
     case 'gaussian':
@@ -147,12 +176,16 @@ export function probability(model: Model, value: number): number {
   }
 }
 export function support(model: Model): number[] {
+  if (model.kind === 'ising')
+    return isingDistribution(model).map((d) => d.value);
   if (model.kind === 'gaussian') return [];
   return model.kind === 'spin'
     ? [-1, 1]
     : Array.from({ length: model.parameters.n + 1 }, (_, k) => k);
 }
 export function initialState(model: Model): number {
+  if (model.kind === 'ising')
+    return 2 ** model.parameters.domain.vertices.length - 1;
   return model.kind === 'gaussian'
     ? 0
     : model.kind === 'spin'
@@ -161,6 +194,8 @@ export function initialState(model: Model): number {
 }
 export function modelSummary(model: Model): string {
   switch (model.kind) {
+    case 'ising':
+      return `${model.parameters.domain.name}; K=[${model.parameters.domain.edges.map((e) => model.parameters.couplings[e.id]).join(',')}], b=[${Object.values(model.parameters.fields).join(',')}]`;
     case 'gaussian':
       return `a=${model.parameters.a}, h=${model.parameters.h}`;
     case 'spin':

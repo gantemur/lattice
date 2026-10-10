@@ -25,7 +25,9 @@ export function TrajectoryPlot({
     ),
   }));
   const discrete = segments[0]!.model.kind !== 'gaussian';
-  const padding = discrete ? 0.35 : (bounds.max - bounds.min) * 0.04;
+  const padding = discrete
+    ? 0.35
+    : Math.max(0.01, (bounds.max - bounds.min) * 0.04);
   const min = bounds.min - padding,
     max = bounds.max + padding;
   const kept = visible.reduce((n, s) => n + s.records.length, 0);
@@ -115,7 +117,10 @@ export function TrajectoryPlot({
           const ticks = [
             ...new Set(
               [bounds.min, (bounds.min + bounds.max) / 2, bounds.max].map(
-                (v) => (discrete ? Math.round(v) : v),
+                (v) =>
+                  discrete && segments[0]!.model.kind !== 'ising'
+                    ? Math.round(v)
+                    : v,
               ),
             ),
           ];
@@ -205,7 +210,11 @@ export function TrajectoryPlot({
                             stroke={color}
                           >
                             <title>
-                              Update {t.update}: self-proposal, state {t.result}
+                              Update {t.update}:{' '}
+                              {t.kind === 'heat-bath'
+                                ? 'unchanged resample'
+                                : 'self-proposal'}
+                              , state {t.result}
                             </title>
                           </rect>
                         ) : (

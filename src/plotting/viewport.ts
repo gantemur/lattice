@@ -41,10 +41,13 @@ export function fitSegments(segments: SegmentSnapshot[]): PlotViewport {
         moments.count ? n / (moments.count * binWidth) : 0,
       ),
     );
-    meanMin = Math.min(meanMin, mean - sd);
-    meanMax = Math.max(meanMax, mean + sd);
-    errorMax = Math.max(errorMax, sd);
-    errorMin = Math.min(errorMin, sd / Math.sqrt(Math.max(2, moments.count)));
+    meanMin = Math.min(meanMin, mean - Math.max(sd, 0.1));
+    meanMax = Math.max(meanMax, mean + Math.max(sd, 0.1));
+    errorMax = Math.max(errorMax, sd, 0.1);
+    errorMin = Math.min(
+      errorMin,
+      Math.max(sd, 1e-10) / Math.sqrt(Math.max(2, moments.count)),
+    );
     nMax = Math.max(nMax, moments.count);
     for (const point of convergence) {
       meanMin = Math.min(meanMin, point.mean);

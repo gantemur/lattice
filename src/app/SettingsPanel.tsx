@@ -4,7 +4,7 @@ import type { Settings, Sampler } from '../algorithms/transitions';
 import { defaultModel } from '../models/singleVariable';
 import type { Model } from '../models/singleVariable';
 
-export function SettingsPanel({
+function ScalarSettingsPanel({
   settings,
   seed,
   setSeed,
@@ -22,7 +22,9 @@ export function SettingsPanel({
     model.kind === 'gaussian' ? String(model.parameters.a) : '1',
   );
   const [h, setH] = useState(
-    model.kind !== 'binomial' ? String(model.parameters.h) : '0',
+    model.kind === 'spin' || model.kind === 'gaussian'
+      ? String(model.parameters.h)
+      : '0',
   );
   const [n, setN] = useState(
     model.kind === 'binomial' ? String(model.parameters.n) : '20',
@@ -255,6 +257,106 @@ export function SettingsPanel({
             the stream.
           </small>
         </details>
+      </form>
+    </details>
+  );
+}
+
+export function SettingsPanel(
+  props: Parameters<typeof ScalarSettingsPanel>[0],
+) {
+  return props.settings.model.kind === 'ising' ? (
+    <GraphSamplerSettings {...props} />
+  ) : (
+    <ScalarSettingsPanel {...props} />
+  );
+}
+function GraphSamplerSettings({
+  settings,
+  seed,
+  setSeed,
+  apply,
+  disabled,
+}: Parameters<typeof ScalarSettingsPanel>[0]) {
+  const [kind, setKind] = useState(settings.sampler.kind),
+    [warmup, setWarmup] = useState(
+      settings.sampler.kind === 'direct'
+        ? '200'
+        : String(settings.sampler.warmup ?? 200),
+    );
+  return (
+    <details className="settings">
+      <summary>Model & sampler settings</summary>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          apply({
+            model: settings.model,
+            sampler:
+              kind === 'direct'
+                ? { kind }
+                : kind === 'heat-bath'
+                  ? { kind, warmup: warmup.trim() ? Number(warmup) : NaN }
+                  : {
+                      kind,
+                      width: 1,
+                      warmup: warmup.trim() ? Number(warmup) : NaN,
+                    },
+          });
+        }}
+        noValidate
+      >
+        <label>
+          Sampling algorithm
+          <select
+            id="sampler"
+            value={kind}
+            onChange={(e) => setKind(e.target.value as Sampler['kind'])}
+          >
+            <option value="direct">Direct exact enumeration</option>
+            <option value="metropolis">Local lazy Metropolis</option>
+            <option value="heat-bath">Local heat bath</option>
+          </select>
+        </label>
+        {kind !== 'direct' && (
+          <label>
+            Warm-up updates
+            <input
+              aria-label="Warm-up updates"
+              type="number"
+              min="0"
+              max="10000"
+              value={warmup}
+              onChange={(e) => setWarmup(e.target.value)}
+            />
+          </label>
+        )}
+        <p className="settings-warning">
+          Uniform random site per local update. Metropolis proposes ½ stay, ½
+          flip. Heat bath resamples the selected spin conditional on its
+          neighbors. N elementary updates = one nominal sweep; not physical
+          time. Warm-up is not a mixing guarantee.
+        </p>
+        <button className="button primary full" disabled={disabled}>
+          Apply settings
+        </button>
+        <details className="seed-settings">
+          <summary>Reset seed</summary>
+          <label>
+            Seed on Reset
+            <input
+              id="seed"
+              type="number"
+              value={seed}
+              onChange={(e) => setSeed(e.target.value)}
+            />
+          </label>
+        </details>
+        <p className="settings-warning">
+          Reset initializes all spins +1, clears history and restarts this seed.
+          Direct sampling draws a whole configuration with one uniform and needs
+          no warm-up.
+        </p>
       </form>
     </details>
   );

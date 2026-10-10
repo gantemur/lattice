@@ -1,12 +1,16 @@
 import type { SegmentSnapshot } from '../engine/protocol';
 import { segmentColor } from './viewport';
 export function AcceptancePlot({ segments }: { segments: SegmentSnapshot[] }) {
-  const chains = segments.filter((s) => s.sampler.kind === 'metropolis');
+  const chains = segments.filter(
+    (s) =>
+      s.sampler.kind === 'metropolis' ||
+      (s.model.kind === 'ising' && s.sampler.kind === 'heat-bath'),
+  );
   return (
     <div
       className="acceptance-plot"
       role="group"
-      aria-label="Metropolis acceptance diagnostics"
+      aria-label="Sampling acceptance and movement diagnostics"
     >
       {chains.length ? (
         chains.map((s) => (
@@ -14,13 +18,15 @@ export function AcceptancePlot({ segments }: { segments: SegmentSnapshot[] }) {
             <strong style={{ color: segmentColor(s.id) }}>S{s.id}</strong>
             <span>
               {s.updates
-                ? `${((100 * (s.accepted + s.self)) / s.updates).toFixed(1)}% accepted · ${((100 * s.accepted) / s.updates).toFixed(1)}% moved`
+                ? s.sampler.kind === 'heat-bath'
+                  ? `${((100 * s.accepted) / s.updates).toFixed(1)}% moved · heat bath (no acceptance test)`
+                  : `${((100 * (s.accepted + s.self)) / s.updates).toFixed(1)}% accepted · ${((100 * s.accepted) / s.updates).toFixed(1)}% moved`
                 : 'No proposals yet'}
             </span>
             <div
               className="acceptance-bar"
               role="img"
-              aria-label={`Segment ${s.id}: ${s.accepted} accepted moves, ${s.rejected} rejected, ${s.self} self-proposals`}
+              aria-label={`Segment ${s.id}: ${s.accepted} accepted moves, ${s.rejected} rejected, ${s.self} ${s.sampler.kind === 'heat-bath' ? 'unchanged resamples' : 'self-proposals'}`}
             >
               <span
                 className="accepted-part"
@@ -52,8 +58,9 @@ export function AcceptancePlot({ segments }: { segments: SegmentSnapshot[] }) {
       )}
       <p className="plot-note">
         Green: moves · orange: rejected · gray: self. Counts include warm-up.
-        Acceptance includes self; movement excludes it. High acceptance does not
-        guarantee mixing. No autocorrelation or ESS estimate.
+        Heat-bath self counts mean unchanged resamples. Acceptance includes
+        self; movement excludes it. High acceptance does not guarantee mixing.
+        No autocorrelation or ESS estimate.
       </p>
     </div>
   );

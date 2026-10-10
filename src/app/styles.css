@@ -1455,3 +1455,171 @@ footer {
 .moments-table th .math-inline {
   display: inline-block;
 }
+
+/* M1a: bounded dynamic plots and a topology view independent of the plots. */
+.graph-workspace {
+  background: var(--surface, #fffdf8);
+  border: 1px solid #d9ded5;
+  border-radius: 12px;
+  padding: 18px;
+}
+.graph-workspace .section-heading {
+  flex-wrap: wrap;
+}
+.graph-diagram {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  margin: 4px auto;
+}
+.graph-edge {
+  stroke: #71817a;
+  stroke-width: 2;
+}
+.graph-edge.highlighted {
+  filter: drop-shadow(0 0 2px #c99c39);
+}
+.graph-diagram [role='button'] {
+  cursor: pointer;
+}
+.graph-diagram [role='button']:focus {
+  outline: 2px solid #14625a;
+}
+.graph-diagram text {
+  font-size: 12px;
+  fill: #33453e;
+  pointer-events: none;
+}
+.graph-diagram .edge-label {
+  paint-order: stroke;
+  stroke: #fffdf8;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  font-size: 11px;
+}
+.graph-vertex {
+  fill: #14625a;
+  stroke: #fffdf8;
+  stroke-width: 3px;
+}
+.graph-vertex.minus {
+  fill: #a25721;
+}
+.graph-vertex.selected {
+  stroke: #172e28;
+  stroke-width: 4px;
+}
+.graph-diagram .spin-sign {
+  fill: white;
+  font-weight: 700;
+  font-size: 17px;
+}
+.updated-site {
+  fill: none;
+  stroke: #c99c39;
+  stroke-width: 3px;
+}
+.graph-form-row,
+.graph-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+.graph-workspace label {
+  display: grid;
+  gap: 5px;
+  font-size: 13px;
+  min-width: 0;
+}
+.graph-workspace select,
+.graph-workspace input {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+}
+.graph-editor {
+  border-top: 1px solid #d9ded5;
+  margin-top: 12px;
+  padding-top: 10px;
+}
+.graph-editor > label {
+  margin-top: 12px;
+}
+.plot-card.expanded-plot {
+  grid-column: 1 / -1;
+}
+.plot-card > select {
+  width: 100%;
+  margin-top: 5px;
+}
+.slot-actions {
+  flex-wrap: wrap;
+}
+.empty-plots {
+  padding: 12px 0;
+}
+.matrix-scroll {
+  overflow-x: auto;
+}
+.matrix-scroll .moments-table td {
+  font-size: 11px;
+  padding: 8px 4px;
+}
+.conditional-plot {
+  padding: 12px 0;
+}
+.conditional-plot meter {
+  display: block;
+  width: 100%;
+  height: 28px;
+}
+.local-inspection {
+  border-left: 3px solid #c99c39;
+  padding-left: 12px;
+}
+.local-inspection ul {
+  margin: 6px 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+@media (max-width: 560px) {
+  .graph-workspace {
+    padding: 12px;
+  }
+  .graph-diagram {
+    max-height: none;
+  }
+  .graph-workspace h2 {
+    font-size: 19px;
+  }
+  .mobile-plot-controls > div {
+    flex-wrap: wrap;
+  }
+  .plot-card.compact-slot {
+    display: none;
+  }
+  .plot-card.compact-slot.active-detail,
+  .show-overview .plot-card.compact-slot {
+    display: block;
+  }
+  .show-overview .plot-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .show-overview .plot-card {
+    padding: 12px;
+  }
+  .run-panel {
+    scroll-margin-top: 12px;
+  }
+}
+
+.graph-edge.positive-weight {
+  stroke: #14625a;
+}
+.graph-edge.negative-weight {
+  stroke: #7952a0;
+}
+.graph-edge.zero-weight {
+  stroke: #71817a;
+}

@@ -1,3 +1,4 @@
+import { projectSegments } from '../plotting/isingProjection';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { expect, it } from 'vitest';
@@ -6,7 +7,7 @@ import { ConvergencePlot } from '../plotting/ConvergencePlot';
 import { SimulationRun } from '../engine/simulationEngine';
 import { fitSegments } from '../plotting/viewport';
 import { defaultModel } from '../models/singleVariable';
-it.each(['gaussian', 'spin', 'binomial'] as const)(
+it.each(['gaussian', 'spin', 'binomial', 'ising'] as const)(
   'renders authored %s formulas and explanations without KaTeX errors',
   (kind) => {
     for (const component of [ModelNotes, ModelFormula]) {
@@ -48,4 +49,27 @@ it('never gives Metropolis segments independent Gaussian confidence bands', () =
     }),
   );
   expect(mixed.match(/data-testid="independent-band"/g)).toHaveLength(1);
+});
+
+it('renders constant graph action distributions and convergence without degenerate axes', () => {
+  const model = defaultModel('ising');
+  if (model.kind !== 'ising') throw new Error('Wrong fixture');
+  for (const id of Object.keys(model.parameters.couplings))
+    model.parameters.couplings[id] = 0;
+  const run = new SimulationRun(1, {
+    model,
+    sampler: { kind: 'heat-bath', warmup: 0 },
+    seed: 2,
+  });
+  run.advance(10);
+  const segments = projectSegments(run.snapshot().segments, 'E'),
+    viewport = fitSegments(segments);
+  expect(viewport.mean.max).toBeGreaterThan(viewport.mean.min);
+  expect(viewport.error.min).toBeGreaterThan(0);
+  for (const absoluteError of [false, true]) {
+    const html = renderToStaticMarkup(
+      createElement(ConvergencePlot, { segments, viewport, absoluteError }),
+    );
+    expect(html).not.toMatch(/NaN|Infinity|independent-band/);
+  }
 });

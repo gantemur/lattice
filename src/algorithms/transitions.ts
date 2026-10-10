@@ -1,3 +1,5 @@
+import { isingTransition } from './isingTransition';
+import type { IsingTrace } from './isingTransition';
 import type { Model } from '../models/singleVariable';
 import {
   actionDifference,
@@ -10,10 +12,10 @@ import type { Rng } from './rng';
 
 export type Sampler =
   | { kind: 'direct' }
-  | { kind: 'heat-bath' }
+  | { kind: 'heat-bath'; warmup?: number }
   | { kind: 'metropolis'; width: number; warmup: number };
 export type Settings = { model: Model; sampler: Sampler };
-export type Transition =
+export type Transition = { ising?: IsingTrace } & (
   | {
       kind: 'direct';
       current: number | null;
@@ -24,7 +26,7 @@ export type Transition =
       kind: 'heat-bath';
       current: number | null;
       result: number;
-      outcome: 'resampled';
+      outcome: 'resampled' | 'self';
       probabilityPlus: number;
       uniform: number;
     }
@@ -40,11 +42,24 @@ export type Transition =
       result: number;
       outcome: 'accepted' | 'rejected' | 'self';
       selfReason: 'lazy' | 'boundary' | null;
-    };
+    }
+);
 export function validateSettings({ model, sampler }: Settings): void {
   validateModel(model);
-  if (sampler.kind === 'heat-bath' && model.kind !== 'spin')
+  if (
+    sampler.kind === 'heat-bath' &&
+    model.kind !== 'spin' &&
+    model.kind !== 'ising'
+  )
     throw new Error('Heat bath is available for the single spin only.');
+  if (
+    sampler.kind === 'heat-bath' &&
+    model.kind === 'ising' &&
+    (!Number.isInteger(sampler.warmup ?? 200) ||
+      (sampler.warmup ?? 200) < 0 ||
+      (sampler.warmup ?? 200) > 10000)
+  )
+    throw new Error('Warm-up must be an integer from 0 to 10000 updates.');
   if (sampler.kind === 'metropolis') {
     if (
       !Number.isFinite(sampler.width) ||
@@ -65,7 +80,7 @@ export function samplerName(sampler: Sampler): string {
   return sampler.kind === 'direct'
     ? 'Direct independent'
     : sampler.kind === 'heat-bath'
-      ? 'Single-spin heat bath'
+      ? 'Heat bath'
       : 'Metropolis';
 }
 export function metropolisProposal(
@@ -99,6 +114,8 @@ export function transition(
   current: number | null,
   rng: Rng,
 ): Transition {
+  if (model.kind === 'ising')
+    return isingTransition(model, sampler, current, rng);
   if (sampler.kind === 'heat-bath') {
     if (model.kind !== 'spin')
       throw new Error('Heat bath is available for the single spin only.');

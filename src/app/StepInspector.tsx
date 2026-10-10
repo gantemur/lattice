@@ -1,15 +1,25 @@
+import type { Model } from '../models/singleVariable';
+import { spins, observableValue, isingAction } from '../models/ising';
 import type { TransitionRecord } from '../observables/trajectory';
 import { formatNumber } from '../plotting/PlotFrame';
 import { InlineMath } from '../ui/Math';
 export function StepInspector({
   record,
+  model,
   open,
   setOpen,
 }: {
   record: TransitionRecord | undefined;
+  model?: Model;
   open: boolean;
   setOpen: (open: boolean) => void;
 }) {
+  const value = (v: number | null) =>
+    model?.kind === 'ising' && v !== null
+      ? spins(model, v)
+          .map((s) => (s > 0 ? '+1' : '−1'))
+          .join(', ')
+      : formatNumber(v);
   return (
     <details
       className="step-inspector"
@@ -29,16 +39,56 @@ export function StepInspector({
               ? 'warm-up — excluded from estimates'
               : 'retained measurement'}
           </p>
+          {record.ising && (
+            <div className="local-inspection">
+              <strong>Selected vertex {record.ising.site}</strong>
+              <p>
+                Spin {record.ising.oldSpin} → proposed{' '}
+                {record.ising.proposedSpin} → result {record.ising.newSpin}.
+                Site draw: {record.ising.siteUniform.toPrecision(6)}
+                {record.ising.proposalUniform !== undefined
+                  ? ` · proposal draw: ${record.ising.proposalUniform.toPrecision(6)}`
+                  : ''}
+                .
+              </p>
+              <p>
+                Field b = {record.ising.field}; effective local field ={' '}
+                {formatNumber(record.ising.localField)}.
+              </p>
+              <ul>
+                {record.ising.contributions.map((c) => (
+                  <li key={c.edgeId}>
+                    {c.edgeId} · neighbor {c.neighbor}: spin {c.spin}, K=
+                    {c.coupling}, contribution K·s=
+                    {formatNumber(c.contribution)}
+                  </li>
+                ))}
+              </ul>
+              <p>
+                Self-links contribute no local field. Actual flip ΔS ={' '}
+                {formatNumber(
+                  2 * record.ising.oldSpin * record.ising.localField,
+                )}
+                ; a lazy proposal has ΔS = 0.
+              </p>
+            </div>
+          )}
+          {model?.kind === 'ising' && (
+            <p>
+              Result M = {observableValue(model, record.result)} · total S ={' '}
+              {formatNumber(isingAction(model, record.result))}.
+            </p>
+          )}
           {record.kind === 'metropolis' ? (
             <>
               <dl className="transition-grid">
                 <div>
                   <dt>Before</dt>
-                  <dd>{formatNumber(record.current)}</dd>
+                  <dd>{value(record.current)}</dd>
                 </div>
                 <div>
                   <dt>Proposed</dt>
-                  <dd>{formatNumber(record.proposed)}</dd>
+                  <dd>{value(record.proposed)}</dd>
                 </div>
                 <div>
                   <dt>
@@ -57,7 +107,7 @@ export function StepInspector({
                 <div>
                   <dt>Result</dt>
                   <dd data-testid="transition-result">
-                    {formatNumber(record.result)}
+                    {value(record.result)}
                   </dd>
                 </div>
               </dl>
@@ -78,20 +128,29 @@ export function StepInspector({
               <p>
                 {record.kind === 'direct'
                   ? 'Independent draw'
-                  : 'Exact single-spin heat-bath resample (independent of previous value)'}{' '}
+                  : record.ising
+                    ? 'Local heat-bath resample conditional on neighbors'
+                    : 'Exact single-spin heat-bath resample (independent of previous value)'}{' '}
                 ·{' '}
                 <strong data-testid="transition-result">
-                  {formatNumber(record.result)}
+                  {value(record.result)}
                 </strong>
               </p>
               {record.kind === 'heat-bath' && (
                 <p>
-                  Before: {formatNumber(record.current)} · P(+1) ={' '}
+                  Before: {value(record.current)} · P(+1) ={' '}
                   {record.probabilityPlus.toPrecision(6)} · uniform u ={' '}
                   {record.uniform.toPrecision(6)}. Choose +1 when u &lt; P(+1).
                 </p>
               )}
-              <p>No Metropolis acceptance test.</p>
+              <p>
+                No Metropolis acceptance test.
+                {record.ising && record.kind === 'heat-bath'
+                  ? record.outcome === 'self'
+                    ? ' Spin unchanged after resampling.'
+                    : ' Spin changed after resampling.'
+                  : ''}
+              </p>
             </>
           )}
         </div>
