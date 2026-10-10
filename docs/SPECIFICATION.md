@@ -1,23 +1,23 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.4 (M0.5 comparative sampling, 2026-10-10)
+**Version:** 0.5 (M1a interactive graph Ising, 2026-10-10)
 
-**Status:** M0 completed and deployed. M0.5 implemented on its feature branch; validation is tracked in the roadmap. M1 and later remain planned.
+**Status:** M0 and M0.5 are merged. M1a is implemented on its feature branch with validation tracked in the roadmap. M1b and later remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
 
 > **How to use this document.** This specifies intended behavior and key mathematical invariants. A feature is not implemented just because it appears here. The roadmap identifies what belongs in the next milestone. Change the specification in the same pull request as an intentional behavior change, and record consequential architectural decisions in the decision log. Do not freeze incidental visual details or library choices prematurely.
 
-### Implemented scope through M0.5
+### Implemented scope through M1a
 
-The Small Systems workspace supports three one-variable models: Gaussian, single Ising spin and binomial count. Model definitions and exact references are separate from direct, heat-bath and Metropolis kernels, worker execution, measurements and rendering. Small explicit discriminated unions replace the Gaussian-only engine; no general plugin registry is introduced. M0 is merged and deployed; M0.5 extends it without graph editing, coupled fields, periodic geometries or the M3 experiment manager.
+Small Systems retains the M0.5 Gaussian, single-spin and binomial models, and adds finite graph Ising on one to four sites. Seven graph/lattice presets, a lightweight SVG configuration view and numerical parameter editor, signed face topology, exact enumeration, direct configuration sampling and random-site local Metropolis/heat bath share the existing worker, bounded history and SVG plotting infrastructure. No new runtime dependency, backend or general plugin registry is introduced.
 
-Exactly four configurable target/view slots remain independent of degrees of freedom. Defaults are distribution/histogram, sample trajectory, running mean, and acceptance diagnostics for Metropolis (otherwise slot 4 is collapsed). Physical variables are x, s and K respectively. A single-site/aggregate-variable display remains separate. Phone single detail and 2×2 overview, compact unassigned selectors, local KaTeX HTML + MathML, static `/lattice/` paths and worker computation are preserved.
+Start with two active distribution/trajectory plots (total magnetization for graph Ising). Add, remove, collapse, expand and reorder up to six independently assigned observable/view plots. Zero active plots is valid; Add Plot remains available. Graph geometry/configuration is separate. Desktop uses up to two columns, phone defaults to single detail with a compact single-column overview. Six limits simultaneous display only. Local KaTeX HTML + MathML and `/lattice/` static assets remain unchanged.
 
-Apply starts a separate segment for changed physical parameters, algorithm, active proposal settings or warm-up budget. Compatible configurations, the RNG stream, previous estimates and stable physical axes are preserved. Each of the latest eight segments owns settings, initial configuration, start index, update/warm-up/outcome counts, moments, histogram, mean checkpoints and its latest 1000 exact transitions. Incompatible model families start a new session with default parameters/direct sampling and the selected seed. Shrinking binomial support clamps an excluded K explicitly. Reset clears all history, reseeds applied settings and refits; Fit All affects only plotting. Saved runs, exports and persistence remain deferred.
+Apply starts separate measurements for changed parameters/algorithm/warm-up, retaining compatible configuration, RNG, previous segments and stable axes. Topology/model-family changes explicitly create new sessions. Reset clears/reseeds/refits; Fit All affects only plotting. Eight recent segments keep separate statistics, exact references, logarithmic checkpoints and up to 1000 exact transitions. Graph segments additionally accumulate full configuration counts and per-observable moments/checkpoints; plotting never reconstructs evicted trajectories or consumes RNG. Every post-warm-up state enters statistics, including rejected/stay states. Only direct Gaussian segments have known-variance uncertainty bands.
 
-Histograms and moments include every post-warm-up state, including rejected/self states. Gaussian tails outside its 32 bins over μ±4σ remain in moments/normalization; discrete models have one bin per state. Running means count retained samples, independently of trajectory update numbers. Known-variance bands and RMS slope references remain restricted to direct Gaussian segments. Sections 4.2, 5 and 6 specify numerical conventions and bounded history.
+M1b quartic/coupled continuous systems, larger lattices, gauge dynamics and M3 experiment management remain out of scope. Mathematical conventions are detailed in D-021–D-024 and sections 3–6 below.
 
 ## 1. Mission and positioning
 
@@ -57,12 +57,12 @@ All workspaces use the same model specification, simulation state, measurement i
 
 ### 2.1 Small Systems
 
-Purpose: detailed inspection through **four principal variable-plot slots**, independent of the number of underlying degrees of freedom. When a model has more than four variables, users select up to four to inspect, or inspect multiple views of the same variable. For example, a periodic 2×2 square U(1) gauge lattice has four sites but **eight oriented link variables**, while the interface still offers four slots. Topology, physical variables, and display slots are separate concepts.
+Purpose: detailed inspection through a **dynamic collection of zero to six plots**, independent of physical degrees of freedom. A periodic 2×2 U(1) gauge lattice would still have eight link variables; display limits never reduce physical state.
 
 Core UI:
 
-- Geometry view: a graph/cell diagram **separate from the four plots**, with visible edge multiplicities and orientations when relevant; tap/click to select a node/edge.
-- Four-panel inspector: always offer exactly four slots in a configurable 2×2 overview. An assignment includes the physical variable or observable and plot type; variables may live on sites, links, or faces. Multiple slots may inspect one variable with different views. M0.5 defaults to distribution/histogram, sample trajectory, running mean, and Metropolis acceptance when applicable; otherwise slot 4 is unassigned. Unassigned slots collapse to one-line selectors, and expanded plots use available space. Slots never create physical degrees of freedom. For larger models, selecting display targets retains the full physical state. Opening, closing, assigning, or rearranging slots must not affect numerical sampling.
+- Geometry view: a graph/cell diagram **separate from scientific plots**, with edge multiplicities, wrap information and selected site/bond; accessible selectors complement direct interaction.
+- Plot collection: two model-appropriate defaults, Add Plot, removal, collapse, expansion and reordering. Every plot chooses a physical variable/observable and view; targets may repeat. No empty placeholders. Normally at most two desktop columns; phones use single detail or an optional compact overview of all active plots. All display changes are independent of numerical state and RNG.
 - Configurable panels: current value; bare on-site potential; conditional energy holding neighbors fixed; exact/reference marginal; empirical marginal/histogram; discrete probability bars. Do not put energy and probability density on a falsely common axis—use separate axes with units, tabs, or explicit labeled overlays.
 - One-step simulator: proposal details, local energy difference, acceptance probability, actual random uniform deviate when relevant, acceptance/rejection, and resulting configuration.
 - A small observable gallery: joint scatter/density for two variables, correlation matrix, total energy, transition trace, or enumeration table.
@@ -131,13 +131,14 @@ For the `2×2` torus, there are eight directed-by-axis bond records that each co
 
 Open, fixed, and periodic boundaries must be distinguishable. A drawn cycle and an oriented 2D plaquette may look similar but have different topological data; the UI should not infer faces merely from visual proximity or graph cycles.
 
-### 3.4 Geometry editor, first implementation
+### 3.4 Preset geometry and numerical parameter editor
 
-- Start from presets; allow toggling edges in the four-node *generic graph* editor, and adding per-edge couplings/weights.
-- Show parallel edges as separately selectable arcs and self-links as small loops.
-- For regular lattice presets, preserve a canonical generated geometry; editing bonds converts to a custom graph (with a visible indicator) instead of silently corrupting the lattice descriptor.
-- Face editing can be deferred; provided gauge-ready presets must include oriented faces and validated boundary sequences.
-- Test chain complexes (where faces exist) by checking that the signed boundary of every face has zero vertex boundary: `∂₁∂₂=0`.
+- Expose the seven presets; do not implement graphical edge creation/deletion or vertex dragging. Keep mathematical topology independent of drawing coordinates.
+- A compact numerical list of per-site fields and per-edge couplings is the primary editing mechanism on desktop and phone. K4’s six pairwise weights can realize any simple four-site interaction graph by setting unwanted weights to zero. Positive, negative and zero couplings are supported.
+- Graph selection remains interactive: separately selectable parallel arcs, site/bond selection, incident interaction highlighting and actual MCMC update inspection. Form-based selectors are the touch/keyboard alternative.
+- Edge labels carry numeric weights; color/sign, thickness and fading distinguish positive/negative/zero interactions. Zero weights never remove mathematical bond records or faces.
+- Preserve canonical lattice metadata and signed plaquettes on preset parameter edits. The 2×2 torus remains eight distinct bonds/four faces and is not substituted with K4. No generic faces are inferred from a drawing.
+- Domain APIs and numerical tests retain arbitrary tiny graphs, parallel edges and self-links. Validate oriented face walks and `∂₁∂₂=0`; this UI simplification does not change mathematical requirements.
 
 ## 4. Physical model framework
 
@@ -167,6 +168,16 @@ This is a **model family**, not a universal assumption. Gauge actions naturally 
 All three actions are dimensionless, with no additional beta multiplier. Display analytic moments and log partition separately from estimates. These references do not advance the graph/lattice or quartic milestones.
 
 The 0D quartic potential can begin with `V(x)= a*x²/2 + λ*x⁴/4 - h*x`. The UI must prevent nonnormalizable choices, or clearly explain that a proposed parameter combination has no finite partition function. For general coupled quartic measures in four variables, exact integration is **not** assumed; analytic Gaussian references and independently checked quadrature/simulation comparisons are sufficient.
+
+#### M1a finite graph Ising
+
+For 1–4 sites use `S(s)=−Σ_e K_e s_tail(e)s_head(e)−Σ_i b_i s_i`, `s_i=±1`, with K and b dimensionless (beta absorbed), each in [−10,10]. Every edge is counted once, including parallel bonds. Self-links contribute constant −K, zero local field/flip difference. The numerical domain supports up to 16 distinct bonds and one to four sites; the UI exposes only presets with editable weights/fields. Choosing a different topology begins a new session. Zero-weight K4 bonds realize simple interaction graphs without altering domain records.
+
+Enumerate all `2^N` configurations independently of sampling, normalize stably and display log Z. Exact outputs include configuration probabilities, each spin mean/marginal, M=Σs, m=M/N, |M|, total action E=S and their distributions/moments, pair correlations and connected covariance. Energy here denotes total dimensionless action, not a separately normalized Hamiltonian. An expandable table compares exact and empirical configuration frequencies. The original single-spin model remains compatible and numerically checked as the one-site special case.
+
+Local field `H_i=b_i+Σ_(incident non-self e=(i,j)) K_e s_j`; `ΔS_i=2s_i H_i`; heat bath `P(s_i=+1|others)=1/(1+exp(−2H_i))`. Local Metropolis uses ½-lazy spin flips. At each update choose a uniform random site with replacement. Direct exact sampling is an optional independent benchmark implemented via inverse CDF. Trace and highlighted graph show the actual selected site, incident contributions, all local RNG draws and resulting configuration. Warm-up is excluded, not hidden.
+
+For a uniform periodic four-site chain, `T_st=exp(Kst+b(s+t)/2)` and `Z=Tr(T^4)`. The one-dimensional 1×4 ring has four bonds; a 2D periodic 2×2 square has eight positive-axis bonds and four signed plaquettes. These geometries are independently validated, never deduplicated by endpoints.
 
 ### 4.3 Next models (not initial release)
 
@@ -243,8 +254,8 @@ The RNG and sampler update sequence must not depend on how often the UI redraws.
 - M0.5: Gaussian direct and uniform random-walk Metropolis; spin direct, exact heat bath and lazy Metropolis; binomial direct Bernoulli sum and nearest-neighbor Metropolis. Gaussian displacement is uniform in `[−δ,δ]`, `0.01≤δ≤50`. Spin proposes self/flip with probability 1/2 each. Binomial proposes ±1 with probability 1/2, mapping out-of-range attempts to self. Proposal symmetry, detailed balance and aperiodicity are tested on small transition matrices.
 - Every Metropolis update consumes two uniforms (proposal, then acceptance), including self/automatic acceptance. Record ΔS and `α=exp(min(0,−ΔS))`; use the full-precision comparison `u<α`. Count accepted moves, rejections and self-proposals separately. Acceptance includes self; movement excludes self. Counters include warm-up.
 - Direct binomial uses n Bernoulli uniforms, spin direct/heat bath uses one. Single-spin heat bath is a resampling kernel with identical rows and therefore independent equilibrium draws. Do not attach fictitious Metropolis acceptance fields to these updates.
-- Metropolis discards a configurable 0–10000 updates (default 200) per new segment. This is not a mixing guarantee. Direct/heat-bath sampling needs zero warm-up. Initial chain configurations are 0 (Gaussian), +1 (spin), round(np) (binomial), not measurements. Accepted, rejected and self states after warm-up all enter estimators at stride one.
-- M1 extends local Metropolis/heat bath and enumeration to tiny graph systems and adds continuous quartic models.
+- Metropolis discards a configurable 0–10000 updates (default 200) per new segment. This is not a mixing guarantee. Direct and isolated single-spin heat-bath sampling need zero warm-up. Initial chain configurations are 0 (Gaussian), +1 (spin), round(np) (binomial), not measurements. Accepted, rejected and self states after warm-up all enter estimators at stride one.
+- M1a implements graph Ising random-site local Metropolis/heat bath and direct enumeration sampling; M1b continuous quartic models remain deferred. Graph Metropolis consumes site/proposal/acceptance uniforms (three), graph heat bath site/resampling uniforms (two), direct exact one uniform for a full configuration. A nominal sweep is N local updates with replacement. Both local samplers discard configurable 0–10000 warm-up updates (default 200); local Reset starts all +1. Single-spin M0.5 heat bath retains zero warm-up and its original stream.
 - Later: Wolff or Swendsen–Wang/FK cluster updates for compatible models; HMC with reversible symplectic integrator and Metropolis correction for smooth continuous fields.
 - Advanced samplers should be exposed only on models for which their validity has been implemented and tested; no universal algorithm picker with invalid choices.
 
@@ -289,11 +300,17 @@ The Sample Trajectory plot uses global elementary algorithmic update number (not
 
 Each segment has a 1000-record ring retaining exact transitions, including before/result state, outcome, global/segment update indices and warm-up flag. Metropolis additionally retains proposed/attempted state, ΔS, α, uniform and acceptance; heat bath retains exact P(+1) and its resampling uniform. Display windows of 100/500/1000 updates can follow the latest or browse older retained updates. Missing/evicted history is disclosed and never connected as though exact intermediate samples existed. Segment colors match distribution/convergence overlays. Optional horizontal lines show exact mean and distribution ±σ, not uncertainty bars.
 
-Step opens the latest-update inspector using the worker’s own record; no extra RNG calls or separate inspection kernel are allowed. Pause finishes the in-flight batch, Step advances once, and Run resumes the same sequence. Current variable display, counters, trace and trajectory must agree. Slot 4 offers simple per-segment acceptance/movement summaries; no autocorrelation estimate or ESS is implemented.
+Step opens the latest-update inspector using the worker’s own record; no extra RNG calls or separate inspection kernel are allowed. Pause finishes the in-flight batch, Step advances once, and Run resumes the same sequence. Current variable display, counters, trace and trajectory must agree. An optional plot offers per-segment acceptance/movement summaries; no autocorrelation estimate or ESS is implemented.
+
+#### M1a graph observable views
+
+Reuse distribution, trajectory, running-mean and absolute-error plots for M, m, |M|, total E=S and each site spin. Graph transitions are projected onto the chosen observable without changing their update index/outcome/warm-up flags. Defaults are total M distribution and trajectory. Add Plot also offers a current connected-correlation matrix (exact/sample), local conditional probabilities for the selected site at current neighbors, and acceptance/movement diagnostics. The conditional is not a marginal; covariance/conditional panels show the current segment/configuration rather than ambiguous overlays. Distribution and mean overlays preserve compatible parameter segments. Site selection can add that spin’s trajectory with one action.
+
+Each segment stores at most 16 full configuration counts, per-observable online moments and bounded checkpoints, and 1000 recent transitions. Empirical probabilities/correlations use all retained measurements, never just the visible trajectory window. Energy support is discrete but need not be integer. No independent-sample uncertainty formula is applied to interacting chains.
 
 ### 6.2 Initial Ising observables
 
-For `N` spins, use `m = N⁻¹ sum_i σ_i` and `e = H/N` unless explicitly stated otherwise. Display instantaneous `m` and `e` distinctly from their sampled means. In a symmetric finite system at `h=0`, report both `<m>` and `<|m|>` so that a nearly zero signed mean is not misread as absence of finite-size ordering.
+M1a explicitly uses total `M = Σ_i s_i`, `m=M/N`, `|M|` and dimensionless total `E=S`. For later lattice models, use `m = N⁻¹ sum_i σ_i` and `e = H/N` unless explicitly stated otherwise. Display instantaneous `m` and `e` distinctly from their sampled means. In a symmetric finite system at `h=0`, report both `<m>` and `<|m|>` so that a nearly zero signed mean is not misread as absence of finite-size ordering.
 
 Measurement priorities:
 
@@ -358,7 +375,7 @@ Export selected numeric series to CSV with a sidecar metadata JSON (or a single 
 
 - Single-column first; controls hidden in a collapsible drawer or accordions. Changing control visibility does not reset state.
 - Main configuration view should occupy meaningful screen width and remain responsive to orientation changes.
-- Small Systems defaults to a detail panel on very narrow phones, with a visible option for a compact **2×2 four-panel overview**. Four plots are still possible simultaneously; their text and interactions must not become unreadable.
+- Small Systems defaults to one detail plot on phones, with a visible compact overview showing all active plots in one column. Up to six plots remain navigable without six mandatory expanded charts; labels and touch controls remain readable.
 - Large-lattice charts can stack vertically; preserve selection and zoom when rotating the device.
 - Minimum comfortable touch targets; accessible keyboard navigation and text labels for icons.
 - Do not encode discrete spin sign only by color; use legend, pattern, or inspectable tooltips and support adequate contrast.
@@ -400,9 +417,9 @@ Each model may link to relevant graduate lecture notes, but these are optional r
 
 ### 9.1 Deployment and dependencies
 
-Recommended initial stack (changeable after prototype): TypeScript + Vite; React or equivalent component UI; Canvas 2D for high-frequency lattice rendering; SVG for tiny graph editor; maintained charting library for plots; Web Worker for simulation. Unit tests with Vitest; smoke/responsiveness tests with Playwright or equivalent.
+Recommended initial stack (changeable after prototype): TypeScript + Vite; React or equivalent component UI; Canvas 2D for high-frequency lattice rendering; SVG for tiny graph selection/inspection; maintained charting library for plots; Web Worker for simulation. Unit tests with Vitest; smoke/responsiveness tests with Playwright or equivalent.
 
-M0 adopts TypeScript/Vite/React, native accessible controls, small SVG density/convergence plots, local KaTeX HTML + MathML, Vitest, Playwright (Chromium and WebKit), and Prettier. No charting/component framework is needed for the one-dimensional density, and no graph/lattice framework is implemented ahead of M1. KaTeX renders authored formulas only, with trust disabled and bundled fonts; no CDN or formula editor. M0.5 adds no runtime dependency. See D-013/D-014 and D-016–D-020 for the accepted implementation choices.
+M0 adopts TypeScript/Vite/React, native accessible controls, small SVG density/convergence plots, local KaTeX HTML + MathML, Vitest, Playwright (Chromium and WebKit), and Prettier. No charting/component framework is needed for the one-dimensional density, and no graph/lattice framework is implemented ahead of M1. KaTeX renders authored formulas only, with trust disabled and bundled fonts; no CDN or formula editor. M0.5 and M1a add no runtime dependencies. M1a reuses SVG for its graph selection view and existing scalar plotting components through read-only observable projections. See D-013/D-014 and D-016–D-024 for the accepted implementation choices.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice); the project name remains Lattice Lab. The site is built into static assets and deployed with GitHub Actions → GitHub Pages. For `https://gantemur.github.io/lattice/`, Vite's `base` must be `/lattice/`. Build/test should run on pull requests; deploy only from the chosen protected/default branch. Never hard-code root-relative URLs that break the project subpath.
 
@@ -480,7 +497,7 @@ Correctness is a release requirement, not optional polish.
 
 - Basic model usable at narrow smartphone width, desktop width, portrait/landscape; drawer controls operate without overlapping charts or clearing state.
 - Keyboard-accessible core controls, visible legends and basic contrast.
-- Plot axes and sample-status labels present; graph editing has touch targets.
+- Plot axes and sample-status labels present; graph selection and numerical parameter editing have touch targets.
 - GitHub Pages deep link, JS chunks, worker URLs, static assets, and base-path deployment work under `/lattice/`.
 - Smoke test on a real browser before a feature is marked delivered.
 
@@ -489,7 +506,7 @@ Correctness is a release requirement, not optional polish.
 See `ROADMAP.md` for implementation milestones. The following describes the initial public usable edition **after M1**, not the M0 acceptance gate. That edition need not include every model or plot in this document. It **must**:
 
 - Deploy as a static site on its own repository.
-- Show a working small-system model with four configurable inspection slots and touch-friendly collapsible controls.
+- Show a working small-system model with a configurable collection of up to six inspection plots and touch-friendly collapsible controls.
 - Support accurate graph/lattice presets including periodic 1×4 and periodic 2×2, not falsely conflated with an open square.
 - Implement at least one validated exact finite-volume benchmark and one step-inspectable MCMC algorithm.
 - Distinguish warm-up from measurement and show which values are sampled versus exact.
@@ -501,9 +518,9 @@ Later milestones cover larger 2D Ising, robust statistics, continuous fields, HM
 
 These should not block a small vertical slice but should be resolved deliberately:
 
-1. Four-panel default presentation on phones: choose single-detail default plus 2×2 overview; test whether the overview can carry more than one curve legibly.
+1. Phone plots: single-detail default plus compact overview; continue reviewing legibility with multiple segment overlays.
 2. Relative priority of exact tiny-graph enumeration versus interactive continuous 0D quadrature; both are in the early roadmap.
-3. How much user graph editing to expose before cell-complex face editing is ready.
+3. Whether a later milestone should expose topology/face editing beyond M1a’s preset selection and numerical weights.
 4. M0.5 overlays retained parameter/algorithm distributions and mean trajectories; recent sample trajectories use a bounded browseable update window; determine how explicit saved-run selection should work in M3.
 5. Which maintained charting library gives adequate performance/accessibility with the smallest complexity burden.
 6. Whether student exercise presets should be in JSON with a simple schema, or in typed TS modules for safer model references.

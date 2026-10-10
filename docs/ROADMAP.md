@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.4, 2026-10-10
+**Version:** 0.5, 2026-10-10
 
-**Status:** M0 completed and deployed. M0.5 implemented and locally validated; M1–M6 remain planned or exploratory.
+**Status:** M0 and M0.5 merged. M1a implemented and locally validated on its feature branch. M1b–M6 remain planned or exploratory.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -18,7 +18,8 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 |---|---|---|---|
 | **M0: deployable foundation** | Responsive app shell, one 0D Gaussian with density/convergence and segment comparisons | Exact moments, seeded sample, static Pages deploy | Completed and deployed |
 | **M0.5: Comparative Sampling Laboratory** | Gaussian, single-spin and binomial models; direct/Markov sampling, trajectories and transition inspection | Exact distributions, transition-matrix balance, warm-up exclusion and seeded replay | Implemented; feature-branch validation complete |
-| **M1: Small Systems** | Four plot slots, tiny graph presets/editor, detailed Metropolis inspection | Full enumeration of 4-spin Ising; 1×4 ring and 2×2 torus checks; 0D quartic reference | Planned |
+| **M1a: Interactive graph Ising** | Dynamic zero-to-six plots, preset graph parameter editor, local transition inspection | Full 1–4-spin enumeration; transfer matrix, periodic multiplicity, balance and sampling checks | Implemented; local validation complete |
+| **M1b: Continuous small systems** | Quartic and coupled continuous models | Gaussian limits and reference quadrature | Planned |
 | **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Planned |
 | **M3: Measurements & Experiments** | Saved comparisons, autocorrelation, error analysis, exports and finite sweeps | Reference-estimator tests, reproducibility metadata | Planned |
 | **M4: Continuous lattice fields** | 1D/2D Gaussian and φ⁴, Euclidean lattice QM, HMC | Fourier covariance, oscillator correlators, HMC invariants | Planned |
@@ -84,21 +85,21 @@ Implemented on `codex/m05-comparative-sampling`, branched from current `main` af
 
 Validation: **103 unit tests** cover exact formulas/normalization/extremes, independent sampler moments, discrete transition-matrix stationarity/detailed balance/aperiodicity, Metropolis frequencies using exact matrix covariance bounds, Gaussian Metropolis ensemble moments, warm-up exclusion, bounded exact histories, seeded Step/batch replay, segment isolation, settings changes, Reset, viewport stability and conditional uncertainty rendering. **36 production browser tests** pass across desktop Chromium, 360px phone Chromium and emulated iPhone WebKit. They include thousands of updates followed by Pause/Step/Resume, trajectory browsing without numerical mutation, all models and samplers, current-state/inspection agreement, compact slots, Reset/Fit All, keyboard controls, invalid inputs, local math/worker loading, and portrait/landscape overflow. Formatting, typecheck and production build pass under `/lattice/`.
 
-Desktop and phone screenshots are reviewed and included in [the review evidence](M05_REVIEW.md). M0.5 is not deployed by the feature branch. Remaining limits: fixed warm-up is not a mixing guarantee; latest eight segments and 1000 exact transitions per segment only; finite binomial parameter range excludes p=0/1; no autocorrelation/ESS, saved runs or exports; no physical-phone performance benchmark. M0 remains the live deployment until this work is reviewed and merged.
+Desktop and phone screenshots are reviewed and included in [the review evidence](M05_REVIEW.md). M0.5 is not deployed by the feature branch. Remaining limits: fixed warm-up is not a mixing guarantee; latest eight segments and 1000 exact transitions per segment only; finite binomial parameter range excludes p=0/1; no autocorrelation/ESS, saved runs or exports; no physical-phone performance benchmark. M0.5 was subsequently merged in PR #2; the feature branch itself did not deploy it.
 
-## M1 — Small Systems: four plot slots and true tiny lattices
+## M1 — Small Systems: configurable plots and true tiny lattices
 
-**Objective:** make the first distinctive teaching instrument: a four-plot micro-laboratory backed by exact calculations and inspectable MCMC.
+**Objective:** make the first distinctive teaching instrument: a configurable micro-laboratory backed by exact calculations and inspectable MCMC.
 
 ### M1a — Tiny geometry and discrete Ising
 
 - Domain types: stable vertex, edge, face IDs; oriented edges; parallel edges and self-links preserved. Geometry construction independently tested from physics.
 - Presets: one site, four-site open path, cycle/periodic 1×4 ring, open 2×2 square (with optional one oriented face), star, K4, and genuine periodic 2×2 torus (4 sites / 8 nearest-neighbor bonds / 4 oriented faces).
-- Display: graph diagram with selected node and edge weights; clearly show parallel bonds; edit generic graph connectivity and per-edge couplings.
+- Display: preset graph diagram with selected nodes/bonds and signed/zero edge weights; distinguish parallel/wrapped bonds. Compact numerical coupling/field lists; K4 zero weights realize simple four-site graphs. No graphical creation/deletion or dragging; preserve all preset topology.
 - Generic finite-graph Ising, including nonuniform couplings and external fields.
 - Exact enumeration for up to four spins (16 states): partition function, energy, moments and selected correlations; enumerate even if a sampler is never run.
 - Local Metropolis and discrete heat bath. Inspection trace includes selected spin, local neighborhood contribution, `ΔS`, proposal/conditional probability, RNG sample, and resulting state.
-- Four assignable inspection slots, independent of physical variable count, for discrete spins (state probability bars/histograms, local conditional distributions); configurable display of exact vs sampled values. The graph visualization remains separate from the slots.
+- Dynamic zero-to-six plot collection; two defaults (M distribution/trajectory), Add Plot, remove/collapse/reorder/expand; site/global targets, running means, energy, exact/sample covariance and local conditionals. Separate prominent graph view with touch/keyboard form alternatives.
 
 **Acceptance gate M1a**
 
@@ -107,7 +108,17 @@ Desktop and phone screenshots are reviewed and included in [the review evidence]
 - A periodic 2×2 torus has *eight* bond records, not four; exact Ising `Z` agrees with full enumeration of that model.
 - Periodic 1×4 Ising `Z` agrees with transfer matrix `Tr(T⁴)` under stated convention.
 - Seeded step trace reproduces the run-mode transition sequence for identical updates.
-- Four panels can be displayed together on desktop and as optional 2×2 overview on phone.
+- Up to six plots, normally two desktop columns, phone single detail and compact overview; plot/graph display edits leave numerical state and RNG unchanged.
+
+### M1a delivery record — 2026-10-10
+
+Implemented on `codex/m1a-small-graph-ising` from `origin/main` at merge `056ac30` (M0.5 PR #2). Domain/physics/sampler/worker/display remain separate. Seven presets include the genuine eight-bond/four-face torus; the numerical domain supports 1–4 sites and up to 16 distinct bonds. The UI uses presets and compact numerical coupling/field lists, supporting negative/zero/heterogeneous values; K4 zero weights realize simple four-site graphs. No graphical topology editing is included. Signed face walks and periodic multiplicity are validated. Exact configurations, observables and pair/covariance results are independent of sampling.
+
+Random-site lazy Metropolis, local heat bath and direct exact sampling share the existing worker/Step protocol. Graph counts and per-observable accumulators project into existing SVG charts; the detailed trace highlights the real selected site and incident contributions. Dynamic zero-to-six plots supersede the fixed-four UI; no numerical behavior depends on plot assignment. Coupling/field changes preserve configuration/RNG with new segments; topology changes explicitly reset the session. Reset/Fit All retain their established separation.
+
+Validation and visual evidence: [M1a review notes](M1A_REVIEW.md). Numerical tests include full-action/local-difference comparisons, independent explicit bond enumeration, transfer-matrix `Tr(T⁴)`, heat-bath conditionals, balance/stationarity/aperiodicity, seeded batching, warm-up/segment/Reset checks and finite-chain covariance-based ensemble tolerances. Full `npm run check` passes: formatting, typecheck, **156 unit tests**, production build, and **51 browser tests** (desktop Chromium, 360px phone Chromium and emulated iPhone WebKit). Desktop/phone, Step and numerical-parameter screenshots have been reviewed. Local validation does not deploy or merge the feature branch.
+
+No M1b continuous extension, large-lattice engine, gauge dynamics, cluster algorithm, backend, new dependency or M3 saved-run manager was introduced.
 
 ### M1b — Continuous 0D potentials
 
@@ -121,7 +132,7 @@ Desktop and phone screenshots are reviewed and included in [the review evidence]
 
 - Gaussian limit agrees with M0 analytics; quadrature agrees with known test integrals and reports failure when error control is inadequate.
 - When coupling is zero, sampled marginals agree with independent references. For nonzero coupling, bare potential, conditional potential, and marginal remain distinguished in labeling.
-- Opening/closing four-panel controls does not alter sampler state.
+- Opening/closing plot controls does not alter sampler state.
 
 ## M2 — 2D Ising: the main lattice laboratory
 
@@ -191,8 +202,8 @@ Desktop and phone screenshots are reviewed and included in [the review evidence]
 - Potts and XY models on 2D square lattices; model-appropriate updates and observables. Add vortices only with a clear lattice winding convention.
 - Optional random-cluster/FK view and valid cluster updates where the physical coupling assumptions permit them.
 - `Z₂` gauge field on oriented edges with plaquette product; one open plaquette and 2×2 torus; visible gauge transformations.
-- Compact `U(1)` link variables; plaquette holonomy, Wilson loops, tiny systems with more link DOFs than four selected inspection slots.
-- Gauge-specific small-system interface: select four links to inspect while keeping the entire link configuration in the worker; do not mistake site rotors for gauge connections.
+- Compact `U(1)` link variables; plaquette holonomy, Wilson loops, tiny systems with more link DOFs than selected inspection plots.
+- Gauge-specific small-system interface: select links to inspect while keeping the entire link configuration in the worker; do not mistake site rotors for gauge connections.
 
 **Acceptance gate**
 
@@ -216,7 +227,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0 is complete; the current feature branch implements **M0.5 only**. Keep later roadmap stages as context, not implied scope. Prefer a working, tested comparative laboratory to infrastructure for hypothetical future models.
+M0 and M0.5 are merged; the current feature branch implements **M1a only**, stopping before M1b. Keep later roadmap stages as context, not implied scope. Prefer a working, tested comparative laboratory to infrastructure for hypothetical future models.
 
 ## Definition of done for the initial public usable release
 
