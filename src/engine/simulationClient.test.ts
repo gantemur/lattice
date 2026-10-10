@@ -120,3 +120,45 @@ describe('client scheduling and acknowledgment', () => {
     client.dispose();
   });
 });
+
+it('queues parameter changes after an in-flight batch, then resumes the same stream', () => {
+  vi.useFakeTimers();
+  const { client, worker, view } = setup();
+  client.start();
+  client.changeParameters({ a: 4, h: 2 });
+  expect(worker.responses).toHaveLength(1);
+  worker.deliver();
+  expect(view().busy).toBe(true);
+  expect(worker.responses).toHaveLength(1);
+  worker.deliver();
+  expect(view().snapshot).toMatchObject({
+    updates: 128,
+    activeSegmentId: 2,
+    moments: { count: 0 },
+  });
+  expect(view().snapshot!.segments[0]!.moments.count).toBe(128);
+  vi.advanceTimersByTime(100);
+  worker.deliver();
+  expect(view().snapshot).toMatchObject({
+    updates: 256,
+    moments: { count: 128 },
+  });
+  client.pause();
+  client.dispose();
+});
+it('Reset cancels a queued parameter change and stale in-flight replies', () => {
+  const { client, worker, view } = setup();
+  client.step();
+  client.changeParameters({ a: 4, h: 2 });
+  client.initialize(standardGaussianPreset.configuration);
+  worker.deliver();
+  worker.deliver();
+  expect(view().snapshot).toMatchObject({
+    runId: 2,
+    updates: 0,
+    activeSegmentId: 1,
+    configuration: { parameters: { a: 1, h: 0 } },
+  });
+  expect(worker.responses).toHaveLength(0);
+  client.dispose();
+});

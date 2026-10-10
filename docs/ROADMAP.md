@@ -1,6 +1,6 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.2, 2026-10-10
+**Version:** 0.3, 2026-10-10
 
 **Status:** M0 implemented; live Pages acceptance pending approved merge/deployment. M1–M6 remain planned or exploratory.
 
@@ -16,7 +16,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 
 | Milestone | User-visible result | Scientific baseline | Status |
 |---|---|---|---|
-| **M0: deployable foundation** | Responsive app shell, one single-variable 0D Gaussian view | Exact moments, seeded sample, static Pages deploy | Implemented; live deployment acceptance pending |
+| **M0: deployable foundation** | Responsive app shell, one 0D Gaussian with density/convergence and segment comparisons | Exact moments, seeded sample, static Pages deploy | Implemented; live deployment acceptance pending |
 | **M1: Small Systems** | Four plot slots, tiny graph presets/editor, detailed Metropolis inspection | Full enumeration of 4-spin Ising; 1×4 ring and 2×2 torus checks; 0D quartic reference | Planned |
 | **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Planned |
 | **M3: Measurements & Experiments** | Saved comparisons, autocorrelation, error analysis, exports and finite sweeps | Reference-estimator tests, reproducibility metadata | Planned |
@@ -37,6 +37,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 - One 0D Gaussian variable: select quadratic coefficient and source term, draw analytically normalized density and correctly labeled moment values; implement a simple seeded sampler and display sampled points/histogram with warm-up status.
 - A validated RNG abstraction and a small worker stepping interface. A test must demonstrate that rendering frequency does not perturb the sequence of Monte Carlo random draws.
 - One simple preset, one mobile browser smoke test, plus working build/test/deploy commands documented in README.
+- Focused M0 refinement: local accessible KaTeX; four compact target/view slots, default density + convergence; known-variance independent-Gaussian diagnostics with bounded worker checkpoints; recent parameter-segment comparison, stable axes, explicit Reset, and display-only Fit All.
 
 **Acceptance gate**
 
@@ -45,15 +46,17 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 - Phone-width controls are operable, dismissible, and do not delete numerical state.
 - Basic Build/Typecheck/Unit/Browser pipeline passes.
 
-**Explicitly out of scope:** generic formula editor, periodic lattices, coupled quartic integrals, gauge variables, parameter sweeps, advanced charts.
+**Explicitly out of scope:** generic formula editor, periodic lattices, coupled quartic integrals, gauge variables, parameter sweeps, generic plot registries and MCMC error analysis.
 
 ### M0 delivery record — 2026-10-10
 
-Implemented in the M0 feature branch: TypeScript/Vite/React shell, separate single-site topology and scalar model, four display slots with one initially assigned Gaussian, collapsible settings, phone detail/2×2 modes, analytic density/moments, seeded independent draws, online moments and tail-aware histograms, Run/Pause/Step/Reset, a standard preset, and a typed worker protocol. Numerical and UI state remain separate. Coefficient/source edits explicitly replace measurements. Independent draws have zero warm-up, clearly labeled. No M1 models, periodic geometry generators, formula editors, exports, or saved runs were added.
+Implemented in `codex/m0-gaussian-foundation`: TypeScript/Vite/React shell, separate single-site topology and scalar model, four compact target/view slots, collapsible settings, phone detail/2×2 modes, analytic density/moments, seeded independent draws, online moments and tail-aware histograms, Run/Pause/Step/Reset, a standard preset, and a typed worker protocol. Numerical and UI state remain separate. No M1 models, periodic geometry generators, formula editors, exports, or saved-run manager were added.
 
-Tooling: npm lockfile, Vitest tests, TypeScript checks, Prettier, production-build Playwright smoke tests for desktop Chromium and emulated phones in Chromium/WebKit, and a GitHub Actions validation/Pages workflow. Vite uses `/lattice/`; navigation uses hash anchors for direct/reload access on static hosting.
+The refinement adds local KaTeX HTML + MathML, default density and running-mean views, optional log–log absolute error, and worker-generated logarithmic checkpoints. Pointwise known-variance bands and RMS scaling are distinguished from a single nonmonotone trajectory. Apply preserves the RNG stream and previous parameter segments; up to eight segments have separate statistics, curves, and reference values. Axes expand only until Fit All or Reset. Reset explicitly clears history and replays the chosen seed under the current parameters; Fit All is display-only. This supersedes the initial M0 behavior of clearing measurements on Apply, without advancing the M3 experiment manager.
 
-Local validation: formatting and TypeScript checks pass; **49 unit tests** pass (Gaussian action/normalization/moments, seeded sample moments, RNG vectors/range/replay, exact batch/step/snapshot equivalence, histogram tails, segment isolation, and worker/client ordering/failure recovery). **18 production browser tests** pass across desktop Chromium, 360px mobile Chromium, and emulated iPhone WebKit. They exercise `/lattice/` assets and worker loading, direct hash navigation/reload, keyboard controls, invalid parameter rejection, new segments, seed replay, Run/Pause/Step/Reset, worker recovery, control visibility, four slots, and portrait/landscape overflow. Desktop and phone screenshots are visually reviewed. `npm run check` runs the full local pipeline, including the production build.
+Tooling: npm lockfile, Vitest, TypeScript, Prettier, production-build Playwright tests for desktop Chromium and emulated phones in Chromium/WebKit, and a GitHub Actions validation/Pages workflow. Vite uses `/lattice/`; navigation uses hash anchors. KaTeX and its fonts are local static assets.
+
+Local refinement validation: formatting and TypeScript checks, production build, **63 unit tests**, and **21 browser tests**. Numerical tests cover Gaussian action/normalization/moments, RNG vectors/replay, batching and snapshot invariance, logarithmic checkpoint bounds, ensemble RMS scaling and pointwise coverage, parameter switching and segment isolation, bounded retention, Reset, viewport expansion, and slot assignment. Browser tests cover local math/fonts/worker loading, hash reload, desktop and phone overflow, keyboard controls, compact slots, assignment/close/open/rearrange without sampling, Run/Apply/Pause/Step ordering, stable axes, Reset/Fit All, seed replay, invalid inputs, and worker recovery. Desktop and phone screenshots are visually reviewed. `npm run check` runs the full pipeline.
 
 The complete M0 acceptance gate remains open until an approved merge and successful Pages deployment confirm the live URL and hash reload. No automatic merge or feature-branch deployment is intended. License selection and physical-phone performance measurements remain open. Periodic 1×4, 2×2, parallel-edge and self-link tests belong to M1, when those geometries exist; M0 does not claim to implement or validate them.
 
@@ -105,7 +108,7 @@ The complete M0 acceptance gate remains open until an approved merge and success
 - UI: large 2D spin view, optional magnification/selection, Run/Pause/Step/Reset, visible progress/counters, temperature control; view frame rate independent of update rate.
 - First plots: magnetization and energy histories, histograms, principal running means and acceptance rate; add elementary spatial correlations when reliable.
 - Model information with exact finite-volume status, 1D and 2D reference points, and small experiments such as phase ordering and field response.
-- Thermometer-style rapid parameter editing may initialize a new run from the previous configuration, but always resets incompatible measurements and discloses the warm start.
+- Thermometer-style rapid parameter editing may initialize a new run from the previous configuration, but always begins fresh segment estimators and discloses the warm start/warm-up policy while preserving bounded prior segments for comparison.
 
 **Acceptance gate**
 
@@ -122,8 +125,8 @@ The complete M0 acceptance gate remains open until an approved merge and success
 
 **Deliverables**
 
-- Shared observable/plot registry. Select and rearrange plots; overlay exact and numerical curves with clear legends.
-- Independent data segments and saved runs in memory, each with configuration, seed, algorithm, measurement schedule, version, and notes.
+- Generalize M0’s target/view slots into a shared observable/plot registry across models. Select and rearrange plots; overlay exact and numerical curves with clear legends.
+- Extend M0’s bounded recent segment comparison to managed saved runs in memory, each with configuration, seed, algorithm, measurement schedule, version, and notes.
 - More robust statistics: signed and absolute magnetization, susceptibility, Binder cumulant, connected correlations, structure factors, autocorrelation estimates, approximate ESS, blocking/batch errors with warnings for short or correlated data.
 - Small bounded parameter sweeps (temperature/coupling/size) executed sequentially or with simple worker scheduling; clear per-run equilibration and budget policy.
 - Export CSV + JSON metadata and one-file JSON bundle; configuration-only URL sharing and optional import.

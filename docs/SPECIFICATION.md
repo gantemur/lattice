@@ -1,6 +1,6 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.2 (M0 implementation, 2026-10-10)
+**Version:** 0.3 (M0 refinement, 2026-10-10)
 
 **Status:** M0 implemented; later-stage requirements remain planned. Live deployment acceptance is tracked in the roadmap.
 
@@ -11,11 +11,13 @@
 
 ### Implemented scope at M0
 
-The current application implements only the single-site 0D Gaussian and the responsive Small Systems shell. Four assignable display slots are always available; initially only slot 1 is assigned to `x`, and the others may remain unassigned or inspect that same variable. A separate single-site diagram represents topology. Phone detail mode and a 2×2 overview are available. Multi-variable assignment, graph editing, periodic domains, Ising, quartic models, and other workspaces remain later milestones.
+The current application implements only the single-site 0D Gaussian and the responsive Small Systems shell. Exactly four slots are always available, each assigned a variable/observable and a plot type. Slots 1–2 default to `x` density/histogram and running mean; slots 3–4 are compact unassigned selectors. The same physical variable may appear in multiple views. Assigned plots can close, reopen, and move without numerical effects. A separate single-site diagram represents topology. Phone detail mode and an optional 2×2 overview are available. Multi-variable models, graph editing, periodic domains, Ising, quartic models, and other workspaces remain later milestones.
 
-The model uses dimensionless `S(x)=a x²/2−h x`, `p∝exp(−S)`, `μ=h/a`, `σ²=1/a`, and `log Z=½log(2π/a)+h²/(2a)`. Supported teaching ranges are `0.05≤a≤20` and `−10≤h≤10`; validation rejects non-finite or out-of-range parameters. Analytic density is evaluated in centered form to avoid overflowing the unnormalized weight. A seeded independent Box–Muller sampler requires no discarded warm-up: one update is one retained sample (stride 1). Histogram tails outside `μ±4σ` remain in all moments and the denominator. M0 provides estimates without uncertainty bars.
+The model uses dimensionless `S(x)=a x²/2−h x`, `p∝exp(−S)`, `μ=h/a`, `σ²=1/a`, and `log Z=½log(2π/a)+h²/(2a)`. Supported teaching ranges are `0.05≤a≤20` and `−10≤h≤10`; validation rejects non-finite or out-of-range parameters. Analytic density is evaluated in centered form. A seeded independent Box–Muller sampler needs no discarded warm-up: one update is one retained sample (stride 1). Histogram tails outside each segment’s `μ±4σ` remain in its moments and denominator. Authored model formulas and explanations use local KaTeX HTML + MathML, with reusable inline/display components and no formula editor.
 
-Run/Pause/Step/Reset and a versioned standard Gaussian preset are implemented. Apply/Reset/preset selection explicitly replaces the current segment and clears measurements; saved runs and exports are deferred. Settings and display changes preserve numerical state. A worker owns samples and bounded-memory accumulators; a small client schedules at most one batch at a time and waits for its acknowledgment when pausing. M0 uses hash navigation and `/lattice/` asset/worker paths; CI builds and tests feature PRs, while Pages deployment is restricted to `main`.
+Run/Pause/Step/Reset and a standard Gaussian preset are implemented. Apply and preset selection preserve old data, current value, and RNG stream, starting a separately labeled measurement segment only when parameters change. Each segment owns its parameters, start-update index, count, moments, histogram, and convergence trajectory. Up to eight recent segments remain in memory; removal of older segments is disclosed. No individual samples are retained. Reset clears all history, refits axes, and reseeds with the currently applied parameters and the Seed on Reset field. Fit All refits retained data without numerical effects. Axes otherwise expand only, including across parameter changes and segment eviction. Saved runs and exports remain deferred.
+
+Running means use log sample-count coordinates, exact segment means, and theoretical pointwise one-standard-error bands; an optional log–log absolute-error view shows the `σ N^(-1/2)` RMS reference. These diagnostics apply specifically to independent Gaussian draws (section 6.3). Settings and display changes preserve numerical state. A worker owns samples and bounded accumulators; the client schedules at most one batch in flight. M0 uses hash navigation and `/lattice/` asset/worker paths; CI builds and tests feature PRs, while Pages deployment is restricted to `main`.
 
 ## 1. Mission and positioning
 
@@ -55,12 +57,12 @@ All workspaces use the same model specification, simulation state, measurement i
 
 ### 2.1 Small Systems
 
-Purpose: detailed inspection through **four principal variable-plot slots**, independent of the number of underlying degrees of freedom. When a model has more than four variables, users select which four to inspect. For example, a periodic 2×2 square U(1) gauge lattice has four sites but **eight oriented link variables**, while the interface still offers four slots. Topology, physical variables, and display slots are separate concepts.
+Purpose: detailed inspection through **four principal variable-plot slots**, independent of the number of underlying degrees of freedom. When a model has more than four variables, users select up to four to inspect, or inspect multiple views of the same variable. For example, a periodic 2×2 square U(1) gauge lattice has four sites but **eight oriented link variables**, while the interface still offers four slots. Topology, physical variables, and display slots are separate concepts.
 
 Core UI:
 
 - Geometry view: a graph/cell diagram **separate from the four plots**, with visible edge multiplicities and orientations when relevant; tap/click to select a node/edge.
-- Four-panel variable inspector: always offer four slots in a configurable 2×2 overview. Assign slots to physical variables carried by sites, links, or faces as appropriate to the model. Default: one slot per variable when there are at most four, with remaining slots explicitly unassigned (they may repeat a variable; they do not create new degrees of freedom). For larger models, select four variables while retaining the full physical state. Auxiliary observable plots do not replace the four principal slots.
+- Four-panel inspector: always offer exactly four slots in a configurable 2×2 overview. An assignment includes the physical variable or observable and plot type; variables may live on sites, links, or faces. Multiple slots may inspect one variable with different views. Defaults are model-specific; M0 activates density/histogram and running mean for `x`. Unassigned slots collapse to one-line selectors, and expanded plots use available space. Slots never create physical degrees of freedom. For larger models, selecting display targets retains the full physical state. Opening, closing, assigning, or rearranging slots must not affect numerical sampling.
 - Configurable panels: current value; bare on-site potential; conditional energy holding neighbors fixed; exact/reference marginal; empirical marginal/histogram; discrete probability bars. Do not put energy and probability density on a falsely common axis—use separate axes with units, tabs, or explicit labeled overlays.
 - One-step simulator: proposal details, local energy difference, acceptance probability, actual random uniform deviate when relevant, acceptance/rejection, and resulting configuration.
 - A small observable gallery: joint scatter/density for two variables, correlation matrix, total energy, transition trace, or enumeration table.
@@ -238,7 +240,7 @@ The RNG and sampler update sequence must not depend on how often the UI redraws.
 
 A minimal worker API can include `initialize`, `runBatch`, `step`, `pause`, `reset`, and `measure`, with acknowledgments carrying a run ID and monotonically increasing state version. Messages should reject stale run IDs. Use compact typed state arrays and transfer/copy strategies that do not accidentally detach the only authoritative state.
 
-M0 deliberately implements only `initialize`, `advance(count)`, and read-only `snapshot`. Initialize creates a fresh run with an increasing run ID; version counts completed updates. Step advances once, Run schedules batches of 128 (protocol limit 1024), and Pause stops further scheduling and waits for any in-flight acknowledgment. The worker has no autonomous timer to race with Pause. Reset uses Initialize; stale commands and stale/regressing replies are rejected or ignored. Rendering and snapshot reads consume no RNG draws. Worker failures stop scheduling and label any displayed state as last confirmed; Reset can recreate the worker.
+M0 implements `initialize`, `advance(count)`, `changeParameters`, and read-only `snapshot`. Initialize creates a fresh run with an increasing run ID. Version counts completed updates plus accepted parameter changes. Step advances once, Run schedules batches of 128 (protocol limit 1024), and Pause stops further scheduling and waits for any in-flight acknowledgment. Apply is ordered after the pending batch and before another is scheduled; Run then continues. Repeated queued parameter edits use the latest requested values. Unchanged parameters are a no-op. The worker has no autonomous timer. Reset uses Initialize; stale commands and stale/regressing replies are rejected or ignored. Rendering and snapshot reads consume no RNG draws. Worker failures stop scheduling and label displayed state as last confirmed; Reset can recreate the worker.
 
 One possible trace payload is:
 
@@ -259,13 +261,13 @@ type UpdateTrace = {
 };
 ```
 
-The worker owns the authoritative evolving configuration. React/UI component state controls rendering and input, not the Monte Carlo transition sequence. Parameter edits must not silently change a running measure: the default is to start a new experiment segment and clear accumulated equilibrium estimators, optionally carrying the old configuration as an explicitly indicated warm start.
+The worker owns the authoritative evolving configuration. React/UI component state controls rendering and input, not the Monte Carlo transition sequence. Parameter edits start a separate measurement segment with fresh estimators while preserving prior segments for comparison. Carry the configuration and RNG stream where appropriate; never pool different target measures. The independent Gaussian requires no warm-up; future MCMC models must apply and disclose the necessary warm-up policy for the new segment.
 
 ## 6. Observables, estimators, and plots
 
 ### 6.1 Plot library
 
-Have a shared registry of plot types, each declaring applicable data and observables: scalar time series; histogram/density; parameter comparison; two-point correlations; structure factor; autocorrelation; joint scatter/density; matrix heatmap; effective gap; Wilson-loop observables; finite-size comparison.
+In M3, introduce a shared registry of plot types, each declaring applicable data and observables: scalar time series; histogram/density; parameter comparison; two-point correlations; structure factor; autocorrelation; joint scatter/density; matrix heatmap; effective gap; Wilson-loop observables; finite-size comparison.
 
 Plots require titles, axes and units/conventions, legends for overlays, run identification, and labeling of exact/reference vs sampled data. Hide incompatible plots rather than present empty nonsense.
 
@@ -285,6 +287,12 @@ Measurement priorities:
 At `k_B=1`, one common fluctuation susceptibility convention is `χ=β N (<m²>-<m>²)`. The Binder cumulant is `U₄=1-<m⁴>/(3<m²>²)` where the denominator is nonzero. Provide the actual formula used in the UI. Do not assume these formulas automatically transfer unchanged to every model.
 
 ### 6.3 Monte Carlo error diagnostics
+
+M0 implements a narrowly scoped independent-Gaussian diagnostic: plot retained running means against logarithmic segment sample count `N`, each segment’s exact `μ`, and `μ±σ/√N` with known analytic `σ²`. At any fixed `N`, this envelope has about 68% coverage for independent Gaussian draws. It is **not** a simultaneous confidence band and does not promise containment of the whole trajectory. Optional log–log `|mean−μ|` displays the `σ N^(-1/2)` RMS reference (slope −½). A single stochastic error can rise, fall, or cross zero; zero errors are omitted from the log view and disclosed. Lines interpolate retained checkpoints, not every fluctuation.
+
+The worker records checkpoints at `n₀=1`, `nₖ₊₁=ceil(1.125 nₖ)` and keeps the latest endpoint, independent of snapshot/render cadence. At most 320 scheduled checkpoints plus one endpoint cover the supported safe-integer sample-count range. Moments, histogram, and checkpoint mean are updated from the same draw in the same segment. Tests compare seeded sequences across batching/parameter changes and check theoretical RMS scaling and fixed-N coverage over an ensemble. These known-variance diagnostics do not implement autocorrelation or generic MCMC uncertainty estimates.
+
+Later measurement capabilities:
 
 - Maintain separate warm-up and measurement counters, with configurable measurement stride.
 - Use numerically stable online moments; keep bounded history buffers for long runs, and export aggregated/decimated histories with disclosed sampling rules.
@@ -340,7 +348,11 @@ Export selected numeric series to CSV with a sidecar metadata JSON (or a single 
 
 - Label parameter meanings and valid ranges with the displayed action convention.
 - Provide one-click presets for instructive regimes (e.g. high/low-temperature Ising, zero-field symmetry, double-well 0D potential, weak/strong coupling of a tiny graph).
-- For live edits that alter the equilibrium measure, make it clear which measurement dataset is invalidated or archived. Pure display options should not affect the simulation.
+- Apply preserves plotted history and starts a clearly labeled segment when the target measure changes. Each segment has separate parameters, sample count, statistics, histogram, and convergence reference. Never pool distributions into one equilibrium estimate.
+- Preserve current numerical configuration and RNG stream where appropriate. Independent Gaussian sampling needs no warm-up; future MCMC segments must include the necessary warm-up policy.
+- Keep axes stable: expand when needed, never automatically shrink/recenter on Apply. Compare old/new sampled and theoretical curves with segment labels/colors. Bounded retention must disclose removal of old data.
+- Reset explicitly clears measurements and history, restarts the current applied model with the documented seed policy, and recenters/rescales plots. M0 uses the Seed on Reset field; Apply does not reseed.
+- Fit All changes only the viewport to fit retained segments. Plot assignments, visibility, order, and all other display options must not affect measurements or RNG state.
 - If sampling is paused for inspection, allowing an update should never silently skip intermediate transitions.
 
 ### 7.4 Visual honesty
@@ -370,7 +382,7 @@ Each model may link to relevant graduate lecture notes, but these are optional r
 
 Recommended initial stack (changeable after prototype): TypeScript + Vite; React or equivalent component UI; Canvas 2D for high-frequency lattice rendering; SVG for tiny graph editor; maintained charting library for plots; Web Worker for simulation. Unit tests with Vitest; smoke/responsiveness tests with Playwright or equivalent.
 
-M0 adopts TypeScript/Vite/React, native accessible controls, a small SVG Gaussian plot, Vitest, Playwright (Chromium and WebKit), and Prettier. No charting/component framework is needed for the one-dimensional density, and no graph/lattice framework is implemented ahead of M1. See D-013/D-014 for the accepted implementation choices.
+M0 adopts TypeScript/Vite/React, native accessible controls, small SVG density/convergence plots, local KaTeX HTML + MathML, Vitest, Playwright (Chromium and WebKit), and Prettier. No charting/component framework is needed for the one-dimensional density, and no graph/lattice framework is implemented ahead of M1. KaTeX renders authored formulas only, with trust disabled and bundled fonts; no CDN or formula editor. See D-013/D-014 and D-016–D-018 for the accepted implementation choices.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice); the project name remains Lattice Lab. The site is built into static assets and deployed with GitHub Actions → GitHub Pages. For `https://gantemur.github.io/lattice/`, Vite's `base` must be `/lattice/`. Build/test should run on pull requests; deploy only from the chosen protected/default branch. Never hard-code root-relative URLs that break the project subpath.
 
@@ -412,7 +424,7 @@ Start with modest lattice sizes (illustratively 16²–128² for 2D Ising, depen
 
 - Reject invalid geometry and non-finite action/parameter values with actionable errors.
 - Pause and recover from worker exceptions without showing stale data as current.
-- Preserve results of previous runs in memory unless explicitly replaced, subject to reasonable memory limits. M0 only has the current run: Apply, Reset, and preset selection explicitly replace it and disclose clearing measurements; multi-run retention is M3.
+- Preserve results of previous runs in memory unless explicitly replaced, subject to reasonable memory limits. M0 retains the latest eight parameter segments using online moments, fixed histogram bins and logarithmic checkpoints, with visible eviction notices. Apply preserves history; Reset explicitly clears it. This bounded comparison is not the M3 saved-run/experiment manager.
 - Avoid hidden dependencies on network availability after static assets load (an installable/offline service worker can come later).
 
 ## 10. Validation and quality gates
@@ -472,7 +484,7 @@ These should not block a small vertical slice but should be resolved deliberatel
 1. Four-panel default presentation on phones: choose single-detail default plus 2×2 overview; test whether the overview can carry more than one curve legibly.
 2. Relative priority of exact tiny-graph enumeration versus interactive continuous 0D quadrature; both are in the early roadmap.
 3. How much user graph editing to expose before cell-complex face editing is ready.
-4. Whether a plot should compare multiple runs by default or require explicit overlay; decide from prototypes and classroom use.
+4. M0 overlays retained parameter segments by default; determine how explicit saved-run selection should work in M3.
 5. Which maintained charting library gives adequate performance/accessibility with the smallest complexity burden.
 6. Whether student exercise presets should be in JSON with a simple schema, or in typed TS modules for safer model references.
 7. Which numerical tolerance and quadrature algorithm to use for quartic integrals after a validation study.

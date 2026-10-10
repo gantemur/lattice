@@ -1,5 +1,6 @@
 import { validateSeed } from '../algorithms/rng';
 import { validateGaussian } from '../models/gaussian';
+import type { GaussianParameters } from '../models/gaussian';
 import type {
   RunConfiguration,
   Snapshot,
@@ -36,6 +37,7 @@ export class SimulationClient {
   private runId = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
+  private pendingParameters: GaussianParameters | null = null;
 
   constructor(
     private readonly createWorker: () => WorkerPort,
@@ -46,6 +48,7 @@ export class SimulationClient {
     validateGaussian(configuration.parameters);
     validateSeed(configuration.seed);
     this.cancelTimer();
+    this.pendingParameters = null;
     this.runId += 1;
     this.view = { snapshot: null, running: false, busy: true, error: null };
     this.emit();
@@ -74,6 +77,31 @@ export class SimulationClient {
     if (!this.ready() || this.view.running) return;
     this.view.running = true;
     this.advance(128);
+  }
+
+  changeParameters(parameters: GaussianParameters): void {
+    validateGaussian(parameters);
+    if (!this.worker || this.view.error || !this.view.snapshot)
+      throw new Error('Wait for the worker, or Reset to recover it.');
+    this.cancelTimer();
+    this.pendingParameters = { ...parameters };
+    if (!this.view.busy) this.sendParameters();
+  }
+
+  private sendParameters(): void {
+    const parameters = this.pendingParameters!;
+    this.pendingParameters = null;
+    this.view.busy = true;
+    this.emit();
+    try {
+      this.worker!.postMessage({
+        type: 'changeParameters',
+        runId: this.runId,
+        parameters,
+      });
+    } catch {
+      this.fail('Could not apply parameters. Reset to restart the worker.');
+    }
   }
 
   pause(): void {
@@ -128,6 +156,10 @@ export class SimulationClient {
       return;
     this.view.snapshot = snapshot;
     this.view.busy = false;
+    if (this.pendingParameters) {
+      this.sendParameters();
+      return;
+    }
     this.emit();
     if (this.view.running) {
       this.cancelTimer();

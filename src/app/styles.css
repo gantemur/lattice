@@ -1065,3 +1065,196 @@ footer {
     scroll-behavior: auto !important;
   }
 }
+
+/* M0 refinement: compact controls and plots, with no empty-card placeholders. */
+.math-display {
+  display: block;
+  overflow-x: auto;
+  padding: 2px 0;
+}
+.katex-display {
+  margin: 0.55em 0;
+}
+.formula {
+  font-size: 18px;
+  padding: 10px 5px;
+  margin: 12px 0;
+}
+.model-card {
+  padding: 18px;
+}
+.intro {
+  padding-bottom: 24px;
+}
+.run-panel {
+  padding-top: 16px;
+}
+.inspector {
+  margin-top: 20px;
+}
+.inspector-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.inspector-options p {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+  margin: 8px 0;
+}
+.plot-grid {
+  align-items: start;
+  grid-auto-flow: row dense;
+}
+.plot-grid.one-expanded .assigned-slot {
+  grid-column: 1 / -1;
+}
+.plot-card {
+  padding: 10px 12px;
+}
+.plot-card.compact-slot {
+  display: block;
+  grid-column: 1 / -1;
+  padding: 2px 10px;
+}
+.compact-slot .plot-card-heading {
+  flex-wrap: nowrap;
+}
+.compact-slot .slot-number {
+  flex-shrink: 0;
+}
+.compact-slot select {
+  font-size: 13px;
+}
+.slot-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  border-bottom: 1px solid var(--line);
+}
+.text-button {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--teal);
+  min-width: 44px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.text-button:hover:not(:disabled) {
+  background: #edf2e8;
+}
+.compact-slot .slot-actions {
+  border: 0;
+}
+.segment-history {
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.segment-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.segment-chip {
+  background: #fbfcf6;
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 5px;
+  padding: 7px 9px;
+  line-height: 1.5;
+}
+.segment-chip strong {
+  margin-right: 6px;
+  color: #314a42;
+}
+.segment-history summary {
+  font-size: 11px;
+  padding: 8px 0;
+  min-height: 44px;
+  display: list-item;
+}
+.segment-history p {
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.plot-note {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.moments-panel {
+  margin-top: 20px;
+}
+.model-notes .math-display {
+  font-size: 14px;
+}
+@media (max-width: 560px) {
+  .intro {
+    padding-bottom: 16px;
+  }
+  .model-card h2 {
+    font-size: 21px;
+    margin-bottom: 8px;
+  }
+  .model-card {
+    padding: 14px 16px;
+  }
+  .model-card .formula {
+    padding: 6px 10px;
+    margin: 8px 0;
+    font-size: 17px;
+  }
+  .model-card > a {
+    min-height: 44px;
+  }
+  .model-card .model-convention {
+    margin-bottom: 0 !important;
+  }
+  .geometry-card {
+    padding: 12px 16px;
+  }
+  .plot-card.assigned-slot {
+    display: none;
+  }
+  .plot-card.assigned-slot.active-detail {
+    display: block;
+  }
+  .show-overview .plot-card.assigned-slot {
+    display: block;
+  }
+  .plot-card.compact-slot {
+    display: block;
+  }
+  .show-overview .compact-slot .plot-card-heading {
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  .show-overview .compact-slot .plot-card-heading select {
+    font-size: 13px;
+  }
+  .show-overview .plot-card select {
+    font-size: 12px;
+  }
+  .show-overview .plot-note {
+    font-size: 10px;
+  }
+  .show-overview .slot-actions {
+    justify-content: space-between;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .show-overview .text-button {
+    min-width: 44px;
+    padding: 0;
+  }
+  .show-overview .plot-card {
+    padding: 9px;
+  }
+  .model-notes .math-display {
+    font-size: 12px;
+  }
+}

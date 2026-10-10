@@ -1,0 +1,172 @@
+import { useState } from 'react';
+import type { Snapshot } from '../engine/protocol';
+import type { Slots, PlotAssignment } from '../plotting/slots';
+import { assignSlot, defaultSlots, swapSlots } from '../plotting/slots';
+import { GaussianPlot } from '../plotting/GaussianPlot';
+import { ConvergencePlot } from '../plotting/ConvergencePlot';
+import { useViewport } from '../plotting/useViewport';
+
+export function Inspector({ snapshot }: { snapshot: Snapshot | null }) {
+  const [slots, setSlots] = useState<Slots>(defaultSlots);
+  const [closed, setClosed] = useState<boolean[]>([false, false, false, false]);
+  const [activeSlot, setActiveSlot] = useState(0);
+  const [overview, setOverview] = useState(false);
+  const [showHistogram, setShowHistogram] = useState(true);
+  const { range, fitAll } = useViewport(snapshot);
+  const expanded = slots.filter((slot, index) => slot && !closed[index]).length;
+  function moveSlot(from: number, to: number) {
+    setSlots(swapSlots(slots, from, to));
+    const reordered = [...closed];
+    [reordered[from], reordered[to]] = [closed[to]!, closed[from]!];
+    setClosed(reordered);
+    setActiveSlot(to);
+  }
+  return (
+    <section
+      className={`inspector ${overview ? 'show-overview' : ''}`}
+      aria-labelledby="inspector-title"
+    >
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Variable inspector</p>
+          <h2 id="inspector-title">Four slots. One system.</h2>
+        </div>
+        <button className="button" onClick={fitAll} disabled={!snapshot}>
+          Fit All
+        </button>
+      </div>
+      <div className="inspector-options">
+        <p>
+          Apply preserves history and axes. Fit All fits retained segments;
+          Reset starts afresh.
+        </p>
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={showHistogram}
+            onChange={(e) => setShowHistogram(e.target.checked)}
+          />
+          Histogram
+        </label>
+      </div>
+      <div className="mobile-plot-controls">
+        <div aria-label="Choose detail slot">
+          {slots.map((_, index) => (
+            <button
+              key={index}
+              className="slot-button"
+              aria-pressed={activeSlot === index}
+              onClick={() => {
+                setActiveSlot(index);
+                setOverview(false);
+              }}
+            >
+              Slot {index + 1}
+            </button>
+          ))}
+        </div>
+        <button
+          className="button"
+          aria-pressed={overview}
+          onClick={() => setOverview(!overview)}
+        >
+          {overview ? 'Single detail' : '2 × 2 overview'}
+        </button>
+      </div>
+      <div className={`plot-grid ${expanded === 1 ? 'one-expanded' : ''}`}>
+        {slots.map((assignment, index) => {
+          const open = assignment && !closed[index];
+          return (
+            <article
+              key={index}
+              className={`plot-card ${activeSlot === index ? 'active-detail' : ''} ${open ? 'assigned-slot' : 'compact-slot'}`}
+              aria-label={`Plot slot ${index + 1}`}
+            >
+              <div className="plot-card-heading">
+                <span className="slot-number">0{index + 1}</span>
+                <label className="sr-only" htmlFor={`slot-${index}`}>
+                  Plot for slot {index + 1}
+                </label>
+                <select
+                  id={`slot-${index}`}
+                  value={
+                    assignment ? `${assignment.target}:${assignment.plot}` : ''
+                  }
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSlots(
+                      assignSlot(
+                        slots,
+                        index,
+                        value
+                          ? {
+                              target: 'x',
+                              plot: value.split(
+                                ':',
+                              )[1] as PlotAssignment['plot'],
+                            }
+                          : null,
+                      ),
+                    );
+                    setClosed(closed.map((v, i) => (i === index ? false : v)));
+                    setActiveSlot(index);
+                  }}
+                >
+                  <option value="">Unassigned</option>
+                  <option value="x:density">x · Density / histogram</option>
+                  <option value="x:mean">x · Running mean</option>
+                  <option value="x:error">x · Absolute error (log–log)</option>
+                </select>
+              </div>
+              {assignment && (
+                <div className="slot-actions">
+                  <button
+                    className="text-button"
+                    aria-label={`${closed[index] ? 'Open' : 'Close'} plot ${index + 1}`}
+                    onClick={() =>
+                      setClosed(closed.map((v, i) => (i === index ? !v : v)))
+                    }
+                  >
+                    {closed[index] ? 'Open' : 'Close'}
+                  </button>
+                  <button
+                    className="text-button"
+                    aria-label={`Move slot ${index + 1} up`}
+                    disabled={index === 0}
+                    onClick={() => moveSlot(index, index - 1)}
+                  >
+                    ↑
+                  </button>
+                  <button
+                    className="text-button"
+                    aria-label={`Move slot ${index + 1} down`}
+                    disabled={index === 3}
+                    onClick={() => moveSlot(index, index + 1)}
+                  >
+                    ↓
+                  </button>
+                </div>
+              )}
+              {open &&
+                range &&
+                snapshot &&
+                (assignment.plot === 'density' ? (
+                  <GaussianPlot
+                    segments={snapshot.segments}
+                    viewport={range}
+                    showHistogram={showHistogram}
+                  />
+                ) : (
+                  <ConvergencePlot
+                    segments={snapshot.segments}
+                    viewport={range}
+                    absoluteError={assignment.plot === 'error'}
+                  />
+                ))}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

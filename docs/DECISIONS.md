@@ -74,6 +74,28 @@ Use online Welford moments (sample variance denominator `n−1`, undefined for f
 
 CI runs formatting, type checking, numerical/worker tests, production build, and browser tests on pull requests. Only validated `main` builds may deploy via GitHub Actions to `/lattice/`. Use hash navigation for static-host reloads, avoiding server rewrites. Preparing M0 on a feature branch does not authorize merging it: local subpath/browser validation and the live Pages acceptance check are tracked separately. Physical-phone performance and license selection remain open; emulated phone smoke tests are not a claim of hardware benchmarking.
 
+## Accepted M0 refinement — 2026-10-10
+
+### D-016 — Local mathematical typesetting and compact target/view slots
+
+Extend D-013’s runtime dependencies with KaTeX. Reusable inline/display React components render authored formulas with HTML + MathML, trust disabled, and locally bundled CSS/fonts. No CDN, general-purpose formula editor, or additional component/plot framework is needed.
+
+Refine D-012: exactly four slots are independent of physical variable count. Each assignment specifies a variable/observable and plot type; one variable may occupy multiple slots with different views. Unassigned slots are compact one-line selectors. M0 defaults to `x` density/histogram and running mean, with slots 3–4 unassigned. Preserve phone single detail and optional 2×2 overview. Assignment, close/open, reordering, and viewport changes remain entirely in display state and never consume randomness.
+
+### D-017 — Independent-Gaussian convergence within M0
+
+Add a running-mean plot with log sample count, exact segment mean and theoretical `μ±σ/√N` envelope using known analytic variance. Coverage is about 68% at a fixed N for independent Gaussian draws, **not simultaneous confidence** for the whole trajectory. The optional log–log absolute-error view includes the `σ N^(-1/2)` RMS reference; individual errors need not decrease monotonically. Omit exact zero errors on logarithmic axes with a notice. Do not transfer this uncertainty formula to correlated MCMC.
+
+Collect checkpoints inside the worker after each draw’s moment/histogram update: `n₀=1`, `nₖ₊₁=ceil(1.125 nₖ)`, plus the current endpoint. At most 320 scheduled points plus one endpoint cover safe-integer counts. This schedule is independent of rendering and batching; individual samples are never retained. Validate the sequence and ensemble RMS/pointwise-coverage behavior. General MCMC diagnostics and plot registries remain M3.
+
+### D-018 — Continuous parameter exploration, explicit Reset and Fit All
+
+Supersede D-014’s segment replacement on Apply/preset selection. Changed physical parameters begin a fresh measurement segment while preserving the current configuration, RNG stream, and earlier plotted segments. Unchanged parameters are a no-op. Apply waits for an in-flight batch before switching, then continues Run if active. A segment owns its parameters, start-update index, count, moments, histogram, checkpoints, and exact references; no cross-measure pooling is allowed. Independent Gaussian sampling requires no warm-up. Future MCMC models should preserve configuration when appropriate and disclose/apply the new segment’s warm-up policy.
+
+Keep the latest eight segments, each with 32 fixed histogram bins over its own `μ±4σ`, tail counters, moments, and bounded checkpoints. Disclose eviction of older segments. Give overlays segment labels/colors and distinct analytic/sampled styles. Axes expand as required but never automatically shrink or recenter on Apply or eviction. Fit All fits the retained data without touching numerical state. Reset clears all history, refits for the currently applied model, and restarts using the Seed on Reset field; Apply never reseeds. Replaying parameter exploration requires the same seed and parameter-change/update sequence.
+
+This is bounded, in-memory M0 comparison, not full M3 experiment management: no named saved runs, persistence, import/export, sweeps, notes, or generic registry.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.
