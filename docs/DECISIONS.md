@@ -196,6 +196,14 @@ For spatial display, require **both** lattice axes periodic before using `Gα(r)
 
 The conventional reversible-chain initial-positive sequence pairs are `Γ_j=γ(2j)+γ(2j+1)`, starting at zero, rather than the earlier shifted pairs `(γ1+γ2),(γ3+γ4),…`. Check only complete pairs, stop before the first nonpositive pair, and seek the first odd complete-pair endpoint satisfying `W≥5 max(½,τ(W))`. A still-positive tail without such a window is unresolved. If a negative pair arrives first, quote a clearly provisional/window-sensitive result only after at least five positive lags and `W≥3 max(½,τ(W))`; otherwise suppress τ/ESS/SE. A negative noisy pair alone is never called convergence. This is a finite-record heuristic, not a guarantee of stationarity.
 
+## Accepted M3b1 conventions — 2026-10-11
+
+### D-034 — Read-only segment capture and portable in-memory archive
+
+Add a third mounted Experiments workspace and preserve both live simulation sessions while navigating. A saved record represents **one** parameter segment. Numerical payloads are copied from a paused, idle worker at an acknowledged run/version boundary, while annotations remain separately editable. Routine Run snapshots retain their compact behavior; on-demand capture copies graph/lattice Ising's ordered M3a 8192-observation rings, or the available recent Small Systems transitions. A historical segment has no invented final configuration. Capturing consumes no RNG, changes no model state, and stale request IDs/versions cannot commit an old reply.
+
+The authoritative portable file is a validated JSON `lattice-lab-experiments` bundle with `schemaVersion:1`, stable scientific dataset IDs, local library IDs, and explicit source workspace/run/segment, model/domain/settings, seed, initialization, update/count/coverage, diagnostic status, capture timestamp and build revision or `unknown`. A parameter-changed inherited-state segment is snapshot-only, not reproducible from the final settings and original seed alone. Imported duplicate scientific IDs remain distinct local copies without overwriting provenance. Validate the complete bundle before mutation; reject oversize/inconsistent/non-finite data. Cap the memory library at 16 records and 12 MiB, with a 16 MiB file-input limit; never silently evict. CSV measurements, metadata sidecar and aggregate summary are derived exports. No automatic persistence, backend, upload, or history-bearing URL is introduced. Existing scalar configuration-only links retain their meaning. Automated sweep execution and parameter-axis plots remain M3b2.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

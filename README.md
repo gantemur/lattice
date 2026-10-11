@@ -1,10 +1,16 @@
 # Lattice Lab
 
-**Status:** M0–M2 are merged. M3a statistical diagnostics and physical observables are being validated on a feature branch; conventions and limits are recorded in the [M3a review](docs/M3A_REVIEW.md). Saved experiments and exports remain planned for M3b.
+**Status:** M0–M3a are merged. M3b1 adds saved experiments and portable data on a feature branch; automated sweeps remain planned for M3b2.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
+
+## New in M3b1
+
+Pause either live workspace, then save its current or available parameter segments to **Experiments**. Navigation preserves both live simulations. Each archived segment keeps its own settings, seed, worker version, full aggregate statistics, histograms, diagnostic quality and actually available bounded raw history. Graph/lattice Ising copies up to 8192 recent M3a observations on demand; other Small Systems retain up to 1000 recent transitions. Earlier raw records may be gone even when full-segment moments remain. A historical segment does not inherit today's configuration or falsely claim fresh-seed replayability.
+
+Experiments stores at most 16 records and 12 MiB in browser memory. Rename, annotate, inspect and compare records through compatible observable definitions. Download a portable version-1 JSON bundle, measurements CSV, its metadata JSON sidecar or aggregate summary CSV. Import validates the complete JSON file before adding records; duplicate scientific IDs retain their original provenance. **Export before refreshing:** the library has no automatic persistence, backend or upload. Existing scalar configuration links still share settings only. [M3b1 review](docs/M3B1_REVIEW.md) documents schema, coverage and validation. Parameter sweeps are not part of this stage.
 
 ## New in M3a
 
@@ -72,7 +78,7 @@ Each of the latest **eight segments** keeps its settings, start index, update/wa
 
 Mulberry32 midpoint v1 remains the RNG. Direct Gaussian Box–Muller v1 still consumes exactly two uniforms per draw; spin direct/heat bath uses one, direct binomial uses n, and Metropolis uses two per update. Reset initializes chains at 0 (Gaussian), +1 (spin), or round(np) (binomial); initialization is not a measurement. Reproducibility requires the same seed, settings/update sequence, algorithm and build; browser transcendental functions can differ in their last bits. Run posts batches of 128 with at most one in flight. Apply and Pause respect the batch acknowledgment boundary. Plotting, history browsing, snapshot frequency and Step inspection never consume RNG values.
 
-**Planned beyond M3a:** gauge dynamics, saved experiments, exports and cluster algorithms. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
+**Planned beyond M3b1:** automated sweeps, gauge dynamics and cluster algorithms. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
 
 ## Read first
 
@@ -115,13 +121,14 @@ TypeScript + Vite + React, native accessible form controls, small SVG plots, a C
 - `src/models/`: scalar and finite Ising model union, actions, local differences, validation, exact densities/masses and independent enumeration.
 - `src/algorithms/`: seeded RNG, direct/heat-bath/Metropolis kernels and discriminated transition traces; no UI dependencies.
 - `src/observables/`: online moments, histogram counters, bounded convergence/transition records, physical Ising observables and worker-owned statistical diagnostic rings.
-- `src/engine/`, `src/workers/`: authoritative small-system and large-lattice run states, typed messages, stale-run handling, and bounded scheduling.
+- `src/engine/`, `src/workers/`: authoritative small-system and large-lattice run states, typed messages, stale-run handling, bounded scheduling and paused-only capture.
+- `src/experiments/`: versioned archive validation, compatible observable descriptors and portable JSON/CSV serialization.
 - `src/app/`, `src/plotting/`: input/display state, dynamic plot assignments, stable viewports, and reusable SVG plotting.
 - `src/ui/`: reusable inline/display math with HTML + MathML output.
 
 Vite uses **`base: '/lattice/'`** in development and production. Navigation uses hash anchors, so `/lattice/#small-systems` can load directly or reload on GitHub Pages without server rewrites.
 
-[CI/Pages workflow](.github/workflows/ci-pages.yml) validates pull requests and pushes to `main`. It uploads and deploys `dist` **only from `main`, after validation passes**. Hosting uses **Settings → Pages → Source → GitHub Actions**. M0–M2 are merged; an approved M3a merge and successful workflow are required to publish this feature branch. This follows the [Vite Pages guide](https://vite.dev/guide/static-deploy.html#github-pages) and [GitHub publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Feature-branch validation does not establish that the live site is deployed; the live URL and hash reload must be checked after deployment.
+[CI/Pages workflow](.github/workflows/ci-pages.yml) validates pull requests and pushes to `main`. It uploads and deploys `dist` **only from `main`, after validation passes**. Hosting uses **Settings → Pages → Source → GitHub Actions**. M0–M3a are merged; an approved M3b1 merge and successful workflow are required to publish this feature branch. This follows the [Vite Pages guide](https://vite.dev/guide/static-deploy.html#github-pages) and [GitHub publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Feature-branch validation does not establish that the live site is deployed; the live URL and hash reload must be checked after deployment.
 
 ## License
 

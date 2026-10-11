@@ -13,6 +13,7 @@ import { segmentColor } from '../plotting/viewport';
 import { formatNumber } from '../plotting/PlotFrame';
 import { InlineMath, DisplayMath } from '../ui/Math';
 import { LatticeStatisticalDiagnostics } from './StatisticalDiagnostics';
+import type { Capture } from '../experiments/archive';
 
 function useLattice() {
   const [view, setView] = useState<LatticeView>({
@@ -264,7 +265,13 @@ const experiments = [
   ],
 ] as const;
 
-export function LatticeSystems() {
+export function LatticeSystems({
+  saveCaptures,
+  archiveCount,
+}: {
+  saveCaptures: (captures: Capture[]) => void;
+  archiveCount: number;
+}) {
   const { view, client } = useLattice();
   const snapshot = view.snapshot;
   const [draft, setDraft] = useState<LatticeConfiguration>(
@@ -331,6 +338,37 @@ export function LatticeSystems() {
       setSelected(0);
     }, 'Reset cleared history and restarted the selected seed and initialization.');
   }
+  async function save(all: boolean) {
+    if (!snapshot || !client.current) return;
+    try {
+      const ids = all
+        ? snapshot.segments.map((s) => s.id)
+        : [snapshot.activeSegmentId];
+      const captures: Capture[] = [];
+      for (const id of ids) captures.push(await client.current.capture(id));
+      if (
+        captures.some(
+          (c) =>
+            c.runId !== captures[0]?.runId ||
+            c.version !== captures[0]?.version,
+        )
+      )
+        throw new Error(
+          'Lattice worker changed during multi-segment capture; pause and retry.',
+        );
+      saveCaptures(captures);
+      setError(null);
+      setNotice(
+        `Saved ${captures.length} acknowledged lattice segment${captures.length === 1 ? '' : 's'} to Experiments.`,
+      );
+    } catch (failure) {
+      setError(
+        failure instanceof Error
+          ? failure.message
+          : 'Could not save lattice segment.',
+      );
+    }
+  }
   const updateP = (patch: Partial<LatticeConfiguration['parameters']>) =>
     setDraft((d) => ({ ...d, parameters: { ...d.parameters, ...patch } }));
   const currentM = snapshot
@@ -356,9 +394,9 @@ export function LatticeSystems() {
           <a className="nav-active" aria-current="page" href="#lattice-systems">
             Lattice Systems
           </a>
-          <span className="nav-planned">
-            Experiments <small>Planned</small>
-          </span>
+          <a href="#experiments">
+            Experiments{archiveCount ? ` (${archiveCount})` : ''}
+          </a>
         </nav>
         <a className="source-link" href="https://github.com/gantemur/lattice">
           Source ↗
@@ -702,6 +740,24 @@ export function LatticeSystems() {
                 <button className="button" onClick={reset} disabled={!snapshot}>
                   Reset
                 </button>
+                <button
+                  className="button"
+                  onClick={() => void save(false)}
+                  disabled={
+                    view.running || view.busy || !snapshot || !!view.error
+                  }
+                >
+                  Save current segment
+                </button>
+                <button
+                  className="button"
+                  onClick={() => void save(true)}
+                  disabled={
+                    view.running || view.busy || !snapshot || !!view.error
+                  }
+                >
+                  Save available segments
+                </button>
                 <div className="sample-count">
                   <strong data-testid="lattice-samples">
                     {current?.samples ?? 0}
@@ -709,6 +765,11 @@ export function LatticeSystems() {
                   <span>retained measurements</span>
                 </div>
               </div>
+              <p className="plot-note">
+                Pause and wait for the current batch before saving. Captures
+                preserve the numerical state and RNG. The in-memory library
+                holds at most 16 records/12 MiB; export before reloading.
+              </p>
               <div className="run-meta">
                 <span>
                   Updates{' '}

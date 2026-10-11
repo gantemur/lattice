@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.9, 2026-10-11
+**Version:** 0.10, 2026-10-11
 
-**Status:** M0–M2 merged. M3a is implemented and validated on a feature branch, pending review; M3b–M6 remain planned or exploratory.
+**Status:** M0–M3a merged. M3b1 saved experiments are implemented on a feature branch; M3b2 sweeps and later milestones remain planned.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -21,8 +21,9 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M1a: Interactive graph Ising** | Dynamic zero-to-six plots, preset graph parameter editor, local transition inspection | Full 1–4-spin enumeration; transfer matrix, periodic multiplicity, balance and sampling checks | Implemented; local validation complete |
 | **M1b: Continuous small systems** | Real graph fields, quartic wells, local conditionals and sampled marginals | Exact 1–4-variable Gaussian, controlled 1D quadrature, local-action tests | Merged |
 | **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Merged in PR #7 |
-| **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Implemented and validated on feature branch; review pending |
-| **M3b: Experiments** | Saved comparisons, exports/imports and finite parameter sweeps | Provenance and round-trip tests | Planned |
+| **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
+| **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Feature branch under review |
+| **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Planned |
 | **M4: Continuous lattice fields** | 1D/2D Gaussian and φ⁴, Euclidean lattice QM, HMC | Fourier covariance, oscillator correlators, HMC invariants | Planned |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
@@ -189,17 +190,21 @@ M3a on `codex/m3a-statistical-diagnostics` adds full-segment fourth-magnetizatio
 
 **M3a validation record — 2026-10-11:** `npm run check` passes formatting, typecheck, 234 unit tests in 28 files, production build and 111 production browser tests across desktop Chromium, 360px Chromium phone and emulated iPhone WebKit. Desktop/phone screenshots, numerical methods, local throughput observations and limits are recorded in [M3a review](M3A_REVIEW.md). The branch is not merged or deployed.
 
-### M3b — Saved experiments and sweeps (planned)
+### M3b1 — Saved experiments and portable data
 
-Saved run comparison, import/export, provenance bundles and bounded parameter sweeps remain separate future work. M3a's recent diagnostic rings are not a full dataset manager.
+M3b1 adds a third mounted Experiments workspace. Paused/idle, version-checked worker capture copies one parameter segment's full aggregate summary and actually available bounded raw observations. It never alters an interactive sampler or its RNG. Each saved scientific payload is immutable while name/notes remain editable. The in-memory library has explicit count/byte limits and no silent eviction. A version-1 JSON bundle round trips validated records; CSV measurements, sidecar metadata and a summary CSV are separate downloads. Compatibility descriptors permit a small side-by-side comparison without equating dimensionless graph action with physical lattice energy density. M3a's 8192-point rings are copied on demand only, not sent during Run; non-Ising Small Systems retain their recent 1000 transitions. Historical segments do not acquire a fabricated current configuration or a false fresh-seed replay claim. Details are in [M3b1 review](M3B1_REVIEW.md).
+
+**M3b1 acceptance:** save active/historical segments from both mounted live workspaces after Pause, inspect complete provenance and coverage, export a JSON bundle, reload/import to recover identical stored numbers, reject malformed imports atomically, keep desktop/phone layout accessible, and pass full numerical/build/browser checks. Refreshing without export can lose the memory-only library. Existing scalar configuration-only URLs remain unchanged; a lattice configuration-only URL is deferred.
+
+**M3b1 validation record — 2026-10-11:** `npm run check` passes formatting, typecheck, 248 unit tests in 30 files, production build and 117 browser tests across desktop Chromium, 360px Chromium phone and emulated iPhone WebKit. Resource limits, local capture size/latency, screenshots and remaining limitations are recorded in [M3b1 review](M3B1_REVIEW.md). The feature branch is not merged or deployed.
+
+### M3b2 — Parameter sweeps and experiment comparison (planned)
+
+The next slice will use the M3b1 archive schema for independently seeded bounded 2D Ising sweep points, a dedicated worker, editable sweep presets, a parameter-axis comparison plot and complete permitted point records. It will not silently turn saved data into a warm-start trajectory.
 
 **Deliverables**
 
-- Generalize M0’s target/view slots into a shared observable/plot registry across models. Select and rearrange plots; overlay exact and numerical curves with clear legends.
-- Extend M0’s bounded recent segment comparison to managed saved runs in memory, each with configuration, seed, algorithm, measurement schedule, version, and notes.
-- Extend M3a's bounded diagnostics where supported by saved datasets; structure factors and correlation-length fits remain separate, model-specific future work.
 - Small bounded parameter sweeps (temperature/coupling/size) executed sequentially or with simple worker scheduling; clear per-run equilibration and budget policy.
-- Export CSV + JSON metadata and one-file JSON bundle; configuration-only URL sharing and optional import.
 - Experiment presets with question, expected qualitative outcome, sampling caveats, and reference to associated model equations.
 
 **Acceptance gate**
@@ -260,7 +265,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M2 are merged. The current feature branch implements **M3a only**, stopping before saved-experiment M3b. Keep later roadmap stages as context, not implied scope. Prefer validated finite-lattice diagnostics to infrastructure for hypothetical future models.
+M0–M3a are merged. The current feature branch implements **M3b1 only**, stopping before sweep execution in M3b2. Keep later roadmap stages as context, not implied scope. Prefer segment-level provenance and validated bounded data to a universal plotting or experiment framework.
 
 ## Definition of done for the initial public usable release
 

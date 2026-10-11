@@ -3,6 +3,7 @@ import { validateSettings } from '../algorithms/transitions';
 import type { Settings } from '../algorithms/transitions';
 import type {
   RunConfiguration,
+  SmallCapture,
   Snapshot,
   WorkerRequest,
   WorkerResponse,
@@ -38,6 +39,13 @@ export class SimulationClient {
   private timer: ReturnType<typeof setTimeout> | undefined;
   private disposed = false;
   private pendingSettings: Settings | null = null;
+  private captureRequestId = 0;
+  private pendingCapture: {
+    id: number;
+    version: number;
+    resolve: (capture: SmallCapture) => void;
+    reject: (reason: Error) => void;
+  } | null = null;
 
   constructor(
     private readonly createWorker: () => WorkerPort,
@@ -48,6 +56,7 @@ export class SimulationClient {
     validateSettings(configuration);
     validateSeed(configuration.seed);
     this.cancelTimer();
+    this.rejectCapture('Session changed before capture completed.');
     this.pendingSettings = null;
     this.runId += 1;
     this.view = { snapshot: null, running: false, busy: true, error: null };
@@ -83,6 +92,10 @@ export class SimulationClient {
     validateSettings(settings);
     if (!this.worker || this.view.error || !this.view.snapshot)
       throw new Error('Wait for the worker, or Reset to recover it.');
+    if (this.pendingCapture)
+      throw new Error(
+        'Wait for the read-only capture before applying parameters.',
+      );
     this.cancelTimer();
     this.pendingSettings = structuredClone(settings);
     if (!this.view.busy) this.sendSettings();
@@ -114,10 +127,36 @@ export class SimulationClient {
   step(): void {
     if (this.ready() && !this.view.running) this.advance(1);
   }
+  capture(segmentId: number): Promise<SmallCapture> {
+    if (!this.ready() || this.view.running || this.pendingSettings)
+      return Promise.reject(
+        new Error('Pause and wait for the worker before saving.'),
+      );
+    const version = this.view.snapshot!.version;
+    const id = ++this.captureRequestId;
+    this.view.busy = true;
+    this.emit();
+    return new Promise((resolve, reject) => {
+      this.pendingCapture = { id, version, resolve, reject };
+      try {
+        this.worker!.postMessage({
+          type: 'capture',
+          runId: this.runId,
+          requestId: id,
+          segmentId,
+        });
+      } catch {
+        this.rejectCapture('Could not request a capture from the worker.');
+        this.view.busy = false;
+        this.emit();
+      }
+    });
+  }
 
   dispose(): void {
     this.disposed = true;
     this.cancelTimer();
+    this.rejectCapture('Workspace closed before capture completed.');
     this.worker?.terminate();
     this.worker = null;
   }
@@ -144,6 +183,24 @@ export class SimulationClient {
 
   private receive(response: WorkerResponse): void {
     if (this.disposed) return;
+    if (response.type === 'capture') {
+      const pending = this.pendingCapture;
+      if (
+        !pending ||
+        response.runId !== this.runId ||
+        response.requestId !== pending.id
+      )
+        return;
+      this.pendingCapture = null;
+      this.view.busy = false;
+      if (response.capture.version !== pending.version)
+        pending.reject(
+          new Error('Capture version changed; retry after Pausing.'),
+        );
+      else pending.resolve(response.capture);
+      this.emit();
+      return;
+    }
     if (response.type === 'error') {
       if (response.runId === this.runId) this.fail(response.message);
       return;
@@ -171,6 +228,7 @@ export class SimulationClient {
 
   private fail(message: string): void {
     this.cancelTimer();
+    this.rejectCapture(message);
     this.worker?.terminate();
     this.worker = null;
     this.view = { ...this.view, error: message, running: false, busy: false };
@@ -179,6 +237,10 @@ export class SimulationClient {
 
   private cancelTimer(): void {
     clearTimeout(this.timer);
+  }
+  private rejectCapture(message: string): void {
+    this.pendingCapture?.reject(new Error(message));
+    this.pendingCapture = null;
   }
   private emit(): void {
     if (!this.disposed) this.publish({ ...this.view });

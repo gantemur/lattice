@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.8 (M2 2D Ising laboratory, 2026-10-10)
+**Version:** 0.10 (M3b1 saved experiments, 2026-10-11)
 
-**Status:** M0–M1b are merged. M2 is implemented and under feature-branch review; M3 and later remain planned.
+**Status:** M0–M3a are merged. M3b1 is under feature-branch review; automated M3b2 sweeps and later models remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -83,7 +83,7 @@ Core UI:
 
 ### 2.3 Experiments
 
-Purpose: analysis of saved runs, reproducible parameter sweeps, side-by-side comparisons, finite-size diagnostics, and export/import. Begin with saved in-memory runs and simple plot overlays; expand incrementally. The Experiment workspace must never claim that two runs are comparable without showing their differing model and sampling metadata.
+Purpose: analysis of saved runs, reproducible parameter sweeps, side-by-side comparisons, finite-size diagnostics, and export/import. M3b1 begins with mounted in-memory segment archives, read-only worker captures, compatible side-by-side aggregate comparison, and portable export/import; automated parameter sweeps and their comparison plots are M3b2. The Experiment workspace must never claim that two runs are comparable without showing their differing model and sampling metadata.
 
 ### 2.4 Navigation contract
 
@@ -229,7 +229,7 @@ Independent blocking uses nonoverlapping blocks of sizes `1,2,4,…`, discards i
 
 For every valid 1–4-spin graph Ising model, construct the **actual** selected one-update transition matrix: random-site ½-lazy Metropolis, random-site heat bath including unchanged resampling, or direct independent Gibbs draws. Preserve distinct parallel/self-link effects through the existing action/local-field functions. Normalize against exact Gibbs probabilities; check stochasticity and detailed balance. When all Gibbs probabilities exceed `10⁻¹²` and the reversible spectrum is stable, symmetrize with `sqrt(πᵢ/πⱼ)Pᵢⱼ`, diagonalize the small real symmetric matrix, and report nontrivial eigenvalues and gap `1−λ₂` per elementary update. For observable `f`, use centered equilibrium mode weights to calculate `γ_f(k)`, exact `τ_int`, and exact asymptotic variance `Σ_{a>0} c_a²(1+λ_a^q)/(1−λ_a^q)` for observations every `q` updates. `q=1` for graph measurements and `q=N·strideSweeps` for M2's exact 2×2 benchmark. Numerically concentrated or effectively closed chains, and constant observables, have explicit unavailable statuses. Exact stationary theory is compared with empirical recent-window diagnostics but is never presented as evidence of equilibration. The full matrix need not occupy the main interface.
 
-This is M3a only. Saved experiments, parameter sweeps, full dataset export/import, and an experiment manager remain M3b. M0–M2 update kernels, RNG streams and direct-Gaussian analytic uncertainty references stay unchanged.
+M3a's numerical conventions remain unchanged. M3b1 stores their available segment aggregates and bounded recent observations on demand; M3b2 will execute parameter sweeps. M0–M2 update kernels, RNG streams and direct-Gaussian analytic uncertainty references stay unchanged.
 
 ### 4.4 Model extensibility
 
@@ -389,26 +389,22 @@ Later measurement capabilities:
 
 ### 6.4 Run storage and exports
 
-Each run has a configuration snapshot and immutable provenance, plus mutable sampling state. Suggested serialized fields:
+Each archived parameter segment has immutable numerical provenance and separately editable annotations. The version-1 portable envelope is:
 
 ```ts
-type RunMetadata = {
-  schemaVersion: number;
-  appVersion: string;
-  modelId: string;
-  domain: Domain;
-  parameters: Record<string, unknown>;
-  sampler: { id: string; settings: Record<string, unknown> };
-  seed: string;
-  warmupUpdates: number;
-  strideUpdates: number;
-  measurementCount: number;
-  startedAt: string;
-  notes?: string;
+type PortableBundle = {
+  format: 'lattice-lab-experiments';
+  schemaVersion: 1;
+  exportedAt: string;
+  records: { scientific: ScientificDataset; annotation: Annotation }[];
 };
 ```
 
-Export selected numeric series to CSV with a sidecar metadata JSON (or a single JSON bundle). Configuration-only share links may be introduced before full datasets; use an explicitly versioned schema and do not put huge measurement histories in URLs. No data are automatically sent to a server.
+M3b1 uses a version-1 `lattice-lab-experiments` JSON bundle as the authoritative portable file. Its records separate immutable scientific capture data from editable display annotations. Each scientific record identifies its source workspace/run/segment and worker version, capture update/time, model/domain/segment settings, seed, initialization, RNG version, source revision or `unknown`, bounded raw coverage, complete available aggregates/histograms, diagnostic summaries and optional current configuration tagged at its capture update. A warm-start historical segment is snapshot-only, not replayable from its final parameters and the original seed. Imported duplicates retain the original scientific dataset ID but receive separate local library IDs. The library holds at most 16 records and 12 MiB; a portable import is capped at 16 MiB and validated atomically. Records live in memory until explicitly exported, with no silent eviction or persistence service.
+
+Both existing workers expose read-only, on-demand captures only at an acknowledged paused/idle boundary. Routine Run snapshots still transmit compact M3a summaries, while a capture copies the actual ordered diagnostic rings (at most 8192 observations) for lattice and graph Ising, or the available recent trajectory for other Small Systems models (at most 1000 transitions). Exact observation indices/cadence and disclosed eviction distinguish these from full-segment aggregate moments. A historical segment has no fabricated final configuration. Capture requests/replies carry monotonically checked IDs and worker versions; capture does not draw randomness or advance the model.
+
+Separate downloads provide the complete JSON bundle, a CSV of available numeric observations, its JSON metadata sidecar, and a concise aggregate CSV summary. CSV columns include scientific dataset ID, observable ID, units, segment-local observation index and algorithmic update; nominal sweeps are present only where meaningful. Only the portable bundle is imported. Existing scalar configuration-only URLs retain their schema; no history is placed in a URL. No data are automatically sent to a server. M3b2 sweep recipes, execution and parameter comparison plots remain deferred.
 
 ## 7. UI/UX and accessibility
 

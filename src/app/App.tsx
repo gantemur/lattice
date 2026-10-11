@@ -11,6 +11,9 @@ import { topologyKey } from '../domain/graph';
 import { observableValue, spins } from '../models/ising';
 import type { IsingModel } from '../models/ising';
 import { useEffect, useRef, useState } from 'react';
+import { Experiments } from './Experiments';
+import type { Capture, ArchiveEntry } from '../experiments/archive';
+import { addArchiveEntries, createArchiveEntry } from '../experiments/archive';
 import { standardGaussianPreset } from '../engine/preset';
 import type { RunConfiguration } from '../engine/protocol';
 import { MAX_SEGMENTS } from '../engine/protocol';
@@ -35,30 +38,80 @@ import { ModelFormula, ModelNotes } from './ModelNotes';
 import { StepInspector } from './StepInspector';
 
 export function App() {
+  const [archive, setArchive] = useState<ArchiveEntry[]>([]);
+  const archiveRef = useRef<ArchiveEntry[]>([]);
+  const sessionId = useRef(crypto.randomUUID());
   const [workspace, setWorkspace] = useState(() =>
-    typeof location !== 'undefined' && location.hash.startsWith('#lattice-')
-      ? 'lattice'
-      : 'small',
+    typeof location !== 'undefined' && location.hash.startsWith('#experiments')
+      ? 'experiments'
+      : typeof location !== 'undefined' && location.hash.startsWith('#lattice-')
+        ? 'lattice'
+        : 'small',
   );
   useEffect(() => {
     const changed = () =>
-      setWorkspace(location.hash.startsWith('#lattice-') ? 'lattice' : 'small');
+      setWorkspace(
+        location.hash.startsWith('#experiments')
+          ? 'experiments'
+          : location.hash.startsWith('#lattice-')
+            ? 'lattice'
+            : 'small',
+      );
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
   }, []);
+  function saveCaptures(captures: Capture[]) {
+    const entries = captures.map((capture) => {
+      const model =
+        capture.workspace === 'lattice'
+          ? '2D Ising'
+          : capture.segment.model.kind;
+      const count =
+        capture.workspace === 'lattice'
+          ? capture.segment.samples
+          : capture.segment.moments.count;
+      return createArchiveEntry(
+        capture,
+        `${sessionId.current}:${capture.workspace}:${capture.runId}`,
+        `${model} · segment ${capture.segment.id} · ${count} measurements`,
+      );
+    });
+    const next = addArchiveEntries(archiveRef.current, entries);
+    archiveRef.current = next;
+    setArchive(next);
+  }
+  function updateArchive(next: ArchiveEntry[]) {
+    archiveRef.current = next;
+    setArchive(next);
+  }
   return (
     <>
       <div className="workspace-surface" hidden={workspace !== 'small'}>
-        <SmallSystemsApp />
+        <SmallSystemsApp
+          saveCaptures={saveCaptures}
+          archiveCount={archive.length}
+        />
       </div>
       <div className="workspace-surface" hidden={workspace !== 'lattice'}>
-        <LatticeSystems />
+        <LatticeSystems
+          saveCaptures={saveCaptures}
+          archiveCount={archive.length}
+        />
+      </div>
+      <div className="workspace-surface" hidden={workspace !== 'experiments'}>
+        <Experiments entries={archive} update={updateArchive} />
       </div>
     </>
   );
 }
 
-function SmallSystemsApp() {
+function SmallSystemsApp({
+  saveCaptures,
+  archiveCount,
+}: {
+  saveCaptures: (captures: Capture[]) => void;
+  archiveCount: number;
+}) {
   const { view, client } = useSimulation();
   const snapshot = view.snapshot;
   const lastConfiguration = useRef<RunConfiguration>(
@@ -173,6 +226,35 @@ function SmallSystemsApp() {
       'Reset cleared history and refitted plots. Applied settings restart with the selected seed.',
     );
   }
+  async function save(all: boolean) {
+    if (!snapshot || !client.current) return;
+    try {
+      const ids = all
+        ? snapshot.segments.map((s) => s.id)
+        : [snapshot.activeSegmentId];
+      const captures: Capture[] = [];
+      for (const id of ids) captures.push(await client.current.capture(id));
+      if (
+        captures.some(
+          (c) =>
+            c.runId !== captures[0]?.runId ||
+            c.version !== captures[0]?.version,
+        )
+      )
+        throw new Error(
+          'Worker changed during multi-segment capture; pause and retry.',
+        );
+      saveCaptures(captures);
+      setFormError(null);
+      setNotice(
+        `Saved ${captures.length} acknowledged segment${captures.length === 1 ? '' : 's'} to the in-memory Experiments library.`,
+      );
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : 'Could not save this segment.',
+      );
+    }
+  }
   function selectModel(kind: ModelKind) {
     if (kind === model.kind) return;
     attempt(
@@ -208,9 +290,9 @@ function SmallSystemsApp() {
             Small Systems
           </a>
           <a href="#lattice-systems">Lattice Systems</a>
-          <span className="nav-planned">
-            Experiments <small>Planned</small>
-          </span>
+          <a href="#experiments">
+            Experiments{archiveCount ? ` (${archiveCount})` : ''}
+          </a>
         </nav>
         <a className="source-link" href="https://github.com/gantemur/lattice">
           Source ↗
@@ -357,6 +439,24 @@ function SmallSystemsApp() {
                 <button className="button" onClick={reset}>
                   Reset
                 </button>
+                <button
+                  className="button"
+                  onClick={() => void save(false)}
+                  disabled={
+                    view.running || view.busy || !snapshot || !!view.error
+                  }
+                >
+                  Save current segment
+                </button>
+                <button
+                  className="button"
+                  onClick={() => void save(true)}
+                  disabled={
+                    view.running || view.busy || !snapshot || !!view.error
+                  }
+                >
+                  Save available segments
+                </button>
                 <div className="sample-count">
                   <strong data-testid="sample-count">
                     {snapshot?.moments.count ?? 0}
@@ -364,6 +464,12 @@ function SmallSystemsApp() {
                   <span>retained in segment</span>
                 </div>
               </div>
+              <p className="plot-note">
+                Pause and wait for the current batch before saving. Captures do
+                not update the model or consume random numbers. The in-memory
+                library holds at most 16 records/12 MiB and is lost on reload
+                unless exported.
+              </p>
               <div className="run-meta">
                 <span>
                   Segment updates{' '}
