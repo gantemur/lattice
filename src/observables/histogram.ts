@@ -6,6 +6,9 @@ export type Histogram = {
   above: number;
 };
 
+// A fixed-range histogram preserves every recorded sample in a bin or an
+// explicit tail counter; plotting code must include tails in normalization.
+
 export function createHistogram(
   min: number,
   max: number,

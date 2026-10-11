@@ -97,6 +97,8 @@ export class SweepRun {
     const index = this.pointIndex;
     const target = this.budget.pointUpdates[index];
     if (target === undefined) throw new Error('No remaining sweep point.');
+    // Every point gets a new seeded lattice run. The worker scheduler may
+    // pause between batches without changing this run's update sequence.
     if (!this.currentRun)
       this.currentRun = new LatticeRun(
         index + 1,
@@ -115,6 +117,8 @@ export class SweepRun {
       updates: this.currentPointUpdates,
       capture: this.currentRun.capture(1, true),
     };
+    // The numerical point is complete here. The worker emits this capture
+    // and blocks its next pump until the UI acknowledges this point index.
     this.pointIndex++;
     this.currentRun = null;
     this.currentPointUpdates = 0;

@@ -36,6 +36,8 @@ describe('2×2 physical-parameter exact reference', () => {
   );
 
   it('remains finite for strongly concentrated ferromagnetic and antiferromagnetic measures', () => {
+    // Eight periodic bonds each contribute |J|=10; at T=0.05 the two ground
+    // states give log Z = 8·10/0.05 + log 2 in either sign case.
     for (const sign of [-1, 1]) {
       const result = exactLatticeTwoByTwo({
         ...base,

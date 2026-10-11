@@ -94,6 +94,8 @@ function newSegment(
   };
 }
 export class SimulationRun {
+  // The run owns the RNG and current configuration. Segments own measurements
+  // under one target distribution; changing settings never reseeds the run.
   private readonly seed: number;
   private readonly rng;
   private segments;
@@ -144,6 +146,8 @@ export class SimulationRun {
     )
       throw new Error('Topology changes require a new session.');
     if (settingsKey(settings) === settingsKey(this.current)) return;
+    // A support change may need a deterministic state adjustment, but never
+    // mixes old samples into the new segment or consumes a random draw.
     let initialization = 'Configuration and RNG stream preserved.';
     if (
       this.currentValue !== null &&
@@ -195,6 +199,7 @@ export class SimulationRun {
       this.currentValue = result.result;
       this.updates++;
       segment.updates++;
+      // Warm-up is counted within this segment, not over the lifetime run.
       const warmup = segment.updates <= segment.warmupTarget;
       if (result.kind === 'metropolis') segment[result.outcome]++;
       else if (result.kind === 'heat-bath' && segment.model.kind === 'ising')
@@ -224,6 +229,8 @@ export class SimulationRun {
   }
 
   snapshot(): Snapshot {
+    // Copy bounded plot histories and full-segment summaries across the worker
+    // boundary. Rendering frequency has no path back into sampling.
     const segments: SegmentSnapshot[] = this.segments.map(
       ({
         convergence,
@@ -287,6 +294,8 @@ export class SimulationRun {
   }
 }
 export class SimulationEngine {
+  // Run IDs reject replies/commands from a previous Reset; captures carry a
+  // request ID so the client can match asynchronous archive requests.
   private run: SimulationRun | ScalarRun | null = null;
   private runId = 0;
   handle(request: WorkerRequest): WorkerResponse {

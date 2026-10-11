@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.10 (M3b1 saved experiments, 2026-10-11)
+**Version:** 0.11 (through M3b2, 2026-10-11)
 
-**Status:** M0–M3b1 are merged. M3b2 independently seeded sweeps are under feature-branch review; later models remain planned.
+**Status:** M0–M3b2 are merged. This pre-M4 readability pass adds no new model behavior; later models remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -499,6 +499,8 @@ Do **not** create all directories as empty boilerplate; create modules when used
 `Domain + Model` → `Action / local Δaction / observables` → `Sampler` → `Run controller and recorder` → `plots / UI`.
 
 The simulation engine owns physical state and sampled measurements; UI state owns tab selections, plot viewports, and drawer visibility. Avoid coupling stepping behavior to React render cycles. Use a deterministic seeded RNG with a documented algorithm/version; never use `Math.random()` inside scientific kernels.
+
+Source code is also teaching material. Mathematical entry points should state their action and unit conventions; non-obvious algorithms, numerical safeguards, state ownership, worker ordering, and data-provenance rules should have concise explanatory comments and independently understandable tests. Ordinary application code should likewise favor descriptive names and clear control flow. Avoid redundant line-by-line commentary and unmeasured complexity; review readability with every feature PR. See [SOURCE_GUIDE.md](SOURCE_GUIDE.md) for a reading path through the implementation.
 
 ### 9.4 Performance envelope
 

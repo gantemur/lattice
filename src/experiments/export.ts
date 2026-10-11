@@ -64,6 +64,8 @@ function csv(rows: unknown[][]): string {
   return rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
 }
 export function measurementRows(entries: readonly ArchiveEntry[]): unknown[][] {
+  // Diagnostic rings and plotted trajectories are bounded excerpts. Their
+  // indices retain original update/observation positions after eviction.
   const rows: unknown[][] = [];
   for (const { scientific } of entries) {
     const { capture, datasetId } = scientific;

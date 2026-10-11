@@ -1,3 +1,11 @@
+/**
+ * Recent-window empirical diagnostics, distinct from full-segment moments
+ * and from exact stationary Markov results. Observations have a tagged
+ * cadence: M2 spacing is nominal sweeps, graph local spacing is one site
+ * update, and direct graph spacing is one whole-configuration draw.
+ * Unresolved, drifting and near-constant records do not acquire invented
+ * autocorrelation times or uncertainty estimates.
+ */
 export const DIAGNOSTIC_CAPACITY = 8192;
 export const MAX_ACF_LAG = 128;
 export type DiagnosticTarget = 'm' | 'absM' | 'e';
@@ -139,6 +147,8 @@ export function analyzeSeries(
   const effectiveTau = Math.max(0.5, tau);
   const ess = Math.min(n, n / (2 * effectiveTau));
   const sampleVariance = (gamma0 * n) / (n - 1);
+  // This SE applies to the analyzed recent-window mean only. The n−1
+  // variance does not repair warm-up bias or certify stationarity.
   const standardError = Math.sqrt((2 * effectiveTau * sampleVariance) / n);
   const half =
     0.5 +
@@ -255,6 +265,8 @@ export class DiagnosticHistory {
     };
   }
   record(m: number, absM: number, e: number) {
+    // The three rings advance together on each retained measurement; a
+    // scheduled analysis can lag the true count until the next refresh.
     const index = this.count % DIAGNOSTIC_CAPACITY;
     this.records.m[index] = m;
     this.records.absM[index] = absM;

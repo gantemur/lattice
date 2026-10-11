@@ -1,4 +1,9 @@
-/** Topological incidence is independent of drawing coordinates and physics. */
+/**
+ * Small graph/cell-complex topology, independent of Ising couplings or drawing.
+ * Edge IDs are physical bond records: equal endpoints never imply one edge.
+ * A face boundary is an oriented walk through edge IDs, with sign -1 when
+ * traversed opposite to the stored tail → head direction.
+ */
 export type Vertex = { id: string };
 export type Edge = {
   id: string;
@@ -56,6 +61,8 @@ export function graphPreset(kind: GraphPreset): Domain {
     const periodic = kind === 'torus';
     const ids = new Map<string, string>();
     const at = (x: number, y: number) => (x % 2) + 2 * (y % 2);
+    // Row-major i=x+2y. On the torus, each site contributes a +x and a +y
+    // bond; length-two wrapping makes parallel bonds, not duplicate records.
     for (let y = 0; y < 2; y++)
       for (let x = 0; x < 2; x++) {
         const i = at(x, y);
@@ -64,6 +71,8 @@ export function graphPreset(kind: GraphPreset): Domain {
         if (y === 0 || periodic)
           ids.set(`${i}:1`, add(i, at(x, y + 1), 1, y === 1));
       }
+    // Four oriented plaquettes survive on the torus even though a four-spin
+    // Ising energy can be reproduced on a different abstract interaction graph.
     for (let y = 0; y < (periodic ? 2 : 1); y++)
       for (let x = 0; x < (periodic ? 2 : 1); x++) {
         domain.faces.push({
@@ -84,6 +93,8 @@ export function graphPreset(kind: GraphPreset): Domain {
   return domain;
 }
 export function validateDomain(domain: Domain): void {
+  // Validate the closed incidence walk, not just its set of edge IDs. Gauge
+  // observables later depend on this orientation; Ising energy does not.
   const vertices = new Set(domain.vertices.map((v) => v.id));
   const edges = new Map(domain.edges.map((e) => [e.id, e]));
   if (

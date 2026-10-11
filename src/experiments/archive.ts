@@ -16,6 +16,7 @@ export const MAX_ARCHIVE_BYTES = 12 * 1024 * 1024;
 export const MAX_IMPORT_BYTES = 16 * 1024 * 1024;
 export type Capture = SmallCapture | LatticeCapture;
 export type ScientificDataset = {
+  // The worker capture plus its provenance remains immutable after save.
   datasetId: string;
   groupId: string;
   source: {
@@ -75,6 +76,7 @@ function array(value: unknown, label: string, max: number): unknown[] {
   return value;
 }
 function finiteTree(value: unknown, depth = 0, budget = { nodes: 0 }): void {
+  // Bound untrusted import traversal before semantic checks allocate copies.
   if (++budget.nodes > 400_000 || depth > 40)
     throw new Error('Dataset structure is too large or too deeply nested.');
   if (typeof value === 'number' && !Number.isFinite(value))
@@ -379,6 +381,8 @@ function validateLattice(c: LatticeCapture): void {
   }
 }
 export function validateScientific(value: unknown): ScientificDataset {
+  // Provenance must agree with the embedded worker capture; the surrounding
+  // name and notes are editable annotations, not scientific measurements.
   finiteTree(value);
   const data = object(value, 'Scientific dataset');
   if (
@@ -470,6 +474,8 @@ export function createArchiveEntry(
   groupId: string,
   name: string,
 ): ArchiveEntry {
+  // datasetId survives export/import; libraryId identifies this local copy.
+  // A warm-start segment has a seed but cannot be replayed from that seed alone.
   const scientific: ScientificDataset = plainCopy({
     datasetId: crypto.randomUUID(),
     groupId,
@@ -532,6 +538,8 @@ export function importBundle(
   existing: readonly ArchiveEntry[],
   input: string,
 ): ArchiveEntry[] {
+  // Build and validate all additions before returning a new archive. A bad
+  // record never partially mutates the caller's existing collection.
   if (new TextEncoder().encode(input).length > MAX_IMPORT_BYTES)
     throw new Error('Import exceeds the 16 MiB file limit.');
   let parsed: unknown;

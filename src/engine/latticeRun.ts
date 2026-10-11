@@ -255,6 +255,8 @@ function segmentSnapshot(segment: Segment): LatticeSegmentSnapshot {
   };
 }
 export class LatticeRun {
+  // Spins and RNG are continuous across parameter segments; each segment has
+  // its own physical parameters, warm-up, and equilibrium measurements.
   private readonly lattice: IndexedLattice;
   private readonly rng;
   private readonly spins: Int8Array;
@@ -307,6 +309,8 @@ export class LatticeRun {
       throw new Error('Lattice dimensions/boundaries require a new session.');
     if (JSON.stringify(settings) === JSON.stringify(this.current.settings))
       return;
+    // The same spin configuration has a different H under new couplings.
+    // Recompute it once without touching the configuration or RNG stream.
     this.H = totalEnergy(this.lattice, next, this.spins);
     this.segments.push(
       newSegment(this.current.id + 1, settings, this.updates, this.lattice),
@@ -341,6 +345,8 @@ export class LatticeRun {
       segment.updates++;
       segment[trace.outcome]++;
       if (trace.newSpin !== trace.oldSpin) {
+        // Accepted transitions permit O(1) aggregate updates; rejected or
+        // unchanged transitions leave both physical observables untouched.
         this.M += -2 * trace.oldSpin;
         this.H += trace.deltaH;
       }
@@ -353,6 +359,8 @@ export class LatticeRun {
           segment.settings.strideSweeps ===
           0
       ) {
+        // One measurement follows each requested whole-sweep stride. Online
+        // moments span the segment; only rendered measurement points are cut.
         const m = this.M / size,
           e = this.H / size;
         recordMoment(segment.m, m);
@@ -421,6 +429,8 @@ export class LatticeRun {
     };
   }
   capture(segmentId: number, finalAnalysis = false): LatticeCapture {
+    // A historical segment has no saved final spin configuration. Captures
+    // include current spins only when the requested segment is still active.
     const internal = this.segments.find((s) => s.id === segmentId);
     if (!internal) throw new Error('Segment is no longer available.');
     const segment = segmentSnapshot(internal);
@@ -443,6 +453,7 @@ export class LatticeRun {
   }
 }
 export class LatticeEngine {
+  // Worker command boundary: stale run IDs cannot mutate a newer session.
   private run: LatticeRun | null = null;
   private runId = 0;
   handle(request: LatticeRequest): LatticeResponse {

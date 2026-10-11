@@ -29,6 +29,15 @@ Before significant work, read `README.md`, `docs/SPECIFICATION.md`, `docs/ROADMA
 
 Do not build infrastructure for hypothetical 3D or production-scale lattice QCD before the milestone requires it. Prefer simple, well-tested extensions to universal plugin abstractions. No backend, account system, cloud jobs, or external persistent service without an explicit design decision.
 
+## Code readability and educational commentary
+
+- Prefer human-readable code throughout the repository, in application code as well as mathematical kernels. A mathematically prepared student with basic TypeScript should be able to follow the principal scientific implementation; a developer learning the project should also be able to follow ordinary UI and worker code.
+- Use descriptive names, straightforward control flow, explicit state ownership, and reasonably sized functions. Avoid clever one-liners, excessive generic abstractions, and convoluted logic when a simpler implementation is practical.
+- Explain mathematics, assumptions, invariants, design decisions, and non-obvious behavior near the code they govern. Do not add comments that merely paraphrase the next line.
+- Prefer a readable reference algorithm when a less transparent optimization has no meaningful measured benefit. Document and independently test performance-driven optimizations that do make important code harder to read.
+- Keep models, algorithms, statistics, worker scheduling, persistence, and UI responsibilities distinct. Treat undocumented complexity in important code as a maintenance issue.
+- Make numerical tests readable, with small independently understandable examples and reference results where possible. Consider source-code readability in every future PR review.
+
 ## Documentation maintenance
 
 A feature PR should state: user-visible change, relevant specification section, numerical validation, UI/mobile validation, and remaining limits. If architecture changes substantially, add a dated decision to `docs/DECISIONS.md`. Keep the main specification readable; move long implementation details to focused docs only when needed.

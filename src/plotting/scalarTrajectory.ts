@@ -41,6 +41,8 @@ export function scalarTrajectoryWindow(
     Math.min(requestedEnd ?? last, last),
   );
   const firstShown = Math.max(0, lastShown - windowLength);
+  // Global update numbers determine x coordinates; the displayed window,
+  // rather than the lifetime run length, determines the pixel scale.
   const width = Math.max(1, lastShown - firstShown);
   const visible = segments
     .filter((s) => s.model.kind === 'scalar' && s.scalar)

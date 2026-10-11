@@ -330,6 +330,8 @@ export function Experiments({
         throw new Error('Import exceeds the 16 MiB file limit.');
       const content = await file.text();
       const current = entriesRef.current;
+      // Parsing and scientific validation finish before either React archive
+      // collection is published to the UI.
       const next = importPortableBundle(current, sweeps, content);
       update(next.entries);
       updateSweeps(next.sweeps);

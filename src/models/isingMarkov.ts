@@ -11,6 +11,12 @@ import { flipEnergy, localField, totalEnergy } from './latticeIsing';
 import { exactLatticeTwoByTwo } from './latticeExact';
 import type { LatticeSampler } from '../algorithms/latticeTransition';
 
+/**
+ * Exact tiny-state, one-update Markov kernels and stationary diagnostics.
+ * These are finite-chain equilibrium calculations, not estimates from one
+ * simulated trajectory. Graph K,b are dimensionless; M2 uses ΔH/T.
+ */
+
 export type SmallSampler = LatticeSampler | 'direct';
 export type ExactKernel = {
   probabilities: number[];
@@ -26,6 +32,9 @@ function buildKernel(
   flipCost: (state: number, site: number) => number,
   plus: (state: number, site: number) => number,
 ): ExactKernel {
+  // One local update chooses a site uniformly. Lazy Metropolis proposes a
+  // flip only half the time, hence P(state→flipped)=α/(2N); heat bath assigns
+  // the two possible post-update spins directly, including unchanged draws.
   const count = probabilities.length;
   const matrix = Array.from(
     { length: count },
@@ -89,6 +98,8 @@ export function latticeTwoByTwoKernel(
 }
 
 function jacobiSymmetric(input: number[][]) {
+  // Repeated plane rotations diagonalize a symmetric matrix of at most 16
+  // states. Retain eigenvectors for observable-mode projections below.
   const n = input.length;
   const a = input.map((row) => [...row]);
   const vectors: number[][] = Array.from({ length: n }, (_, i) =>
@@ -192,6 +203,7 @@ export function exactMarkovDiagnostics(
       if (Math.abs(pi[i]! * P[i]![j]! - pi[j]! * P[j]![i]!) > 1e-10)
         return unavailable('Detailed balance failed numerically.');
   }
+  // Detailed balance makes D^(1/2) P D^(-1/2) symmetric for D=diag(π).
   const symmetric = Array.from({ length: n }, (_, i) =>
     Array.from({ length: n }, (_, j) => Math.sqrt(pi[i]! / pi[j]!) * P[i]![j]!),
   );
@@ -220,6 +232,8 @@ export function exactMarkovDiagnostics(
     };
   let asymptoticVariance = 0;
   const components = modes.slice(1).map((mode) => {
+    // At observation spacing q, mode λ contributes λ^q per lag and
+    // c²(1+λ^q)/(1−λ^q) to the asymptotic variance of the sample mean.
     const coefficient = mode.vector.reduce(
       (sum, v, i) => sum + v * centered[i]!,
       0,

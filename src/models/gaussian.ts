@@ -1,5 +1,11 @@
 import type { RealSiteVariable } from '../domain/singleSite';
 
+/**
+ * One real variable with dimensionless action S(x)=a x²/2−h x and weight
+ * exp(−S). Completing the square gives mean h/a, variance 1/a and the
+ * normalized density below; there is no separate inverse-temperature factor.
+ */
+
 export type GaussianParameters = Readonly<{ a: number; h: number }>;
 
 export const gaussianVariable: RealSiteVariable = {

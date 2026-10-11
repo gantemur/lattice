@@ -15,6 +15,8 @@ function plan(measurements = 8): SweepPlan {
 }
 
 async function workerHarness() {
+  // Fake timers control scheduling; messages still pass through the real
+  // worker command handler rather than calling SweepRun methods directly.
   vi.useFakeTimers();
   vi.resetModules();
   const replies: SweepReply[] = [];
@@ -56,6 +58,8 @@ afterEach(() => {
 });
 
 it('keeps repeated controls and stale or duplicate point ACKs nonterminal and numerically inert', async () => {
+  // Point 1 may start only after ACK(0); a duplicate ACK(0) cannot release
+  // point 1. Independent LatticeRun captures below verify unchanged RNG work.
   const p = plan();
   const h = await workerHarness();
   h.start(p);

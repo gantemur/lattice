@@ -1,12 +1,12 @@
 # Lattice Lab
 
-**Status:** M0–M3b1 are merged. M3b2 independent 2D Ising sweeps are under feature-branch review.
+**Status:** M0–M3b2 are merged. The pre-M4 source-readability pass is under feature-branch review.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
-## New in M3b2 (feature branch)
+## New in M3b2
 
 Experiments can run a bounded 2D Ising parameter sweep in a dedicated worker. Temperature, field, and finite-size presets fill an editable plan. Start displays the validated elementary-update and archive budget. Every point creates a fresh seeded lattice run with its own warm-up and retained measurements; Pause/Resume preserve the current point, while Cancel discards its partial data and archives completed points. A numeric parameter-axis plot and table compare m, |m|, physical e=H/N, susceptibility, Binder, heat capacity and directional bond products. Short runs near criticality may mix slowly. The infinite-volume Tc marker appears only for the isotropic Jx=Jy=1, h=0 temperature configuration.
 
@@ -84,7 +84,7 @@ Each of the latest **eight segments** keeps its settings, start index, update/wa
 
 Mulberry32 midpoint v1 remains the RNG. Direct Gaussian Box–Muller v1 still consumes exactly two uniforms per draw; spin direct/heat bath uses one, direct binomial uses n, and Metropolis uses two per update. Reset initializes chains at 0 (Gaussian), +1 (spin), or round(np) (binomial); initialization is not a measurement. Reproducibility requires the same seed, settings/update sequence, algorithm and build; browser transcendental functions can differ in their last bits. Run posts batches of 128 with at most one in flight. Apply and Pause respect the batch acknowledgment boundary. Plotting, history browsing, snapshot frequency and Step inspection never consume RNG values.
 
-**Planned beyond M3b1:** automated sweeps, gauge dynamics and cluster algorithms. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
+**Planned beyond M3b2:** gauge dynamics and cluster algorithms. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
 
 ## Read first
 
@@ -92,6 +92,7 @@ Mulberry32 midpoint v1 remains the RNG. Direct Gaussian Box–Muller v1 still co
 2. [Development roadmap](docs/ROADMAP.md): staged delivery and acceptance gates.
 3. [Design decisions](docs/DECISIONS.md): rationale and history.
 4. [Agent instructions](AGENTS.md): contributor workflow.
+5. [Source-reading guide](docs/SOURCE_GUIDE.md): code paths and independently checked examples.
 
 ## Develop and validate
 

@@ -39,6 +39,8 @@ import { ModelFormula, ModelNotes } from './ModelNotes';
 import { StepInspector } from './StepInspector';
 
 export function App() {
+  // Keep hidden workspaces mounted so tab navigation does not reset their
+  // worker sessions, measurements, or local view state.
   const [archive, setArchive] = useState<ArchiveEntry[]>([]);
   const [sweeps, setSweeps] = useState<SavedSweep[]>([]);
   const archiveRef = useRef<ArchiveEntry[]>([]);

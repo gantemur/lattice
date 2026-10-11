@@ -287,6 +287,8 @@ export function SweepWorkspace({
       : null;
 
   function finalize(reply: Extract<SweepReply, { type: 'terminal' }>) {
+    // A terminal reply may arrive while a point is staged; preserve it for
+    // retry so the manifest references only committed captures.
     terminalRef.current = reply;
     if (pendingRef.current || !runPlanRef.current) return;
     try {

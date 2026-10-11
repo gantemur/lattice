@@ -1,4 +1,9 @@
-/** Row-major site index i=x+Lx*y. Bonds point along positive axes. */
+/**
+ * M2's compact rectangular Ising geometry, separate from the small graph's
+ * explicit vertices/edges/faces. Sites use row-major i=x+Lx*y. Each site
+ * creates its existing +x and +y bonds, so a periodic length-two axis has
+ * two distinct oppositely oriented records between the same sites.
+ */
 export type LatticeShape = {
   lx: number;
   ly: number;
@@ -44,6 +49,8 @@ export function createIndexedLattice(shape: LatticeShape): IndexedLattice {
   const neighborAxes = new Uint8Array(size * 4);
   const degree = new Uint8Array(size);
   let bond = 0;
+  // Both endpoints receive an incidence slot. Keeping separate slots for
+  // parallel bonds makes local flip costs match the full bond sum exactly.
   const add = (tail: number, head: number, axis: number) => {
     tails[bond] = tail;
     heads[bond] = head;

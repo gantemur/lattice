@@ -3,6 +3,12 @@ import { isingTargets, observableValue } from '../models/ising';
 import { emptyMoments, recordMoment, summarizeMoments } from './moments';
 import { ConvergenceHistory } from './convergence';
 import { DiagnosticHistory } from './statisticalDiagnostics';
+/**
+ * One graph-Ising segment's full configuration counts and online observable
+ * moments. The separate diagnostic ring retains only recent ordered m, |m|
+ * and dimensionless E=S values; its cadence is updates for local kernels and
+ * whole-configuration draws for direct sampling.
+ */
 export class IsingMeasurements {
   private counts: number[];
   private observables;

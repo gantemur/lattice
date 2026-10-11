@@ -11,6 +11,8 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let lastProgressAt = 0;
 let pendingPointIndex: number | null = null;
 let terminalSent = false;
+// A completed point blocks further pumping until its matching archive ACK.
+// The worker can reach numerical completion before that final ACK arrives.
 
 type WorkerPayload =
   | Pick<Extract<SweepReply, { type: 'state' }>, 'type' | 'progress'>
@@ -30,6 +32,7 @@ function emitTerminal(
   partial: { index: number; updates: number; measurements: number } | null,
   error: string | null,
 ) {
+  // One terminal reply per sweep; no later timer may resume sampling.
   if (!run || terminalSent) return;
   terminalSent = true;
   if (timer !== null) clearTimeout(timer);
@@ -124,6 +127,7 @@ context.onmessage = ({ data }: MessageEvent<SweepCommand>) => {
   commandId = data.commandId;
   try {
     if (data.type === 'ack') {
+      // Stale/duplicate ACKs are inert, including after a later point stages.
       if (data.pointIndex !== pendingPointIndex) return;
       pendingPointIndex = null;
       const progress = run.progress();
