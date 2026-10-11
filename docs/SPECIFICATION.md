@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.7 (M1b continuous scalar systems, 2026-10-10)
+**Version:** 0.8 (M2 2D Ising laboratory, 2026-10-10)
 
-**Status:** M0, M0.5 and M1a (including local inspection) are merged. M1b is implemented and locally validated on its feature branch; M2 and later remain planned.
+**Status:** M0–M1b are merged. M2 is implemented and under feature-branch review; M3 and later remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -17,7 +17,7 @@ Start with two active distribution/trajectory plots (total magnetization for gra
 
 Apply starts separate measurements for changed parameters/algorithm/warm-up, retaining compatible configuration, RNG, previous segments and stable axes. Topology/model-family changes explicitly create new sessions. Reset clears/reseeds/refits; Fit All affects only plotting. Eight recent segments keep separate statistics, exact references, logarithmic checkpoints and up to 1000 exact transitions. Graph segments additionally accumulate full configuration counts and per-observable moments/checkpoints; plotting never reconstructs evicted trajectories or consumes RNG. Every post-warm-up state enters statistics, including rejected/stay states. Only direct Gaussian segments have known-variance uncertainty bands.
 
-Larger lattices, HMC, gauge dynamics and M3 experiment management remain out of scope. Mathematical conventions are detailed in D-021–D-029 and sections 3–6 below.
+M2 adds a separate Lattice Systems workspace for rectangular 2D Ising systems up to 64×64. A typed-spin worker, indexed oriented bonds, incremental H/M, sweep-scheduled measurements, bounded segment histories, Canvas configuration and zero-to-six measurement plots leave Small Systems behavior intact. HMC, gauge dynamics and M3 experiment management remain out of scope. Mathematical conventions are detailed in D-021–D-030 and sections 3–6 below.
 
 ## 1. Mission and positioning
 
@@ -202,6 +202,18 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
 - `Z₂` and compact `U(1)` gauge models on oriented edges and plaquettes. Start with one open plaquette and small periodic tori. Show Wilson loops and gauge invariance explicitly. Do not imply a 2D gauge model has an Ising-like thermal transition without model-specific justification.
+
+#### M2 indexed 2D Ising
+
+Lattice Systems uses row-major site `i=x+Lx*y` and one positive-axis oriented bond from each site wherever its +x or +y neighbor exists. The x/y boundaries are independently open or periodic. Supported side lengths are integer 2–64; periodic length-two axes retain distinct parallel bonds. Open bond counts are `(Lx−1)Ly` and `Lx(Ly−1)`; periodic axes have `N` bonds. This indexed domain does not replace the small graph/cell-complex domain. The periodic 2×2 torus still corresponds to eight bonds and four M1a faces.
+
+The physical Hamiltonian is `H=−Jx Σ_x s_i s_j−Jy Σ_y s_i s_j−h Σ_i s_i`, with `S=H/T`, `β=1/T`, `k_B=1`. M1a's dimensionless weights are `Kx=βJx`, `Ky=βJy`, `b=βh`. Finite controls allow `−10≤Jx,Jy,h≤10` and `0.05≤T≤100`; non-finite values are rejected. `M=Σs_i`, `m=M/N`, `|m|`, `e=H/N` and moments of `m²,e²` are distinct quantities. Negative bonds are supported without ferromagnetic theory claims. The indexed local field sums each incident bond, including parallel pairs; `ΔH=2s_i(Jx Σ_x s_j+Jy Σ_y s_j+h)`. A flipped spin changes `M` by `−2s_i`; energy and magnetization are maintained incrementally and independently recomputed in validation.
+
+Random-site lazy Metropolis uses site, stay/flip and acceptance uniforms on every update. Heat bath uses site and resampling uniforms and a stable logistic conditional; it has no accept/reject test. All +, all − and seeded random ± initial states are available. A sweep is `N` elementary site updates with replacement, not physical time. Segment warm-up is specified in whole sweeps; after it, a measurement is taken every selected number of *segment-local* complete sweeps, including unchanged states. A parameter/sampler/schedule Apply on unchanged geometry preserves the spin configuration and RNG, recomputes H for the new parameters, starts an isolated segment and restarts warm-up. Geometry changes and Reset start a seeded session. Partial sweeps do not create extra measurements. Global update count remains exact; the plot's sweep coordinate is cumulative updates divided by N, possibly fractional after a mid-sweep quench.
+
+Each segment retains online m, |m|, e, m² and e² moments; 41-bin full-segment m/e histograms; logarithmic mean checkpoints; and the latest 1,000 complete measurement records. At most eight segments survive. Full spin arrays are kept only for the current configuration, not for every update or measurement. The worker returns one current image with batched scalar summaries; Run uses bounded 4,096-update batches and a separate display timer. Plot windows, site selection, and rendering draw no random numbers. No independent-sample bands or MCMC uncertainty estimates are provided.
+
+The Canvas view shows complete spins and a selected 5×5 neighborhood; Step shows the worker's actual latest transition, incident terms and draws. Its hypothetical selected-spin flip cost is distinct from the Metropolis proposed-move cost and the actual transition change: rejection, lazy self-proposal and unchanged heat-bath resampling have actual `ΔH=ΔS=0`. The plot gallery defaults to m and e histories and offers histograms, |m| history, running means and outcome bars. Recent windows and navigation use global sweep coordinates and never join separate segments. Every 2×2 open, periodic or mixed-boundary box has a direct 16-state physical-parameter reference for log Z, probabilities, magnetization/energy moments and P(m), normalized with a lowest-action log-sum-exp offset across the full M2 parameter range. M1a's narrower dimensionless editing bounds remain unchanged. For positive Jx,Jy and h=0 only, the infinite-volume critical β satisfies `sinh(2βJx)sinh(2βJy)=1`; isotropic `Tc/J=2/log(1+√2)`. The Tc example preset explicitly sets the draft to `Jx=Jy=1`, `h=0`, `T≈2.269`; Apply retains its normal segment behavior. This is not a finite-volume transition temperature. At h=0 finite-volume exact 〈m〉 vanishes by spin-flip symmetry even when a finite local chain remains in one sector.
 
 ### 4.4 Model extensibility
 

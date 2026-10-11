@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.7, 2026-10-10
+**Version:** 0.8, 2026-10-10
 
-**Status:** M0, M0.5 and M1a (including refinement) merged. M1b implemented and locally validated on its feature branch; M2–M6 remain planned or exploratory.
+**Status:** M0–M1b merged. M2 implemented on its feature branch and under review; M3–M6 remain planned or exploratory.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -19,8 +19,8 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M0: deployable foundation** | Responsive app shell, one 0D Gaussian with density/convergence and segment comparisons | Exact moments, seeded sample, static Pages deploy | Completed and deployed |
 | **M0.5: Comparative Sampling Laboratory** | Gaussian, single-spin and binomial models; direct/Markov sampling, trajectories and transition inspection | Exact distributions, transition-matrix balance, warm-up exclusion and seeded replay | Implemented; feature-branch validation complete |
 | **M1a: Interactive graph Ising** | Dynamic zero-to-six plots, preset graph parameter editor, local transition inspection | Full 1–4-spin enumeration; transfer matrix, periodic multiplicity, balance and sampling checks | Implemented; local validation complete |
-| **M1b: Continuous small systems** | Real graph fields, quartic wells, local conditionals and sampled marginals | Exact 1–4-variable Gaussian, controlled 1D quadrature, local-action tests | Implemented and locally validated on feature branch |
-| **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Planned |
+| **M1b: Continuous small systems** | Real graph fields, quartic wells, local conditionals and sampled marginals | Exact 1–4-variable Gaussian, controlled 1D quadrature, local-action tests | Merged |
+| **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Implemented on feature branch; review pending |
 | **M3: Measurements & Experiments** | Saved comparisons, autocorrelation, error analysis, exports and finite sweeps | Reference-estimator tests, reproducibility metadata | Planned |
 | **M4: Continuous lattice fields** | 1D/2D Gaussian and φ⁴, Euclidean lattice QM, HMC | Fourier covariance, oscillator correlators, HMC invariants | Planned |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
@@ -162,6 +162,14 @@ The plotting refinement on the same branch gives scalar trajectories 100/500/100
 
 **Out of scope:** demanding infinite-volume critical exponent fits, guaranteed asymptotic error estimates, production performance tuning.
 
+### M2 feature-branch delivery record — 2026-10-10
+
+The new Lattice Systems workspace supports 2–64 sites per side, independent open/periodic x/y boundaries, signed anisotropic bonds, field and temperature. An indexed typed-spin runner preserves distinct periodic bonds, updates H/M incrementally, runs lazy Metropolis or heat bath in bounded worker batches and records measurements on segment-local sweep boundaries. Canvas configuration, selected 5×5 detail, actual worker transition inspection, separate parameter segments, dynamic plots and 2×2 exact/theoretical references are implemented. Run/Pause/Step and phone layout are validated against the production build; numerical and measured performance evidence is in [M2 review](M2_REVIEW.md). This record does not mark deployment or merge complete.
+
+Pre-merge correction: the 2×2 exact panel now enumerates directly in physical M2 units for every supported temperature/coupling/field combination and mixed boundaries, avoiding M1a's narrower dimensionless editing limits. Step distinguishes hypothetical flip, Metropolis proposed-move and actual transition energy/action changes. The Tc example sets the isotropic zero-field draft explicitly. Regression and production browser evidence is recorded in [M2 review](M2_REVIEW.md); the branch remains unmerged.
+
+Current M2 limits: side length one is excluded; nearest-neighbor bond-product averages and long-range correlations are deferred; no physical-phone throughput measurement or MCMC error bars are claimed. Experiment prompts are concise in-app notes, not saved experiments. The M2 acceptance gate remains subject to PR review and any documented final validation issues.
+
 ### M1a refinement — local inspection and convergence clarity
 
 Selected site/bond panels expose current local fields, flip costs, conditional probabilities and bond action contributions, with read-only selection and a link to the existing Apply form. Symmetry-aware exact references preserve true tiny nonzero responses. Log absolute-error plots use an explicit scale/N floor, disclose omitted checkpoints, and show current numerical errors/counts. See [refinement review notes](M1A_REFINEMENT_REVIEW.md) and D-025 for validation and screenshots.
@@ -238,7 +246,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0, M0.5 and M1a are merged. The current feature branch implements **M1b only**, stopping before M2. Keep later roadmap stages as context, not implied scope. Prefer a working, tested comparative laboratory to infrastructure for hypothetical future models.
+M0–M1b are merged. The current feature branch implements **M2 only**, stopping before M3. Keep later roadmap stages as context, not implied scope. Prefer a working, tested finite-lattice laboratory to infrastructure for hypothetical future models.
 
 ## Definition of done for the initial public usable release
 

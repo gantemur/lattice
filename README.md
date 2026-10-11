@@ -1,10 +1,18 @@
 # Lattice Lab
 
-**Status:** M0, M0.5 and M1a (including local inspection) are merged. M1b continuous scalar systems are implemented and locally validated on the feature branch; tests and limits are recorded in the [review](docs/M1B_REVIEW.md). M2 and later remain planned.
+**Status:** M0–M1b are merged. M2 2D Ising is implemented on a feature branch and under review; tests and limits are recorded in the [M2 review](docs/M2_REVIEW.md). M3 and later remain planned.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
+
+## New in M2
+
+Choose **Lattice Systems** for rectangular 2D Ising boxes from 2×2 to 64×64. Open or periodic x/y boundaries, signed horizontal/vertical couplings, field and temperature are editable. A Canvas shows every spin; pointer/touch or numeric controls select a site and a 5×5 detail. Run, Pause and Step use a separate seeded worker with lazy Metropolis or heat bath. The actual latest transition shows local bond contributions, physical field, ΔH, ΔS and random decisions.
+
+The physical Hamiltonian is `H=−Jx Σ_x sᵢsⱼ−Jy Σ_y sᵢsⱼ−h Σᵢsᵢ`, with `S=H/T`, `k_B=1`. M1a's dimensionless graph weights equal `Kx=Jx/T`, `Ky=Jy/T`, `b=h/T`; a periodic 2×2 lattice keeps eight distinct bonds. N random-site updates are one nominal sweep, not physical time. Measurements start after configurable sweep warm-up and recur at a whole-sweep stride. The worker maintains H/M incrementally, online moments and full-segment histograms; only 1,000 recent measurements and eight segments remain for plotted history. Changed physical settings preserve spins/RNG and begin a fresh segment; geometry changes and Reset restart a seeded session. Plot choices never sample.
+
+Two default plots show m and e histories. Up to six dynamic views add |m|, histograms, running means and sampler outcomes; recent windows are navigable. Exact 2×2 references come from M1a enumeration. The critical-temperature formula is labeled as **infinite-volume theory** and appears only for positive Jx/Jy at h=0. Finite-volume symmetry, local-chain mixing limits, and five suggested classroom experiments are explained in the interface. See the [M2 review](docs/M2_REVIEW.md) for performance measurements, screenshots and remaining limits.
 
 ## New in M1b
 
@@ -25,7 +33,7 @@ The action is `S=−Σ_e K_e s_tail s_head−Σ_i b_i s_i`, weight `exp(−S)` (
 - **Graph observables:** M, m=M/N, |M|, total dimensionless action E=S and each spin; distributions, exact/sample running means, trajectories, local conditionals and connected correlations. Configuration probability tables show exact and sampled masses. Local conditionals are explicitly distinct from equilibrium marginals.
 - **Measurements:** local warm-up defaults to 200 updates (0–10000), excluded from all estimates; a fixed budget is not a mixing guarantee. Coupling/field/sampler changes preserve compatible configurations/RNG and create separate segments. Topology changes explicitly restart/reseed. Reset clears/reseeds/refits; Fit All is display-only. Eight segments retain 1000 exact transitions each plus full configuration counts and bounded per-observable summaries. No MCMC confidence bands, ESS or saved-run manager.
 
-[Initial review notes](docs/M1A_REVIEW.md) and [local-inspection refinement screenshots](docs/M1A_REFINEMENT_REVIEW.md) record the numerical and desktop/phone validation. Larger lattices, gauge dynamics and cluster algorithms remain deferred.
+[Initial review notes](docs/M1A_REVIEW.md) and [local-inspection refinement screenshots](docs/M1A_REFINEMENT_REVIEW.md) record the numerical and desktop/phone validation. Large-lattice Ising now lives in its separate M2 workspace; gauge dynamics and cluster algorithms remain deferred.
 
 ## Preserved single-variable laboratory
 
@@ -58,7 +66,7 @@ Each of the latest **eight segments** keeps its settings, start index, update/wa
 
 Mulberry32 midpoint v1 remains the RNG. Direct Gaussian Box–Muller v1 still consumes exactly two uniforms per draw; spin direct/heat bath uses one, direct binomial uses n, and Metropolis uses two per update. Reset initializes chains at 0 (Gaussian), +1 (spin), or round(np) (binomial); initialization is not a measurement. Reproducibility requires the same seed, settings/update sequence, algorithm and build; browser transcendental functions can differ in their last bits. Run posts batches of 128 with at most one in flight. Apply and Pause respect the batch acknowledgment boundary. Plotting, history browsing, snapshot frequency and Step inspection never consume RNG values.
 
-**Planned:** quartic/coupled continuous variables, larger lattice systems, gauge dynamics, saved experiments and exports. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
+**Planned beyond M2:** gauge dynamics, saved experiments, exports, cluster algorithms and advanced MCMC error analysis. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
 
 ## Read first
 
@@ -95,13 +103,13 @@ Browser tests serve the **production build**, so run `npm run build` before `npm
 
 ## Architecture and deployment
 
-TypeScript + Vite + React, native accessible form controls, small SVG plots, locally bundled KaTeX (including fonts), and one browser Web Worker. Runtime packages are React, React DOM, and KaTeX. No backend, accounts, telemetry, CDN assets, plotting framework, or persistent service.
+TypeScript + Vite + React, native accessible form controls, small SVG plots, a Canvas spin view, locally bundled KaTeX (including fonts), and separate small-system/lattice browser workers. Runtime packages are React, React DOM, and KaTeX. No backend, accounts, telemetry, CDN assets, plotting framework, or persistent service.
 
-- `src/domain/`: finite graph/cell topology, stable incidence IDs, seven presets and separate drawing coordinates.
+- `src/domain/`: finite graph/cell topology with stable incidence IDs, plus indexed rectangular geometry with distinct oriented positive-axis bond records.
 - `src/models/`: scalar and finite Ising model union, actions, local differences, validation, exact densities/masses and independent enumeration.
 - `src/algorithms/`: seeded RNG, direct/heat-bath/Metropolis kernels and discriminated transition traces; no UI dependencies.
 - `src/observables/`: online moments, histogram counters, and bounded convergence checkpoints and exact transition rings.
-- `src/engine/`, `src/workers/`: authoritative run state, typed messages, stale-run handling, and bounded scheduling.
+- `src/engine/`, `src/workers/`: authoritative small-system and large-lattice run states, typed messages, stale-run handling, and bounded scheduling.
 - `src/app/`, `src/plotting/`: input/display state, dynamic plot assignments, stable viewports, and reusable SVG plotting.
 - `src/ui/`: reusable inline/display math with HTML + MathML output.
 
