@@ -166,6 +166,16 @@ The M1b plotting refinement uses global-update windows of 100 (default), 500 or 
 
 A version-1 URL query serializes scalar model/domain parameters, sampler and seed. Import validates schema, geometry, finite parameters and sampler compatibility before starting a fresh seeded session. Monte Carlo histories, raw trajectories and measurement datasets are never serialized in this M1b feature. Full experiment provenance/export remains M3.
 
+## Accepted M2 conventions — 2026-10-10
+
+### D-030 — Indexed large-lattice Ising runner and sweep-scheduled measurements
+
+M2 adds a separate indexed rectangular domain and worker runner rather than expanding the 1–4-site graph engine into a universal large-system abstraction. Row-major sites and positive-axis bond records preserve orientation and periodic length-two multiplicity. Int8 spins, precomputed four-slot incidence, incremental physical H/M and full recomputation oracles meet the 64×64 performance target while retaining the M1a exact 2×2 graph representation as an independent benchmark. The new UI uses physical `Jx,Jy,h,T` with `S=H/T`; M1a keeps its beta-absorbed `K,b` convention. Finite signed parameter bounds and 2–64 side lengths are teaching/resource limits, not mathematical restrictions.
+
+Both local samplers draw uniformly selected sites with replacement. Lazy Metropolis consumes three uniforms (site, proposal, acceptance), including deliberate stays; heat bath consumes site and resampling uniforms and reports no acceptance rate. Run and Step call the same transition kernel. One segment-local nominal sweep is N updates; warm-up and stride use whole sweeps, while global update number remains exact. Parameter/sampler/schedule changes preserve spins and RNG, recompute H, and begin isolated measurements with fresh warm-up. Geometry changes and Reset start a seeded session. Eight segments retain full online moments/histograms, bounded log checkpoints and 1,000 recent measurement records; the worker owns the only authoritative spin array. A 4,096-update batch and independent display timer keep rendering out of RNG decisions. Graphical selection and plot settings are display-only. No ESS, confidence bands, cluster algorithm, saved experiment system, or backend is implied.
+
+M2 presents the 2×2 exact M1a enumeration and the infinite-volume ferromagnetic zero-field critical relation under explicitly separate assumptions. It excludes Ly=1 rather than generating vertical self-links or misapplying 2D theory. Nearest-neighbor bond-product plots are postponed until their per-segment normalization and rendering are fully validated; they are not needed for the current core acceptance gate.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

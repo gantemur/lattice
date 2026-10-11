@@ -17,6 +17,9 @@
 body {
   margin: 0;
 }
+.workspace-surface[hidden] {
+  display: none;
+}
 a {
   color: var(--teal);
   text-underline-offset: 4px;
@@ -146,7 +149,10 @@ nav a {
   align-items: center;
   font-weight: 650;
   text-decoration: none;
-  border-bottom: 2px solid var(--teal);
+  border-bottom: 2px solid transparent;
+}
+.nav-active {
+  border-bottom-color: var(--teal);
 }
 .nav-planned {
   color: var(--muted);
@@ -1695,6 +1701,181 @@ footer {
 }
 .scalar-workspace .graph-fields {
   grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+}
+
+/* M2: large-lattice configuration remains distinct from numerical plots. */
+.lattice-canvas-card,
+.lattice-plots,
+.lattice-segment-row {
+  border: 1px solid var(--line);
+  background: #fdfdf9;
+  border-radius: 10px;
+}
+.lattice-canvas-card,
+.lattice-plots {
+  margin-top: 18px;
+  padding: 18px;
+  min-width: 0;
+}
+.lattice-model-card .math-display {
+  font-size: 13px;
+  overflow-x: auto;
+}
+.lattice-canvas-card canvas {
+  display: block;
+  width: min(100%, 640px);
+  height: auto;
+  margin: 14px auto;
+  image-rendering: pixelated;
+  cursor: crosshair;
+  border: 1px solid #758b80;
+  touch-action: manipulation;
+}
+.lattice-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  font-size: 12px;
+}
+.lattice-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.lattice-legend i {
+  width: 13px;
+  height: 13px;
+  border: 1px solid #607168;
+  display: inline-block;
+}
+.spin-plus {
+  background: #14625a;
+}
+.spin-minus {
+  background: #c87d44;
+}
+.spin-latest {
+  background: #f5ce66;
+}
+.lattice-site-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+}
+.lattice-site-controls label {
+  width: 95px;
+  font-size: 12px;
+}
+.lattice-site-controls input {
+  display: block;
+  margin-top: 4px;
+}
+.lattice-site-controls span {
+  padding-bottom: 12px;
+}
+.lattice-detail {
+  display: grid;
+  grid-template-columns: repeat(5, 27px);
+  gap: 2px;
+  width: max-content;
+  margin: 12px 0 6px;
+}
+.lattice-detail span {
+  display: grid;
+  place-items: center;
+  height: 27px;
+  color: white;
+  font-size: 12px;
+}
+.lattice-detail .plus {
+  background: #14625a;
+}
+.lattice-detail .minus {
+  background: #c87d44;
+}
+.lattice-detail .outside {
+  background: #e4e8df;
+}
+.lattice-detail .center {
+  outline: 3px solid #172e28;
+  z-index: 1;
+}
+.lattice-form-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.lattice-temperature-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 9px;
+}
+.lattice-temperature-presets button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: #eef3eb;
+  color: var(--teal);
+  font-size: 11px;
+  flex: 1;
+}
+.lattice-segment-row {
+  border-left: 4px solid #14625a;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 10px;
+  margin: 8px 0;
+  font-size: 12px;
+}
+.lattice-segment-row strong {
+  color: var(--teal);
+}
+.lattice-plots .section-heading {
+  margin-bottom: 10px;
+}
+.lattice-plots .plot-grid {
+  margin-top: 12px;
+}
+.lattice-plots .plot-card-heading {
+  flex-wrap: wrap;
+}
+.lattice-plots .plot-card-heading label {
+  flex: 1;
+  min-width: 150px;
+  font-size: 11px;
+}
+.lattice-plots .plot-card-heading select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  margin-top: 4px;
+}
+.lattice-plots .plot-controls input[type='number'] {
+  width: 95px;
+}
+@media (max-width: 700px) {
+  .lattice-canvas-card,
+  .lattice-plots {
+    padding: 12px;
+  }
+  .lattice-plots .plot-card.assigned-slot {
+    display: none;
+  }
+  .lattice-plots .plot-card.assigned-slot.active-detail,
+  .lattice-plots.show-overview .plot-card.assigned-slot {
+    display: block;
+  }
+  .lattice-plots.show-overview .plot-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lattice-plots .slot-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
 }
 @media (max-width: 560px) {
   .scalar-workspace .graph-fields {

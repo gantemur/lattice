@@ -1,4 +1,5 @@
 import { ScalarShare } from './ScalarShare';
+import { LatticeSystems } from './LatticeSystems';
 import { decodeScalarConfiguration } from './shareConfiguration';
 import { ScalarWorkspace } from './ScalarWorkspace';
 import { ScalarInspector } from './ScalarInspector';
@@ -33,6 +34,30 @@ import { ModelFormula, ModelNotes } from './ModelNotes';
 import { StepInspector } from './StepInspector';
 
 export function App() {
+  const [workspace, setWorkspace] = useState(() =>
+    typeof location !== 'undefined' && location.hash.startsWith('#lattice-')
+      ? 'lattice'
+      : 'small',
+  );
+  useEffect(() => {
+    const changed = () =>
+      setWorkspace(location.hash.startsWith('#lattice-') ? 'lattice' : 'small');
+    window.addEventListener('hashchange', changed);
+    return () => window.removeEventListener('hashchange', changed);
+  }, []);
+  return (
+    <>
+      <div className="workspace-surface" hidden={workspace !== 'small'}>
+        <SmallSystemsApp />
+      </div>
+      <div className="workspace-surface" hidden={workspace !== 'lattice'}>
+        <LatticeSystems />
+      </div>
+    </>
+  );
+}
+
+function SmallSystemsApp() {
   const { view, client } = useSimulation();
   const snapshot = view.snapshot;
   const lastConfiguration = useRef<RunConfiguration>(
@@ -181,9 +206,7 @@ export function App() {
           <a className="nav-active" href="#small-systems" aria-current="page">
             Small Systems
           </a>
-          <span className="nav-planned">
-            Lattice Systems <small>Planned</small>
-          </span>
+          <a href="#lattice-systems">Lattice Systems</a>
           <span className="nav-planned">
             Experiments <small>Planned</small>
           </span>
