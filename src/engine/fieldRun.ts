@@ -16,7 +16,16 @@ import {
 } from '../models/gaussianField';
 import type { GaussianFieldParameters } from '../models/gaussianField';
 import { exactGaussianField } from '../models/gaussianFieldReference';
-import { spectralGaussianField } from '../models/gaussianFieldSpectral';
+import {
+  spectralGaussianField,
+  spectralQuadraticField,
+} from '../models/gaussianFieldSpectral';
+import {
+  defaultOscillator,
+  oscillatorField,
+  validateOscillator,
+} from '../models/oscillator';
+import type { OscillatorParameters } from '../models/oscillator';
 import { isFullyPeriodic } from '../models/fieldFourier';
 import {
   emptyMoments,
@@ -25,13 +34,26 @@ import {
 } from '../observables/moments';
 
 /** The worker owns all field values, RNG draws and measurement accumulators. */
-export type FieldSettings = {
+type CommonFieldSettings = {
   parameters: GaussianFieldParameters;
   sampler: FieldSampler;
   warmupSweeps: number;
   strideSweeps: number;
 };
+export type GaussianFieldSettings = CommonFieldSettings & {
+  /** Omitted means the original Gaussian model for backwards compatibility. */
+  model?: 'gaussian';
+  oscillator?: never;
+};
+export type OscillatorFieldSettings = CommonFieldSettings & {
+  model: 'oscillator';
+  oscillator: OscillatorParameters;
+};
+export type FieldSettings = GaussianFieldSettings | OscillatorFieldSettings;
 export type FieldConfiguration = FieldSettings & { seed: number };
+export type OscillatorConfiguration = OscillatorFieldSettings & {
+  seed: number;
+};
 export const defaultFieldConfiguration: FieldConfiguration = {
   parameters: {
     shape: { kind: 'chain', length: 8, periodic: false },
@@ -41,6 +63,15 @@ export const defaultFieldConfiguration: FieldConfiguration = {
     source: 0,
   },
   sampler: { kind: 'direct' },
+  warmupSweeps: 0,
+  strideSweeps: 1,
+  seed: 12345,
+};
+export const defaultOscillatorConfiguration: OscillatorConfiguration = {
+  model: 'oscillator',
+  oscillator: defaultOscillator,
+  parameters: oscillatorField(defaultOscillator),
+  sampler: { kind: 'spectral' },
   warmupSweeps: 0,
   strideSweeps: 1,
   seed: 12345,
@@ -99,7 +130,35 @@ export type FieldResponse =
   | { type: 'error'; runId: number; message: string };
 
 export function validateFieldSettings(settings: FieldSettings) {
-  validateGaussianField(settings.parameters);
+  if (settings.model === 'oscillator') {
+    if (!settings.oscillator)
+      throw new Error('Oscillator physical parameters are required.');
+    validateOscillator(settings.oscillator);
+    const expected = oscillatorField(settings.oscillator);
+    const actual = settings.parameters;
+    const shape = actual.shape;
+    if (
+      shape.kind !== 'chain' ||
+      shape.length !== settings.oscillator.sites ||
+      !shape.periodic ||
+      fieldMeasure(actual) !== 'ordinary' ||
+      actual.r !== expected.r ||
+      actual.kappaX !== expected.kappaX ||
+      actual.kappaY !== 0 ||
+      actual.source !== 0
+    )
+      throw new Error(
+        'Oscillator quadratic coefficients disagree with physical parameters.',
+      );
+    if (settings.sampler.kind === 'direct')
+      throw new Error('Oscillator independent paths use the spectral sampler.');
+  } else if (settings.model === undefined || settings.model === 'gaussian') {
+    if (settings.oscillator)
+      throw new Error(
+        'Gaussian settings cannot contain oscillator parameters.',
+      );
+    validateGaussianField(settings.parameters);
+  } else throw new Error('Unknown field model.');
   const size = createFieldLattice(settings.parameters.shape).size;
   validateFieldSampler(settings.sampler, size);
   const measure = fieldMeasure(settings.parameters);
@@ -152,9 +211,11 @@ function newSegment(
     recent: [] as FieldMeasurement[],
     discardedMeasurements: 0,
     reference:
-      copied.sampler.kind === 'spectral'
-        ? spectralGaussianField(copied.parameters)
-        : exactGaussianField(copied.parameters),
+      copied.model === 'oscillator'
+        ? spectralQuadraticField(copied.parameters)
+        : copied.sampler.kind === 'spectral'
+          ? spectralGaussianField(copied.parameters)
+          : exactGaussianField(copied.parameters),
   };
 }
 type Segment = ReturnType<typeof newSegment>;
@@ -193,6 +254,11 @@ export class FieldRun {
 
   changeSettings(settings: FieldSettings) {
     validateFieldSettings(settings);
+    if (
+      (settings.model ?? 'gaussian') !==
+      (this.current.settings.model ?? 'gaussian')
+    )
+      throw new Error('Changing field model requires a seeded Reset.');
     if (
       JSON.stringify(settings.parameters.shape) !==
       JSON.stringify(this.current.settings.parameters.shape)

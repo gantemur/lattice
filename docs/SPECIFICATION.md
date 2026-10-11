@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.13 (M4a2 Fourier Gaussian fields, 2026-10-11)
+**Version:** 0.14 (M4b harmonic oscillator paths, 2026-10-11)
 
-**Status:** M0–M3b2, the pre-M4 readability pass and M4a1 are merged. M4a2 is implemented on a feature branch; later field models remain planned.
+**Status:** M0–M3b2, the pre-M4 readability pass, M4a1 and M4a2 are merged. M4b is implemented on a feature branch; interacting fields remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -85,9 +85,9 @@ Core UI:
 
 Purpose: analysis of saved runs, reproducible parameter sweeps, side-by-side comparisons, finite-size diagnostics, and export/import. M3b1 provides mounted in-memory segment archives and portable records. M3b2 adds bounded independent 2D Ising sweeps, a dedicated worker, numeric parameter-axis comparison, and version-2 sweep manifests alongside the original point datasets. The Experiment workspace must show differing model and sampling metadata when comparing runs.
 
-### 2.4 Fields & Paths (M4a1–M4a2)
+### 2.4 Fields & Paths (M4a1–M4b)
 
-A fourth mounted workspace begins with massive Gaussian real fields and extends fully periodic cases to Fourier sampling and a mean-zero massless measure. It presents a 1D profile or 2D fixed-scale heatmap, selected-site mathematics, exact finite-volume covariance, sampled comparisons and Fourier mode power. Later oscillator, interacting-field and HMC modes remain separate future work. Its worker state and RNG remain independent of the other mounted workspaces; display selection cannot sample.
+A fourth mounted workspace begins with massive Gaussian real fields, extends fully periodic cases to Fourier sampling and a mean-zero massless measure, and adds an explicit harmonic-oscillator path mode. It presents field profiles or heatmaps, exact finite-volume comparisons, and, in oscillator mode, a periodic Euclidean path, correlators and gap/transfer references. Interacting-field and HMC modes remain future work. Its worker state and RNG remain independent of the other mounted workspaces; display selection cannot sample.
 
 ### 2.5 Navigation contract
 
@@ -201,7 +201,7 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 ### 4.3 Next models (not initial release)
 
 - M4a1: merged massive Gaussian fields in 1D/2D with dense finite-volume covariance and exact Gaussian sampling. M4a2 adds periodic Fourier sampling and constrained massless zero-mode handling below.
-- Euclidean lattice quantum mechanics (harmonic and double-well paths); correlators, transfer matrix, effective energy/gap.
+- M4b harmonic Euclidean oscillator paths are implemented below; double-well paths remain future work.
 - Continuous-spin lattice `φ⁴` in 1D/2D; local Metropolis and HMC; mass and correlation-length diagnostics.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
@@ -215,13 +215,21 @@ Use dimensionless `S(φ)=r Σφᵢ²/2 + Σ_b κ_b(φ_tail−φ_head)²/2 − j 
 
 One direct update replaces the whole field using two Box–Muller uniforms per component and has no acceptance test or local-sweep unit. A coordinate heat-bath update consumes one site plus two normal uniforms, and a Metropolis update consumes site/proposal/decision uniforms, including rejected proposals. Local updates select sites uniformly with replacement; `N` are one nominal sweep, never physical time. Direct sampling has no warm-up and measures every draw. Local segments discard 0–1000 complete warm-up sweeps, then measure after each selected 1–100 complete sweeps. Parameter changes on fixed geometry preserve field/RNG and begin isolated measurements; geometry changes and Reset restart with the chosen seed. Each of at most eight segments keeps full online site/average/action-density moments and all pair-product sums, with only 256 recent full measurement vectors for plots. Sample covariance is a finite-segment plug-in estimate; no independent-sample SE is claimed for a local chain. Archive schema integration, Euclidean QM, φ⁴ and HMC remain deferred.
 
-#### M4a2 periodic Fourier field and mean-zero GFF (feature branch)
+#### M4a2 periodic Fourier field and mean-zero GFF (merged)
 
 The optional measure discriminator defaults to ordinary, preserving M4a1 configurations. Ordinary fields retain `0.05≤r≤20`, `0≤κx,κy≤10`, `|j|≤10` and product Lebesgue measure. Fully periodic chains and rectangles may use either the old dense samplers or a spectral independent sampler. A mean-zero massless field requires `r=j=0`, full periodicity and strictly positive stiffness in each active direction; it uses only spectral draws on the subspace `Σφ=0` with induced Euclidean measure. Changing support starts a new seeded session, including when the engine is called outside React. Other fixed-support parameter changes preserve compatible field/RNG and begin isolated segments.
 
 For row-major sites and modes `x+Lx y`, the forward DFT is `F(k)=Σx φ(x)exp(−ik·x)`, the inverse divides by `N`, and `k·x=2π(kx x/Lx+ky y/Ly)`. The periodic precision eigenvalues are `λ(k)=r+4κx sin²(πkx/Lx)+4κy sin²(πky/Ly)`, omitting the y term for chains. Ordinary mean is `j/r`, covariance is the Fourier sum of `1/λ`, and log Z uses the spectral determinant and `N j²/(2r)`. The constrained model removes only the constant mode, has covariance `Q⁺`, and `log Z=(N−1)log(2π)/2−Σk≠0 log λ(k)/2` under the induced measure. This is not the delta-constraint normalization against product Lebesgue measure. Open/mixed massive references remain dense; DFT is never applied to their precision.
 
 Spectral draws transform N real Box–Muller white-noise values, divide paired Fourier coefficients by `√λ`, remove the constant coefficient for mean-zero fields, inverse-transform and remove roundoff residual mean. Each draw consumes exactly `2N` uniforms. Mode-power inspection displays `P(k)=E[|F(φ−μ)(k)|²]/N` from full-segment pair products and site means against exact `1/λ`, with the removed zero mode explicitly marked. It provides no confidence band or autocorrelation correction. The constrained selected-site panel omits the ordinary fixed-neighbor conditional: fixing every other site determines the selected coordinate. The profile/heatmap scale remains user-controlled. See [Fourier mathematics](math/gaussian-fourier.md) and [M4a2 review](M4A2_REVIEW.md).
+
+#### M4b periodic Euclidean harmonic oscillator (feature branch)
+
+Use ℏ=kB=m=1, `H=p²/2+ω²x²/2`, integer `4≤N≤64`, `2≤β≤16`, `0.25≤ω≤4`, and `a=β/N`. The product-Lebesgue path action is `S=Σ_j[(x_{j+1}−x_j)²/(2a)+aω²x_j²/2]`, with `x_N=x_0` and no extra endpoint degree of freedom. Its periodic ordinary Gaussian map is `r=aω²`, `κ=1/a`, `j=0`, with positive constant mode. This physical model has its own validation; M4a1's UI bounds on `r,κ` remain in force for standalone Gaussian fields but do not constrain derived oscillator coefficients. Model switching and N changes begin seeded sessions; fixed-N β/ω/sampler changes retain the path and RNG in isolated measurement segments. No oscillator archive schema is added.
+
+The finite precision modes are `λ_k=aω²+4sin²(πk/N)/a`; exact `C_a(ℓ)=N⁻¹Σ_k cos(2πkℓ/N)/λ_k` equals `a cosh[Ω_a(β/2−ℓa)]/[2sinh(aΩ_a)sinh(βΩ_a/2)]`, where `Ω_a=2 asinh(aω/2)/a`. The continuum thermal reference is `C_β(t)=cosh[ω(β/2−t)]/[2ω sinh(βω/2)]`, with gap ω. The constant path-average variance is `1/(βω²)`; individual paths must not be mean-centered. Each retained whole path contributes `N⁻¹Σ_j x_jx_{j+ℓ}` through full-segment pair aggregates, distinct from the latest 256 displayed vectors. The unconnected equilibrium two-point is connected by exact symmetry; finite-segment sampling need not be centered. Display the sampled cosh effective gap only after 64 retained paths in the current segment and only when its empirical ratio has a valid real acosh value. Before then show N/A and the count while retaining the raw correlator. Thereafter label the gap provisional and uncorrected, with local-chain autocorrelation and warm-up caveats; no nonlinear uncertainty is claimed.
+
+The symmetric Trotter kernel is `T_a(x,y)=(2πa)^(-1/2) exp[−(x−y)²/(2a)−a(V(x)+V(y))/2]`. Its leading levels are `(n+1/2)Ω_a`. The physical trace includes the kinetic factor: `Z_QM=(2πa)^(-N/2) Z_raw=1/[2sinh(βΩ_a/2)]`. A bounded positive-weight Nyström quadrature gives an approximate two-level gap with disclosed coordinate cutoff; analytic Ω_a remains authoritative. Classify the fixed-grid result as usable, under-resolved (over 5% relative gap discrepancy or a violated leading-eigenvalue bound), or unavailable, showing the reason and discrepancy without replacing its numerical value. Exact `G_ij=C_a(i+j)` at selected positive half-circle indices illustrates reflection positivity up to roundoff, not a proof of all Osterwalder–Schrader axioms. One spectral path consumes `2N` uniforms and is independent; random-site heat bath and Metropolis reuse the same quadratic action, with N elementary updates per nominal sweep and segment-local warm-up/stride. Run/Step share kernels; Euclidean time is never an algorithmic update count. See [the mathematical walkthrough](math/euclidean-oscillator.md) and [M4b review](M4B_REVIEW.md).
 
 #### M2 indexed 2D Ising
 
@@ -476,7 +484,7 @@ Recommended first examples:
 - Compare 1D Ising transfer-matrix correlation lengths with Monte Carlo estimates as the chain grows; distinguish large-but-finite correlation length from a finite-temperature transition.
 - For 2D Ising, compare high- and low-temperature configurations and locate finite-volume susceptibility peaks; contrast with the known infinite-volume critical point.
 - Compare heat-bath and Metropolis autocorrelation near criticality (cautious about insufficient mixing).
-- For M4a1–M4a2 Gaussian fields, vary stiffness and compare sampled site/pair moments with finite-volume covariance; explain the two-bond periodic length-two case, then compare dense and Fourier references and remove the massless constant mode. Later study a `φ⁴` correction and Euclidean QM correlators.
+- For M4a1–M4a2 Gaussian fields, vary stiffness and compare sampled site/pair moments with finite-volume covariance; explain the two-bond periodic length-two case, then compare dense and Fourier references and remove the massless constant mode. In M4b, vary N at fixed β,ω and compare exact finite-spacing and continuum gaps and sampled correlators. Later study a `φ⁴` correction.
 
 Each model may link to relevant graduate lecture notes, but these are optional resources and must not block using the laboratory offline.
 
@@ -551,7 +559,7 @@ Correctness is a release requirement, not optional polish.
 - 1D periodic transfer-matrix partition function matches enumeration for `N=4` (allow standard transfer-matrix normalization conventions, explicitly documented).
 - Zero-field spin-flip symmetry and permutation symmetries where applicable.
 - 0D Gaussian moments/covariance equal analytic formulas; quartic quadrature reports truncation/integration tolerance when used as numerical reference.
-- M4a2 compares finite free-field sampled covariance with Fourier-space inverse and tests the mean-zero pseudoinverse and removed constant mode.
+- M4a2 compares finite free-field sampled covariance with Fourier-space inverse and tests the mean-zero pseudoinverse and removed constant mode. M4b compares independently computed oscillator action, Fourier/dense and hyperbolic correlators, transfer normalization and finite-grid spectra, reflection covariance, and segment-local sampled estimates.
 - Later gauge models: action and Wilson loops invariant under generated local gauge transformations, including tiny periodic/self-link cases.
 
 ### 10.3 Sampling tests

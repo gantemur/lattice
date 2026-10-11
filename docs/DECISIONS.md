@@ -240,6 +240,16 @@ An omitted field-measure discriminator means the M4a1 ordinary massive Gaussian,
 
 Periodic modes use row-major indices and a forward DFT without scale, inverse with `1/N`. Real white noise, generated with the existing uncached Box–Muller rule, supplies conjugate-paired coefficients; filtering by `1/√λ` preserves a real field. The massless constant coefficient is removed and residual mean projected away. A spectral draw uses `2N` uniforms, no warm-up or acceptance test. Open and mixed massive fields retain the dense reference because a periodic DFT does not diagonalize their precision. Spectrum views derive selected full-segment power from existing pair aggregates, avoiding another sample history or RNG use. The zero mode is marked removed rather than shown as infinite.
 
+## Accepted M4b conventions — 2026-10-11
+
+### D-040 — Physical oscillator adapter on the existing Gaussian worker
+
+The harmonic path is a separate typed model within Fields & Paths, with ℏ=kB=m=1, `a=β/N`, ordinary periodic measure and `r=aω²`, `κ=1/a`, `j=0`. Its physical bounds are `N=4–64`, `β=2–16`, `ω=0.25–4`; M4a's standalone field UI coefficient bounds remain unchanged. A validated oscillator adapter reuses the field action, spectral reference and original transition kernels. The positive constant mode is retained. Switching models or changing N starts a seeded session; changing β, ω or sampler at fixed N preserves the path and RNG but isolates all measurements in a new segment. No archive schema change accompanies M4b.
+
+### D-041 — Time, normalization and bounded correlator evidence
+
+Euclidean coordinate time `t=ℓa` is never a Monte Carlo update or physical real time. Full-segment pair-product aggregates, not the 256 most recent path vectors, give the uncentered translation average `N⁻¹Σ_j〈x_j x_(j+ℓ)〉`. Exact symmetry makes the equilibrium mean zero, but individual paths are never de-meaned. Show the exact lattice correlator/gap alongside continuum thermal theory. Display a sampled cosh effective gap only after 64 retained paths in the current segment and when its arcosh is real; label it provisional and uncorrected, with no unsupported uncertainty. A 64-path count is not an equilibration or effective-sample-size guarantee. The raw product-Lebesgue Gaussian integral differs from the quantum trace by `(2πa)^(-N/2)`. The symmetric Trotter transfer kernel, its analytic finite-spacing spectrum, a bounded positive-weight coordinate quadrature and small reflection Gram matrices are distinct teaching calculations. Operator positivity follows from the factorization; numerical Gram checks only illustrate reflection positivity and are not a proof of the full OS axioms. Classify the fixed-grid quadrature against the analytic gap (>5% relative discrepancy) and leading eigenvalue bound, disclose numerical failure, and retain its approximate value even when under-resolved. The path scale is fixed and clipping disclosed. Interacting oscillators, HMC and persistence remain later decisions.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.
