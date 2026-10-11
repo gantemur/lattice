@@ -396,6 +396,7 @@ export function LatticeSystems({
           <a className="nav-active" aria-current="page" href="#lattice-systems">
             Lattice Systems
           </a>
+          <a href="#fields-paths">Fields &amp; Paths</a>
           <a href="#experiments">
             Experiments{archiveCount ? ` (${archiveCount})` : ''}
           </a>

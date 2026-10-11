@@ -1,5 +1,6 @@
 import { ScalarShare } from './ScalarShare';
 import { LatticeSystems } from './LatticeSystems';
+import { FieldWorkspace } from './FieldWorkspace';
 import { decodeScalarConfiguration } from './shareConfiguration';
 import { ScalarWorkspace } from './ScalarWorkspace';
 import { ScalarInspector } from './ScalarInspector';
@@ -48,18 +49,23 @@ export function App() {
   const [workspace, setWorkspace] = useState(() =>
     typeof location !== 'undefined' && location.hash.startsWith('#experiments')
       ? 'experiments'
-      : typeof location !== 'undefined' && location.hash.startsWith('#lattice-')
-        ? 'lattice'
-        : 'small',
+      : typeof location !== 'undefined' && location.hash.startsWith('#fields-')
+        ? 'fields'
+        : typeof location !== 'undefined' &&
+            location.hash.startsWith('#lattice-')
+          ? 'lattice'
+          : 'small',
   );
   useEffect(() => {
     const changed = () =>
       setWorkspace(
         location.hash.startsWith('#experiments')
           ? 'experiments'
-          : location.hash.startsWith('#lattice-')
-            ? 'lattice'
-            : 'small',
+          : location.hash.startsWith('#fields-')
+            ? 'fields'
+            : location.hash.startsWith('#lattice-')
+              ? 'lattice'
+              : 'small',
       );
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
@@ -109,6 +115,9 @@ export function App() {
           sweeps={sweeps}
           updateSweeps={setSweeps}
         />
+      </div>
+      <div className="workspace-surface" hidden={workspace !== 'fields'}>
+        <FieldWorkspace />
       </div>
     </>
   );
@@ -299,6 +308,7 @@ function SmallSystemsApp({
             Small Systems
           </a>
           <a href="#lattice-systems">Lattice Systems</a>
+          <a href="#fields-paths">Fields &amp; Paths</a>
           <a href="#experiments">
             Experiments{archiveCount ? ` (${archiveCount})` : ''}
           </a>

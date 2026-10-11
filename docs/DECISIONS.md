@@ -214,6 +214,22 @@ The pre-merge worker-protocol correction makes repeated Pause/Resume idempotent 
 
 Keep M3b1's immutable point datasets and 16-record/12 MiB in-memory limits. A version-2 JSON envelope contains a sweep manifest referring to those records, with explicit per-point plan, seed, status, work count and dataset ID. Version-1 imports remain valid. Validate the complete envelope atomically, reserve capacity before Start, and stage a completed capture in memory if a concurrent archive change prevents saving it. Imported sweeps are read-only until their plan is explicitly copied. Comparison uses numeric parameter spacing and only labels the theoretical infinite-volume Tc for the isotropic Jx=Jy=1, h=0 temperature configuration. CSV is derived and uses M3b1 formula-text protection. No backend, persistent job scheduler, automatic fit or later model is introduced.
 
+## Accepted M4a1 conventions — 2026-10-11
+
+### D-036 — Readable massive Gaussian lattice-field foundation
+
+M4a1 extends the merged source-readability policy in `AGENTS.md` rather than replacing the source guide or rewriting older kernels. A distinct Fields & Paths worker owns a real field configuration, seeded RNG, parameter segments and bounded measurements; the fourth mounted workspace only schedules and displays snapshots. Geometry, action, dense reference, transitions, run, and React views live in separate modules with equations and small independent tests.
+
+A 1D chain is explicit, not a 2D `Ly=1` special case. A 2D rectangle uses row-major sites and positive-axis bond records, with open sides omitting wraps and periodic length-two axes preserving parallel records. Supported shapes are 1D length 2–64 or 2D sides 2–8, at most 64 sites. Every supported lattice has a dense finite-volume Cholesky reference, so UI selection never has to imply an unavailable exact covariance. These are conservative teaching and resource limits; they can be revisited after measured performance evidence.
+
+The dimensionless action is `S=rΣφᵢ²/2+Σ_bκ_b(φ_tail−φ_head)²/2−jΣφᵢ`, ordinary measure `∏dφᵢ`, with `0.05≤r≤20`, `0≤κx,κy≤10`, `|j|≤10`. Thus `Q=rI+` weighted bond Laplacian is positive definite without a zero-mode convention. The exact finite-volume reference computes `μ=Q⁻¹j1`, `C=Q⁻¹`, and log Z from the Cholesky diagonals, checking `QC≈I`. The coefficient `r` is not an oscillator particle mass. Fourier and massless cases are M4a2, not hidden options here.
+
+One direct whole-field draw uses two seeded Box–Muller uniforms per component and has no acceptance or local-sweep unit. Random-site coordinate heat bath uses site plus two normal uniforms; random-site Metropolis uses site, symmetric-uniform proposal and acceptance uniforms, including on rejection. `N` local updates form a nominal sweep. Run and Step use the same transition function. Direct draws measure immediately; local samplers use segment-local whole-sweep warm-up and stride. A changed parameter or sampler on fixed geometry retains configuration/RNG but starts isolated aggregates; geometry change and Reset start a new seeded session. Full online moments and all pair-product sums span each segment, while only 256 recent full field vectors per segment are retained for plotting. Local-chain means receive no independent-sample uncertainty. M4e will define any portable archive extension; M3b1/v2 files remain unchanged.
+
+### D-037 — Fixed, disclosed field visualization scale
+
+The 1D profile and 2D heatmap use a visible user-controlled symmetric display range. Values outside it are clipped with a count and explicit disclosure; applying physical parameters does not silently recolor the same value. Site and pair selection, scale edits and history browsing are display-only. Exact conditional means are labeled as fixed-neighbor laws, separate from equilibrium marginal covariance. The pair table juxtaposes exact finite-volume and segment-specific sampled estimates without treating a finite chain trajectory as independent observations.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.
