@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.11 (through M3b2, 2026-10-11)
+**Version:** 0.12 (M4a1 Gaussian fields, 2026-10-11)
 
-**Status:** M0–M3b2 are merged. This pre-M4 readability pass adds no new model behavior; later models remain planned.
+**Status:** M0–M3b2 and the pre-M4 readability pass are merged. M4a1 is implemented on a feature branch; later field models remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -85,7 +85,11 @@ Core UI:
 
 Purpose: analysis of saved runs, reproducible parameter sweeps, side-by-side comparisons, finite-size diagnostics, and export/import. M3b1 provides mounted in-memory segment archives and portable records. M3b2 adds bounded independent 2D Ising sweeps, a dedicated worker, numeric parameter-axis comparison, and version-2 sweep manifests alongside the original point datasets. The Experiment workspace must show differing model and sampling metadata when comparing runs.
 
-### 2.4 Navigation contract
+### 2.4 Fields & Paths (M4a1)
+
+A fourth mounted workspace begins with massive Gaussian real fields. It presents a 1D profile or 2D fixed-scale heatmap, selected-site local mathematics, exact finite-volume covariance and sampled comparisons. Later oscillator, interacting-field and HMC modes remain separate future work. Its worker state and RNG remain independent of the other mounted workspaces; display selection cannot sample.
+
+### 2.5 Navigation contract
 
 - Model selection is accessible without losing the identity of the current run; changing model creates or loads another run rather than blending measurements.
 - The selected workspace, model, main parameter values, and current plot choices should be visible with minimal taps.
@@ -196,12 +200,20 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 
 ### 4.3 Next models (not initial release)
 
-- Massive Gaussian free field in 1D/2D; Fourier-space covariance and exact Gaussian sampling. A massless periodic case needs zero-mode removal or an explicit constraint.
+- M4a1: massive Gaussian fields in 1D/2D with dense finite-volume covariance and exact Gaussian sampling; see the implemented feature-branch contract below. Fourier sampling and massless zero-mode handling remain M4a2.
 - Euclidean lattice quantum mechanics (harmonic and double-well paths); correlators, transfer matrix, effective energy/gap.
 - Continuous-spin lattice `φ⁴` in 1D/2D; local Metropolis and HMC; mass and correlation-length diagnostics.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
 - `Z₂` and compact `U(1)` gauge models on oriented edges and plaquettes. Start with one open plaquette and small periodic tori. Show Wilson loops and gauge invariance explicitly. Do not imply a 2D gauge model has an Ising-like thermal transition without model-specific justification.
+
+#### M4a1 massive Gaussian field (feature branch)
+
+The field geometry is independent of model and sampler: a 2–64-site 1D chain or a 2D rectangle with each side 2–8, at most 64 sites. Sites use row-major `i=x+Lx y`; bonds point along existing positive axes. Open boundaries omit wrap bonds without fixing boundary values, and periodic length-two axes preserve parallel bonds. No fake `Ly=1` rectangle or self-link is introduced.
+
+Use dimensionless `S(φ)=r Σφᵢ²/2 + Σ_b κ_b(φ_tail−φ_head)²/2 − j Σφᵢ`, with ordinary product Lebesgue measure `∏dφᵢ`, `0.05≤r≤20`, `0≤κx,κy≤10`, `|j|≤10`. The quadratic precision is `Q=rI+` the weighted bond Laplacian. Full action, gradient, local ΔS and site conditional are pure functions. Dense Cholesky gives `μ=Q⁻¹j1`, `C=Q⁻¹`, and `log Z=N log(2π)/2−Σ log Lᵢᵢ+j1ᵀμ/2`; an explicit `QC≈I` check rejects unstable reference calculations. References are exact for the finite Gaussian model up to floating-point rounding, not infinite-volume theory.
+
+One direct update replaces the whole field using two Box–Muller uniforms per component and has no acceptance test or local-sweep unit. A coordinate heat-bath update consumes one site plus two normal uniforms, and a Metropolis update consumes site/proposal/decision uniforms, including rejected proposals. Local updates select sites uniformly with replacement; `N` are one nominal sweep, never physical time. Direct sampling has no warm-up and measures every draw. Local segments discard 0–1000 complete warm-up sweeps, then measure after each selected 1–100 complete sweeps. Parameter changes on fixed geometry preserve field/RNG and begin isolated measurements; geometry changes and Reset restart with the chosen seed. Each of at most eight segments keeps full online site/average/action-density moments and all pair-product sums, with only 256 recent full measurement vectors for plots. Sample covariance is a finite-segment plug-in estimate; no independent-sample SE is claimed for a local chain. Archive schema integration, Fourier sampling, massless fields, Euclidean QM, φ⁴ and HMC are deferred.
 
 #### M2 indexed 2D Ising
 
@@ -456,7 +468,7 @@ Recommended first examples:
 - Compare 1D Ising transfer-matrix correlation lengths with Monte Carlo estimates as the chain grows; distinguish large-but-finite correlation length from a finite-temperature transition.
 - For 2D Ising, compare high- and low-temperature configurations and locate finite-volume susceptibility peaks; contrast with the known infinite-volume critical point.
 - Compare heat-bath and Metropolis autocorrelation near criticality (cautious about insufficient mixing).
-- Later: sample a massive Gaussian field; compare Fourier covariance exactly, then study a `φ⁴` correction; extract effective energies from Euclidean QM correlators.
+- For the M4a1 massive Gaussian field, vary a chain or rectangle stiffness and compare its sampled site/pair moments with finite-volume covariance; explain the two-bond periodic length-two case. Later, compare Fourier covariance, study a `φ⁴` correction, and extract effective energies from Euclidean QM correlators.
 
 Each model may link to relevant graduate lecture notes, but these are optional resources and must not block using the laboratory offline.
 

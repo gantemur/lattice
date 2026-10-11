@@ -364,6 +364,7 @@ export function Experiments({
         <nav aria-label="Workspaces">
           <a href="#small-systems">Small Systems</a>
           <a href="#lattice-systems">Lattice Systems</a>
+          <a href="#fields-paths">Fields &amp; Paths</a>
           <a className="nav-active" aria-current="page" href="#experiments">
             Experiments
           </a>
