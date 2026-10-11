@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type {
   LatticeSegmentSnapshot,
   LatticeSnapshot,
@@ -6,6 +6,11 @@ import type {
 } from '../engine/latticeRun';
 import { PlotFrame, tick } from './PlotFrame';
 import { segmentColor } from './viewport';
+import {
+  AutocorrelationPlot,
+  BlockingPlot,
+  SpatialPlot,
+} from './DiagnosticPlots';
 
 export type LatticePlot =
   | 'm-history'
@@ -16,7 +21,14 @@ export type LatticePlot =
   | 'm-mean'
   | 'abs-mean'
   | 'e-mean'
-  | 'acceptance';
+  | 'acceptance'
+  | 'm-acf'
+  | 'abs-acf'
+  | 'e-acf'
+  | 'm-blocking'
+  | 'e-blocking'
+  | 'spatial-x'
+  | 'spatial-y';
 const names: Record<LatticePlot, string> = {
   'm-history': 'Magnetization history',
   'abs-history': '|m| history',
@@ -27,6 +39,13 @@ const names: Record<LatticePlot, string> = {
   'abs-mean': 'Running mean of |m|',
   'e-mean': 'Running mean of e',
   acceptance: 'Update outcomes',
+  'm-acf': 'Autocorrelation of m',
+  'abs-acf': 'Autocorrelation of |m|',
+  'e-acf': 'Autocorrelation of e',
+  'm-blocking': 'Blocking SE of m',
+  'e-blocking': 'Blocking SE of e',
+  'spatial-x': 'Spatial correlation · x',
+  'spatial-y': 'Spatial correlation · y',
 };
 const choices = Object.entries(names) as [LatticePlot, string][];
 type Assignment = {
@@ -325,7 +344,21 @@ export function LatticePlots({ snapshot }: { snapshot: LatticeSnapshot }) {
     [follow, setFollow] = useState(true),
     [end, setEnd] = useState(0),
     [overview, setOverview] = useState(false),
-    [detail, setDetail] = useState(1);
+    [detail, setDetail] = useState(1),
+    [spatialMaximum, setSpatialMaximum] = useState(4);
+  useEffect(() => {
+    setSlots([
+      { id: 1, plot: 'm-history', collapsed: false, expanded: false },
+      { id: 2, plot: 'e-history', collapsed: false, expanded: false },
+    ]);
+    setNextId(3);
+    setWindowSize(100);
+    setFollow(true);
+    setEnd(0);
+    setOverview(false);
+    setDetail(1);
+    setSpatialMaximum(4);
+  }, [snapshot.runId]);
   const earliest = Math.min(
     snapshot.sweeps,
     ...snapshot.segments.flatMap((s) => s.measurements.map((m) => m.sweep)),
@@ -364,6 +397,20 @@ export function LatticePlots({ snapshot }: { snapshot: LatticeSnapshot }) {
         </button>
       </div>
       <div className="plot-controls">
+        <label>
+          Spatial max r{' '}
+          <select
+            aria-label="Spatial maximum displacement"
+            value={spatialMaximum}
+            onChange={(e) => setSpatialMaximum(Number(e.target.value))}
+          >
+            {[1, 2, 3, 4].map((r) => (
+              <option key={r} value={r}>
+                {r}
+              </option>
+            ))}
+          </select>
+        </label>
         <label>
           Window{' '}
           <select
@@ -523,6 +570,32 @@ export function LatticePlots({ snapshot }: { snapshot: LatticeSnapshot }) {
                 <Histogram segments={snapshot.segments} plot={slot.plot} />
               ) : slot.plot.endsWith('mean') ? (
                 <Mean segments={snapshot.segments} plot={slot.plot} />
+              ) : slot.plot.endsWith('acf') ? (
+                <AutocorrelationPlot
+                  diagnostic={
+                    snapshot.segments.at(-1)!.diagnostics[
+                      slot.plot.startsWith('abs')
+                        ? 'absM'
+                        : slot.plot.startsWith('e-')
+                          ? 'e'
+                          : 'm'
+                    ]
+                  }
+                />
+              ) : slot.plot.endsWith('blocking') ? (
+                <BlockingPlot
+                  diagnostic={
+                    snapshot.segments.at(-1)!.diagnostics[
+                      slot.plot.startsWith('e-') ? 'e' : 'm'
+                    ]
+                  }
+                />
+              ) : slot.plot.startsWith('spatial') ? (
+                <SpatialPlot
+                  segment={snapshot.segments.at(-1)!}
+                  axis={slot.plot.endsWith('x') ? 'x' : 'y'}
+                  maximum={spatialMaximum}
+                />
               ) : (
                 <Outcomes segments={snapshot.segments} />
               ))}
@@ -533,7 +606,13 @@ export function LatticePlots({ snapshot }: { snapshot: LatticeSnapshot }) {
                   ? 'Each color is one parameter segment; full-segment counts, not only visible history.'
                   : slot.plot.endsWith('mean')
                     ? 'Correlated MCMC means; no independent-sample error band or mixing guarantee.'
-                    : 'Counts include warm-up. Heat bath has no acceptance test.'}
+                    : slot.plot.endsWith('acf')
+                      ? 'Worker-computed recent-window ρ(k); lag is in retained measurements, not spin updates. Dashed line marks the summation window.'
+                      : slot.plot.endsWith('blocking')
+                        ? 'Nonoverlapping blocks; the remainder is omitted. Orange is the autocorrelation-window SE when supported.'
+                        : slot.plot.startsWith('spatial')
+                          ? 'Current segment only. Fully periodic: G(r)−〈m〉²; open or mixed boundaries: raw G(r). Ordered positive-axis origin pairs, not all pairs.'
+                          : 'Counts include warm-up. Heat bath has no acceptance test.'}
             </p>
           </article>
         ))}

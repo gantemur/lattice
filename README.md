@@ -1,10 +1,16 @@
 # Lattice Lab
 
-**Status:** M0–M1b are merged. M2 2D Ising is implemented on a feature branch and under review; tests and limits are recorded in the [M2 review](docs/M2_REVIEW.md). M3 and later remain planned.
+**Status:** M0–M2 are merged. M3a statistical diagnostics and physical observables are being validated on a feature branch; conventions and limits are recorded in the [M3a review](docs/M3A_REVIEW.md). Saved experiments and exports remain planned for M3b.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
+
+## New in M3a
+
+Lattice Systems now reports the connected signed-magnetization susceptibility `χ=N(〈m²〉−〈m〉²)/T`, Binder cumulant `U₄=1−〈m⁴〉/(3〈m²〉²)`, fixed-Hamiltonian heat capacity per site `cV=N(〈e²〉−〈e〉²)/T²`, and directional nearest-neighbor bond products. Axial correlation plots average positive-displacement origin pairs up to four sites: fully periodic lattices show a plug-in connected estimate `G(r)−〈m〉²`, while open and mixed-boundary lattices show raw pair correlation. The exact 2×2 reference includes these observables for open, periodic and mixed boundaries.
+
+A collapsible Statistical Diagnostics panel estimates autocorrelation, integrated time, recent-window ESS/standard error and blocking behavior from up to 8192 consecutive retained measurements per segment. It discloses measurement cadence, evictions and failure statuses. Local graph-Ising times use elementary updates (or updates divided by site count for nominal sweeps); direct draws have no local-sweep unit; M2 uses its selected sweep stride. These are estimates about the recent analyzed window, not automatic error bars for the full-segment mean or proof of equilibration. Tiny graph Ising and M2 2×2 additionally compare with exact stationary Markov-chain autocorrelation and spectral results for their actual selected sampler. ACF, blocking and spatial plots join the existing zero-to-six plot gallery. [M3a review](docs/M3A_REVIEW.md) documents the numerical methods and validation.
 
 ## New in M2
 
@@ -12,7 +18,7 @@ Choose **Lattice Systems** for rectangular 2D Ising boxes from 2×2 to 64×64. O
 
 The physical Hamiltonian is `H=−Jx Σ_x sᵢsⱼ−Jy Σ_y sᵢsⱼ−h Σᵢsᵢ`, with `S=H/T`, `k_B=1`. M1a's dimensionless graph weights equal `Kx=Jx/T`, `Ky=Jy/T`, `b=h/T`; a periodic 2×2 lattice keeps eight distinct bonds. N random-site updates are one nominal sweep, not physical time. Measurements start after configurable sweep warm-up and recur at a whole-sweep stride. The worker maintains H/M incrementally, online moments and full-segment histograms; only 1,000 recent measurements and eight segments remain for plotted history. Changed physical settings preserve spins/RNG and begin a fresh segment; geometry changes and Reset restart a seeded session. Plot choices never sample.
 
-Two default plots show m and e histories. Up to six dynamic views add |m|, histograms, running means and sampler outcomes; recent windows are navigable. Exact 2×2 references come from M1a enumeration. The critical-temperature formula is labeled as **infinite-volume theory** and appears only for positive Jx/Jy at h=0. Finite-volume symmetry, local-chain mixing limits, and five suggested classroom experiments are explained in the interface. See the [M2 review](docs/M2_REVIEW.md) for performance measurements, screenshots and remaining limits.
+Two default plots show m and e histories. Up to six dynamic views add |m|, histograms, running means and sampler outcomes; recent windows are navigable. Exact 2×2 references use direct stable physical-parameter enumeration and agree with M1a where its dimensionless range applies. The critical-temperature formula is labeled as **infinite-volume theory** and appears only for positive Jx/Jy at h=0. Finite-volume symmetry, local-chain mixing limits, and five suggested classroom experiments are explained in the interface. See the [M2 review](docs/M2_REVIEW.md) for performance measurements, screenshots and remaining limits.
 
 ## New in M1b
 
@@ -60,13 +66,13 @@ Gaussian Metropolis proposes a uniform displacement in `[−δ,δ]`, with `0.01�
 
 Metropolis defaults to **200 discarded warm-up updates per new segment**, configurable from 0 to 10000. This budget does not guarantee mixing. Direct samplers need none. Single-spin heat bath also generates independent equilibrium draws: its resampling law does not depend on the old spin. After warm-up, every update—including rejection/self states—enters moments and histograms. Sample variance uses N−1, which does not remove finite-chain correlation bias.
 
-Only **direct Gaussian** segments show the known-variance `μ±σ/√N` envelope (about 68% coverage at fixed N) and optional `σ N^(-1/2)` RMS error reference. These are not simultaneous confidence bands or promises of monotone error reduction. Metropolis plots show the running mean and exact reference without independent-sample bands. Autocorrelation-adjusted errors and ESS are deferred to M3.
+Only **direct Gaussian** segments show the known-variance `μ±σ/√N` envelope (about 68% coverage at fixed N) and optional `σ N^(-1/2)` RMS error reference. These are not simultaneous confidence bands or promises of monotone error reduction. Metropolis plots show the running mean and exact reference without independent-sample bands. M3a's autocorrelation-adjusted errors and ESS apply to labeled recent Ising diagnostic windows when supported, never as automatic Gaussian independent-sample bands.
 
 Each of the latest **eight segments** keeps its settings, start index, update/warm-up/acceptance counters, moments, histogram, logarithmic mean checkpoints and latest **1000 exact transitions**. Older transitions and then old segments are removed with disclosure; full segment statistics survive transition eviction. Gaussian histograms use 32 bins over each segment’s `μ±4σ`, with explicit tails included in normalization and moments. Discrete histograms have one bin per state. Checkpoints follow `n₀=1`, `nₖ₊₁=ceil(1.125 nₖ)`, at most 320 plus the latest endpoint, using retained measurement count only.
 
 Mulberry32 midpoint v1 remains the RNG. Direct Gaussian Box–Muller v1 still consumes exactly two uniforms per draw; spin direct/heat bath uses one, direct binomial uses n, and Metropolis uses two per update. Reset initializes chains at 0 (Gaussian), +1 (spin), or round(np) (binomial); initialization is not a measurement. Reproducibility requires the same seed, settings/update sequence, algorithm and build; browser transcendental functions can differ in their last bits. Run posts batches of 128 with at most one in flight. Apply and Pause respect the batch acknowledgment boundary. Plotting, history browsing, snapshot frequency and Step inspection never consume RNG values.
 
-**Planned beyond M2:** gauge dynamics, saved experiments, exports, cluster algorithms and advanced MCMC error analysis. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
+**Planned beyond M3a:** gauge dynamics, saved experiments, exports and cluster algorithms. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
 
 ## Read first
 
@@ -108,14 +114,14 @@ TypeScript + Vite + React, native accessible form controls, small SVG plots, a C
 - `src/domain/`: finite graph/cell topology with stable incidence IDs, plus indexed rectangular geometry with distinct oriented positive-axis bond records.
 - `src/models/`: scalar and finite Ising model union, actions, local differences, validation, exact densities/masses and independent enumeration.
 - `src/algorithms/`: seeded RNG, direct/heat-bath/Metropolis kernels and discriminated transition traces; no UI dependencies.
-- `src/observables/`: online moments, histogram counters, and bounded convergence checkpoints and exact transition rings.
+- `src/observables/`: online moments, histogram counters, bounded convergence/transition records, physical Ising observables and worker-owned statistical diagnostic rings.
 - `src/engine/`, `src/workers/`: authoritative small-system and large-lattice run states, typed messages, stale-run handling, and bounded scheduling.
 - `src/app/`, `src/plotting/`: input/display state, dynamic plot assignments, stable viewports, and reusable SVG plotting.
 - `src/ui/`: reusable inline/display math with HTML + MathML output.
 
 Vite uses **`base: '/lattice/'`** in development and production. Navigation uses hash anchors, so `/lattice/#small-systems` can load directly or reload on GitHub Pages without server rewrites.
 
-[CI/Pages workflow](.github/workflows/ci-pages.yml) validates pull requests and pushes to `main`. It uploads and deploys `dist` **only from `main`, after validation passes**. Hosting uses **Settings → Pages → Source → GitHub Actions**. M0/M0.5 are merged; an approved M1a merge and successful workflow are required to publish this feature branch. This follows the [Vite Pages guide](https://vite.dev/guide/static-deploy.html#github-pages) and [GitHub publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Feature-branch validation does not establish that the live site is deployed; the live URL and hash reload must be checked after deployment.
+[CI/Pages workflow](.github/workflows/ci-pages.yml) validates pull requests and pushes to `main`. It uploads and deploys `dist` **only from `main`, after validation passes**. Hosting uses **Settings → Pages → Source → GitHub Actions**. M0–M2 are merged; an approved M3a merge and successful workflow are required to publish this feature branch. This follows the [Vite Pages guide](https://vite.dev/guide/static-deploy.html#github-pages) and [GitHub publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Feature-branch validation does not establish that the live site is deployed; the live URL and hash reload must be checked after deployment.
 
 ## License
 

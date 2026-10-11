@@ -12,6 +12,7 @@ import { LatticePlots } from '../plotting/LatticePlots';
 import { segmentColor } from '../plotting/viewport';
 import { formatNumber } from '../plotting/PlotFrame';
 import { InlineMath, DisplayMath } from '../ui/Math';
+import { LatticeStatisticalDiagnostics } from './StatisticalDiagnostics';
 
 function useLattice() {
   const [view, setView] = useState<LatticeView>({
@@ -230,6 +231,11 @@ function exactTwoByTwo(snapshot: LatticeSnapshot) {
     absM: reference.meanAbsM,
     e: reference.meanE,
     e2: reference.secondE,
+    chi: reference.susceptibility,
+    binder: reference.binder,
+    specificHeat: reference.specificHeat,
+    gx: reference.meanGx,
+    gy: reference.meanGy,
     distribution: reference.magnetizationDistribution,
     bonds: reference.bondCount,
   };
@@ -271,7 +277,6 @@ export function LatticeSystems() {
     'Random initialization is not a measurement. Run or Step to begin updates.',
   );
   const [inspectOpen, setInspectOpen] = useState(false);
-  const [plotKey, setPlotKey] = useState(0);
   const p =
     snapshot?.configuration.parameters ??
     defaultLatticeConfiguration.parameters;
@@ -303,7 +308,6 @@ export function LatticeSystems() {
         if (geometry) {
           client.current?.initialize({ ...draft, seed: Number(seed) });
           setSelected(0);
-          setPlotKey((k) => k + 1);
         } else
           client.current?.change({
             parameters: draft.parameters,
@@ -325,7 +329,6 @@ export function LatticeSystems() {
         initialization: draft.initialization,
       });
       setSelected(0);
-      setPlotKey((k) => k + 1);
     }, 'Reset cleared history and restarted the selected seed and initialization.');
   }
   const updateP = (patch: Partial<LatticeConfiguration['parameters']>) =>
@@ -898,7 +901,7 @@ export function LatticeSystems() {
                 evicted. Warm-up is a count, not evidence of mixing.
               </p>
             </section>
-            {snapshot && <LatticePlots key={plotKey} snapshot={snapshot} />}
+            {snapshot && <LatticePlots snapshot={snapshot} />}
             <section className="moments-panel">
               <div className="section-heading">
                 <h2>Finite measurements & references</h2>
@@ -930,6 +933,66 @@ export function LatticeSystems() {
                     ))}
                 </tbody>
               </table>
+              <table
+                className="moments-table"
+                data-testid="lattice-equilibrium-observables"
+              >
+                <caption>
+                  Equilibrium fluctuation and bond observables · current segment
+                </caption>
+                <thead>
+                  <tr>
+                    <th>Observable</th>
+                    <th>Sampled estimate</th>
+                    <th>Exact 2×2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th>χ = N(〈m²〉−〈m〉²)/T</th>
+                    <td>
+                      {formatNumber(
+                        current?.fluctuations?.susceptibility ?? null,
+                      )}
+                    </td>
+                    <td>{formatNumber(exact?.chi ?? null)}</td>
+                  </tr>
+                  <tr>
+                    <th>U₄ = 1−〈m⁴〉/(3〈m²〉²)</th>
+                    <td>
+                      {formatNumber(current?.fluctuations?.binder ?? null)}
+                    </td>
+                    <td>{formatNumber(exact?.binder ?? null)}</td>
+                  </tr>
+                  <tr>
+                    <th>cᵥ = N(〈e²〉−〈e〉²)/T²</th>
+                    <td>
+                      {formatNumber(
+                        current?.fluctuations?.specificHeat ?? null,
+                      )}
+                    </td>
+                    <td>{formatNumber(exact?.specificHeat ?? null)}</td>
+                  </tr>
+                  <tr>
+                    <th>Gₓ(1) · x bonds</th>
+                    <td>{formatNumber(current?.gx.mean ?? null)}</td>
+                    <td>{formatNumber(exact?.gx ?? null)}</td>
+                  </tr>
+                  <tr>
+                    <th>Gᵧ(1) · y bonds</th>
+                    <td>{formatNumber(current?.gy.mean ?? null)}</td>
+                    <td>{formatNumber(exact?.gy ?? null)}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="plot-note">
+                χ uses the signed mean m. cᵥ is heat capacity per site at fixed
+                physical Jx, Jy and h. These use population fluctuations of
+                retained measurements, not the N−1 sample variances above. U₄ is
+                N/A when 〈m²〉 is numerically unusable. Bond means divide by
+                actual x/y bond counts, including periodic length-two parallel
+                records. Exact columns apply only to 2×2.
+              </p>
               {exact && (
                 <p data-testid="lattice-exact">
                   2×2 exact enumeration (all 16 states; {exact.bonds} distinct
@@ -966,6 +1029,12 @@ export function LatticeSystems() {
                 bars or claim of spontaneous symmetry breaking.
               </p>
             </section>
+            {current && (
+              <LatticeStatisticalDiagnostics
+                key={current.id}
+                segment={current}
+              />
+            )}
             <details className="model-notes">
               <summary>Suggested experiments</summary>
               {experiments.map(([title, note]) => (

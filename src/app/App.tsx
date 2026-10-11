@@ -29,6 +29,7 @@ import { segmentColor } from '../plotting/viewport';
 import { InlineMath } from '../ui/Math';
 import { useSimulation } from './useSimulation';
 import { Inspector } from './Inspector';
+import { SmallIsingStatisticalDiagnostics } from './StatisticalDiagnostics';
 import { SettingsPanel } from './SettingsPanel';
 import { ModelFormula, ModelNotes } from './ModelNotes';
 import { StepInspector } from './StepInspector';
@@ -580,7 +581,13 @@ function SmallSystemsApp() {
                 <ScalarReferences segment={current} />
               ) : null
             ) : model.kind === 'ising' && current ? (
-              <ExactIsingPanel segment={current} />
+              <>
+                <ExactIsingPanel segment={current} />
+                <SmallIsingStatisticalDiagnostics
+                  key={current.id}
+                  segment={current}
+                />
+              </>
             ) : (
               <section
                 className="moments-panel"

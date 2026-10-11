@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.8, 2026-10-10
+**Version:** 0.9, 2026-10-11
 
-**Status:** M0–M1b merged. M2 implemented on its feature branch and under review; M3–M6 remain planned or exploratory.
+**Status:** M0–M2 merged. M3a is implemented and validated on a feature branch, pending review; M3b–M6 remain planned or exploratory.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -20,8 +20,9 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M0.5: Comparative Sampling Laboratory** | Gaussian, single-spin and binomial models; direct/Markov sampling, trajectories and transition inspection | Exact distributions, transition-matrix balance, warm-up exclusion and seeded replay | Implemented; feature-branch validation complete |
 | **M1a: Interactive graph Ising** | Dynamic zero-to-six plots, preset graph parameter editor, local transition inspection | Full 1–4-spin enumeration; transfer matrix, periodic multiplicity, balance and sampling checks | Implemented; local validation complete |
 | **M1b: Continuous small systems** | Real graph fields, quartic wells, local conditionals and sampled marginals | Exact 1–4-variable Gaussian, controlled 1D quadrature, local-action tests | Merged |
-| **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Implemented on feature branch; review pending |
-| **M3: Measurements & Experiments** | Saved comparisons, autocorrelation, error analysis, exports and finite sweeps | Reference-estimator tests, reproducibility metadata | Planned |
+| **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Merged in PR #7 |
+| **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Implemented and validated on feature branch; review pending |
+| **M3b: Experiments** | Saved comparisons, exports/imports and finite parameter sweeps | Provenance and round-trip tests | Planned |
 | **M4: Continuous lattice fields** | 1D/2D Gaussian and φ⁴, Euclidean lattice QM, HMC | Fourier covariance, oscillator correlators, HMC invariants | Planned |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
@@ -170,6 +171,8 @@ Pre-merge correction: the 2×2 exact panel now enumerates directly in physical M
 
 Current M2 limits: side length one is excluded; nearest-neighbor bond-product averages and long-range correlations are deferred; no physical-phone throughput measurement or MCMC error bars are claimed. Experiment prompts are concise in-app notes, not saved experiments. The M2 acceptance gate remains subject to PR review and any documented final validation issues.
 
+M2 was merged in PR #7. M3a adds the deferred nearest-neighbor products and bounded axial correlations; the historical M2 limit above describes that milestone's delivery state.
+
 ### M1a refinement — local inspection and convergence clarity
 
 Selected site/bond panels expose current local fields, flip costs, conditional probabilities and bond action contributions, with read-only selection and a link to the existing Apply form. Symmetry-aware exact references preserve true tiny nonzero responses. Log absolute-error plots use an explicit scale/N floor, disclose omitted checkpoints, and show current numerical errors/counts. See [refinement review notes](M1A_REFINEMENT_REVIEW.md) and D-025 for validation and screenshots.
@@ -178,12 +181,23 @@ Selected site/bond panels expose current local fields, flip costs, conditional p
 
 **Objective:** make the lab useful for reproducible, moderately quantitative student projects.
 
+### M3a — Statistical diagnostics and physical observables
+
+M3a on `codex/m3a-statistical-diagnostics` adds full-segment fourth-magnetization and directional/spatial pair moments, the finite-volume connected susceptibility, Binder cumulant and physical-energy heat capacity. The M2 exact 2×2 enumerator supplies the same quantities for open, periodic and mixed boundaries. Worker-owned 8192-observation rings for m, |m| and e (or graph Ising E) produce a bounded ACF, a documented conventional initial-positive/self-consistent τ window, recent-window ESS/SE and nonoverlapping blocking views. Statuses distinguish insufficient, constant, unresolved, drift and window-sensitive records. Small graph Ising and M2's 2×2 case receive exact selected-kernel matrices, reversible spectra, stationary ACF and asymptotic variance at the correct measurement cadence. Local graph, direct-draw and M2 sweep units are separately labeled; only fully periodic spatial plots use global-mean centering. The dynamic six-plot collection remains display-only and phone responsive. Details and limitations are in [M3a review](M3A_REVIEW.md).
+
+**M3a acceptance:** independent exact and stochastic reference tests; preserved seeded Run/Step/segment behavior; clear separation of physical fluctuation identities, empirical uncertainty and exact stationary-chain benchmarks; full formatting/typecheck/unit/build/desktop and phone browser checks. A finite τ from a short or drifting record does not imply reliable mixing. Structure factors, correlation-length fitting and general experiment storage are deferred.
+
+**M3a validation record — 2026-10-11:** `npm run check` passes formatting, typecheck, 234 unit tests in 28 files, production build and 111 production browser tests across desktop Chromium, 360px Chromium phone and emulated iPhone WebKit. Desktop/phone screenshots, numerical methods, local throughput observations and limits are recorded in [M3a review](M3A_REVIEW.md). The branch is not merged or deployed.
+
+### M3b — Saved experiments and sweeps (planned)
+
+Saved run comparison, import/export, provenance bundles and bounded parameter sweeps remain separate future work. M3a's recent diagnostic rings are not a full dataset manager.
+
 **Deliverables**
 
 - Generalize M0’s target/view slots into a shared observable/plot registry across models. Select and rearrange plots; overlay exact and numerical curves with clear legends.
 - Extend M0’s bounded recent segment comparison to managed saved runs in memory, each with configuration, seed, algorithm, measurement schedule, version, and notes.
-- Proposed tiny-Ising exact MCMC benchmarks (not implemented): construct the selected chain's at-most-16-state transition matrix; compute stationary distribution, nontrivial eigenvalues, spectral gap, observable-specific autocorrelation functions and asymptotic variances. Use these as finite-volume benchmarks for mixing and uncertainty, with documented kernel/warm-up conventions. This is distinct from existing test-only balance/finite-chain covariance oracles.
-- More robust statistics: signed and absolute magnetization, susceptibility, Binder cumulant, connected correlations, structure factors, autocorrelation estimates, approximate ESS, blocking/batch errors with warnings for short or correlated data.
+- Extend M3a's bounded diagnostics where supported by saved datasets; structure factors and correlation-length fits remain separate, model-specific future work.
 - Small bounded parameter sweeps (temperature/coupling/size) executed sequentially or with simple worker scheduling; clear per-run equilibration and budget policy.
 - Export CSV + JSON metadata and one-file JSON bundle; configuration-only URL sharing and optional import.
 - Experiment presets with question, expected qualitative outcome, sampling caveats, and reference to associated model equations.
@@ -246,7 +260,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M1b are merged. The current feature branch implements **M2 only**, stopping before M3. Keep later roadmap stages as context, not implied scope. Prefer a working, tested finite-lattice laboratory to infrastructure for hypothetical future models.
+M0–M2 are merged. The current feature branch implements **M3a only**, stopping before saved-experiment M3b. Keep later roadmap stages as context, not implied scope. Prefer validated finite-lattice diagnostics to infrastructure for hypothetical future models.
 
 ## Definition of done for the initial public usable release
 

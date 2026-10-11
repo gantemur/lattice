@@ -152,3 +152,151 @@ test('workspace navigation preserves both independent sessions', async ({
   await page.getByRole('link', { name: 'Lattice Systems' }).click();
   await expect(page.getByTestId('lattice-updates')).toHaveText('1');
 });
+
+test('M3a exact and sampled 2×2 fluctuation observables and constant diagnostic', async ({
+  page,
+}) => {
+  await open(page);
+  await page.getByLabel('Size preset').selectOption('2');
+  await page.getByLabel('Horizontal Jx').fill('0');
+  await page.getByLabel('Vertical Jy').fill('0');
+  await page.getByLabel('Field h').fill('0');
+  await page.getByLabel('Temperature T').fill('2');
+  await page.getByLabel('Warm-up sweeps').fill('0');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  const table = page.getByTestId('lattice-equilibrium-observables');
+  await expect(table.getByRole('row', { name: /χ =/ })).toContainText('0.5');
+  await expect(table.getByRole('row', { name: /U₄ =/ })).toContainText(
+    '0.1667',
+  );
+  await page
+    .getByTestId('lattice-diagnostics')
+    .locator('summary')
+    .first()
+    .click();
+  await expect(page.getByTestId('diagnostic-status')).toContainText(
+    'insufficient',
+  );
+  await page.getByLabel('Diagnostic observable').selectOption('e');
+  await page.getByRole('button', { name: '▷ Run' }).click();
+  await expect
+    .poll(async () =>
+      Number(await page.getByTestId('lattice-updates').textContent()),
+    )
+    .toBeGreaterThan(20000);
+  await page.getByRole('button', { name: 'Ⅱ Pause' }).click();
+  await expect(page.getByTestId('diagnostic-status')).toContainText('constant');
+  await expect(
+    table.getByRole('row', { name: /χ =/ }).locator('td').first(),
+  ).not.toHaveText('—');
+  await expect(
+    table.getByRole('row', { name: /U₄ =/ }).locator('td').first(),
+  ).not.toHaveText('—');
+  await page.getByLabel('Diagnostic observable').selectOption('m');
+  await expect(
+    page.getByRole('img', { name: /Autocorrelation of m/ }),
+  ).toBeVisible();
+  await expect(page.getByTestId('exact-markov')).toContainText('Exact τ_int');
+  await page.getByLabel('Sampler').selectOption('heat-bath');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await expect(page.getByTestId('lattice-segment')).toHaveText('Segment 2');
+  await expect(page.getByTestId('diagnostic-status')).toContainText(
+    'insufficient',
+  );
+  await expect(page.getByTestId('exact-markov')).toContainText('Exact τ_int');
+  await page.getByRole('button', { name: '▷ Run' }).click();
+  await expect
+    .poll(async () =>
+      Number(await page.getByTestId('lattice-samples').textContent()),
+    )
+    .toBeGreaterThan(64);
+  await page.getByRole('button', { name: 'Ⅱ Pause' }).click();
+  await expect(page.getByTestId('diagnostic-coverage')).toContainText('/');
+});
+
+test('M3a autocorrelation plots and quench statistics remain segment-local and display-only', async ({
+  page,
+}) => {
+  await open(page);
+  await page.getByLabel('Size preset').selectOption('16');
+  await page.getByLabel('Warm-up sweeps').fill('0');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: '▷ Run' }).click();
+  await expect
+    .poll(async () =>
+      Number(await page.getByTestId('lattice-samples').textContent()),
+    )
+    .toBeGreaterThan(64);
+  await page.getByRole('button', { name: 'Ⅱ Pause' }).click();
+  await page
+    .getByTestId('lattice-diagnostics')
+    .locator('summary')
+    .first()
+    .click();
+  await expect(page.getByTestId('diagnostic-coverage')).toContainText('/');
+  const before = await page.getByTestId('lattice-updates').textContent();
+  await page.getByRole('button', { name: 'Add plot' }).click();
+  await page.getByLabel('Plot 3 type').selectOption('m-acf');
+  if (await page.getByLabel('Lattice detail plot').isVisible())
+    await page.getByLabel('Lattice detail plot').selectOption('3');
+  await expect(
+    page.getByRole('img', { name: /Autocorrelation of m/ }).first(),
+  ).toBeVisible();
+  await page.getByLabel('Plot 3 type').selectOption('spatial-x');
+  await expect(
+    page.getByRole('img', { name: /pair correlation/ }),
+  ).toBeVisible();
+  await expect(page.getByTestId('lattice-updates')).toHaveText(before!);
+  await page.getByLabel('Temperature T').fill('4');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await expect(page.getByTestId('lattice-segment')).toHaveText('Segment 2');
+  await expect(page.getByTestId('diagnostic-status')).toContainText(
+    'insufficient',
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test('M3a sweep cadence and spatial labels respect mixed boundaries', async ({
+  page,
+}) => {
+  await open(page);
+  await page.getByLabel('Size preset').selectOption('2');
+  await page.getByLabel('Warm-up sweeps').fill('0');
+  await page.getByLabel('Measure every sweeps').fill('3');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  const diagnostics = page.getByTestId('lattice-diagnostics');
+  await diagnostics.locator('summary').first().click();
+  await expect(diagnostics.getByText('3 nominal sweep(s)')).toBeVisible();
+  await expect(
+    diagnostics.getByText('τ_int · retained measurements'),
+  ).toBeVisible();
+  await expect(diagnostics.getByTestId('exact-markov')).toContainText(
+    'retained measurements',
+  );
+  await page.getByLabel('Size preset').selectOption('4');
+  await page.getByLabel('Periodic y').uncheck();
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: 'Add plot' }).click();
+  await page.getByLabel('Plot 3 type').selectOption('spatial-x');
+  await expect(
+    page.getByRole('img', { name: /^Raw x-axis pair correlation/ }),
+  ).toBeVisible();
+  await page.getByLabel('Periodic y').check();
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: 'Add plot' }).click();
+  await page.getByLabel('Plot 3 type').selectOption('spatial-x');
+  await expect(
+    page.getByRole('img', { name: /^Connected x-axis pair correlation/ }),
+  ).toBeVisible();
+  await page.getByLabel('Periodic x').uncheck();
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: 'Add plot' }).click();
+  await page.getByLabel('Plot 3 type').selectOption('spatial-y');
+  await expect(
+    page.getByRole('img', { name: /^Raw y-axis pair correlation/ }),
+  ).toBeVisible();
+});

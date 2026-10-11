@@ -42,6 +42,11 @@ it.each(samplers)(
       retained = s.trajectory.filter((t) => !t.warmup);
     expect(s.moments.count).toBe(sampler.kind === 'direct' ? 256 : 245);
     expect(s.ising!.counts.reduce((s, n) => s + n, 0)).toBe(retained.length);
+    expect(s.ising!.diagnostics.m.cadence).toEqual(
+      sampler.kind === 'direct'
+        ? { kind: 'direct' }
+        : { kind: 'local', sites: 4 },
+    );
     for (const target of Object.keys(s.ising!.observables)) {
       const projected = projectSegments(snapshot.segments, target)[0]!,
         values = retained.map((t) =>
@@ -63,6 +68,18 @@ it.each(samplers)(
       expect(s.accepted + s.self + s.rejected).toBe(256);
   },
 );
+it('one-site graph Ising has one elementary update per nominal sweep', () => {
+  const run = new SimulationRun(1, {
+    model: isingPreset('site'),
+    sampler: { kind: 'heat-bath', warmup: 0 },
+    seed: 18,
+  });
+  for (let batch = 0; batch < 8; batch++) run.advance(1024);
+  const diagnostic = run.snapshot().segments[0]!.ising!.diagnostics.m;
+  expect(diagnostic.cadence).toEqual({ kind: 'local', sites: 1 });
+  if (diagnostic.tauMeasurements !== null)
+    expect(diagnostic.tauSweeps).toBeCloseTo(diagnostic.tauMeasurements, 12);
+});
 it('isolates compatible parameter and algorithm changes, rejects topology edits, and Reset replays', () => {
   const model = isingPreset('ring'),
     config = { model, sampler: samplers[1]!, seed: 97 },
