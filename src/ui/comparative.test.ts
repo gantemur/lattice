@@ -73,3 +73,43 @@ it('renders constant graph action distributions and convergence without degenera
     expect(html).not.toMatch(/NaN|Infinity|independent-band/);
   }
 });
+
+it('discloses zero and below-range errors, breaking paths and retaining numeric readouts', () => {
+  const run = new SimulationRun(1, {
+    model: defaultModel('gaussian'),
+    sampler: { kind: 'direct' },
+    seed: 1,
+  });
+  run.advance(100);
+  const segments = run.snapshot().segments;
+  segments[0]!.convergence = [
+    { count: 1, mean: 0 },
+    { count: 2, mean: 1e-18 },
+    { count: 3, mean: 0.1 },
+    { count: 100, mean: 0.02 },
+  ];
+  segments[0]!.moments.mean = 0.02;
+  const html = renderToStaticMarkup(
+    createElement(ConvergencePlot, {
+      segments,
+      viewport: fitSegments(segments),
+      absoluteError: true,
+    }),
+  );
+  expect(html).toContain('1 zero-error checkpoints omitted');
+  expect(html).toContain('1 positive checkpoints below');
+  expect(html).toContain('current absolute error:');
+  expect(html).toContain('N = 100');
+  expect(html).toContain('0.02');
+  expect(html).not.toMatch(/NaN|Infinity/);
+  segments[0]!.convergence = [{ count: 100, mean: 0 }];
+  expect(
+    renderToStaticMarkup(
+      createElement(ConvergencePlot, {
+        segments,
+        viewport: fitSegments(segments),
+        absoluteError: true,
+      }),
+    ),
+  ).toContain('All recorded errors are zero');
+});

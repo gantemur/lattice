@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.5, 2026-10-10
+**Version:** 0.6, 2026-10-10
 
-**Status:** M0 and M0.5 merged. M1a implemented and locally validated on its feature branch. M1b–M6 remain planned or exploratory.
+**Status:** M0 and M0.5 merged. M1a merged in PR #3; local-inspection/convergence refinement implemented and locally validated on its feature branch. M1b–M6 remain planned or exploratory.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -156,6 +156,10 @@ No M1b continuous extension, large-lattice engine, gauge dynamics, cluster algor
 
 **Out of scope:** demanding infinite-volume critical exponent fits, guaranteed asymptotic error estimates, production performance tuning.
 
+### M1a refinement — local inspection and convergence clarity
+
+Selected site/bond panels expose current local fields, flip costs, conditional probabilities and bond action contributions, with read-only selection and a link to the existing Apply form. Symmetry-aware exact references preserve true tiny nonzero responses. Log absolute-error plots use an explicit scale/N floor, disclose omitted checkpoints, and show current numerical errors/counts. See [refinement review notes](M1A_REFINEMENT_REVIEW.md) and D-025 for validation and screenshots.
+
 ## M3 — Measurement and experiments layer
 
 **Objective:** make the lab useful for reproducible, moderately quantitative student projects.
@@ -164,6 +168,7 @@ No M1b continuous extension, large-lattice engine, gauge dynamics, cluster algor
 
 - Generalize M0’s target/view slots into a shared observable/plot registry across models. Select and rearrange plots; overlay exact and numerical curves with clear legends.
 - Extend M0’s bounded recent segment comparison to managed saved runs in memory, each with configuration, seed, algorithm, measurement schedule, version, and notes.
+- Proposed tiny-Ising exact MCMC benchmarks (not implemented): construct the selected chain's at-most-16-state transition matrix; compute stationary distribution, nontrivial eigenvalues, spectral gap, observable-specific autocorrelation functions and asymptotic variances. Use these as finite-volume benchmarks for mixing and uncertainty, with documented kernel/warm-up conventions. This is distinct from existing test-only balance/finite-chain covariance oracles.
 - More robust statistics: signed and absolute magnetization, susceptibility, Binder cumulant, connected correlations, structure factors, autocorrelation estimates, approximate ESS, blocking/batch errors with warnings for short or correlated data.
 - Small bounded parameter sweeps (temperature/coupling/size) executed sequentially or with simple worker scheduling; clear per-run equilibration and budget policy.
 - Export CSV + JSON metadata and one-file JSON bundle; configuration-only URL sharing and optional import.

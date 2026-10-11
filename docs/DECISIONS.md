@@ -138,6 +138,14 @@ The M1a interface exposes graph/lattice presets and a compact numerical list of 
 
 This simplifies UI scope only. The domain and tests continue to support 1–4 sites, parallel bonds, self-links and signed faces. Preset selection may change topology and starts a fresh session. Coupling/field changes preserve the preset’s topology, including zero weights. The periodic 2×2 lattice always retains eight bond records and four faces; it is never replaced with K4 based on energetic equivalence. User-added topology and arbitrary graph drawing are deferred.
 
+### D-025 — Local mathematical inspection and stable exact/log references — 2026-10-10
+
+Selected site/bond panels are compact, collapsible read-only projections of the current configuration. Preserve unique parallel IDs and display self-links as constant action/zero flip contribution. Conditional probabilities are given current neighbors, not equilibrium marginals. User selections have dark marks distinct from gold latest-update marks. The bond's editing action opens/focuses the existing numerical form; no second parameter draft or alternative Apply path is introduced.
+
+Refine D-022's exact references by pairing global spin reversals: odd site means use pair probability mass × tanh(b·s), with b·s evaluated separately. This enforces exact zero in zero fields without an arbitrary tolerance and preserves tiny nonzero field responses even with large pair actions. M and m derive from the site means; the displayed table and plotted references share this calculation.
+
+Refine D-017/D-018's log-error fitting: use an observable-scale/sample-count floor, `max(σ,0.1)/(125 sqrt(max(2,N)))`, never the minimum positive checkpoint error. Fit All applies the same policy; automatic viewports expand only. Omit zero/below-range positive checkpoints and disclose their counts, break connecting lines, and explicitly label all-zero histories. Show current absolute error and retained N for each segment even when its point is omitted. The floor is a display choice, not a statistical bound. Independent Gaussian RMS/pointwise references remain unchanged; observed MCMC error is not uncertainty or proof of mixing. Exact transition-matrix spectral/autocorrelation/asymptotic-variance diagnostics remain a roadmap proposal.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

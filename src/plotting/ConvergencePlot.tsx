@@ -1,7 +1,7 @@
 import type { SegmentSnapshot } from '../engine/protocol';
 import { modelReference } from '../models/singleVariable';
 import { InlineMath } from '../ui/Math';
-import { PlotFrame, tick } from './PlotFrame';
+import { PlotFrame, tick, formatNumber } from './PlotFrame';
 import { segmentColor } from './viewport';
 import type { PlotViewport } from './viewport';
 
@@ -24,12 +24,35 @@ export function ConvergencePlot({
   const hasOther = segments.some(
     (s) => s.model.kind !== 'gaussian' || s.sampler.kind !== 'direct',
   );
-  let zeros = 0;
+  let zeros = 0,
+    below = 0,
+    checkpoints = 0;
   for (const s of segments)
-    for (const p of s.convergence)
-      if (p.mean === modelReference(s.model).mean) zeros += 1;
+    for (const p of s.convergence) {
+      const error = Math.abs(p.mean - modelReference(s.model).mean);
+      checkpoints += 1;
+      if (error === 0) zeros += 1;
+      else if (error < viewport.error.min) below += 1;
+    }
   return (
     <>
+      {absoluteError && (
+        <div className="error-readouts" aria-label="Current absolute errors">
+          {segments.map((s) => (
+            <p key={s.id} style={{ borderLeftColor: segmentColor(s.id) }}>
+              Segment {s.id} · N = {s.moments.count.toLocaleString('en')} ·
+              current absolute error:{' '}
+              <strong>
+                {s.moments.count
+                  ? formatNumber(
+                      Math.abs(s.moments.mean! - modelReference(s.model).mean),
+                    )
+                  : '—'}
+              </strong>
+            </p>
+          ))}
+        </div>
+      )}
       <PlotFrame
         label={
           absoluteError
@@ -93,7 +116,7 @@ export function ConvergencePlot({
                     const value = absoluteError
                       ? Math.abs(p.mean - ref.mean)
                       : p.mean;
-                    if (absoluteError && value === 0) {
+                    if (absoluteError && value < bounds.min) {
                       pen = false;
                       return '';
                     }
@@ -152,7 +175,7 @@ export function ConvergencePlot({
                       const v = absoluteError
                         ? Math.abs(p.mean - ref.mean)
                         : p.mean;
-                      return absoluteError && v === 0 ? null : (
+                      return absoluteError && v < bounds.min ? null : (
                         <circle
                           key={p.count}
                           cx={x(p.count)}
@@ -197,7 +220,16 @@ export function ConvergencePlot({
                 RMS reference, direct Gaussian only.{' '}
               </>
             )}
-            {zeros > 0 && `${zeros} zero-error checkpoints omitted. `}
+            {zeros > 0 &&
+              `${zeros} zero-error checkpoints omitted (log undefined). `}
+            {below > 0 &&
+              `${below} positive checkpoints below the displayed range omitted; lines break at omissions. `}
+            {checkpoints > 0 &&
+              zeros === checkpoints &&
+              'All recorded errors are zero; no log trajectory to draw. '}
+            Fit All uses an observable-scale / √N floor, two decades below that
+            scale; exceptionally small errors do not set the range. This is a
+            display policy, not an uncertainty bound.{' '}
           </>
         ) : (
           <>
@@ -212,7 +244,7 @@ export function ConvergencePlot({
           </>
         )}
         {hasOther &&
-          'No uncertainty bands for discrete or Metropolis segments. '}
+          'Observed error is not statistical uncertainty. No uncertainty bands for discrete, Metropolis or graph heat-bath segments. MCMC samples are correlated: the effective independent sample count may be much smaller than N. A small error does not establish mixing or equilibrium. '}
         Single-trajectory error need not decrease monotonically.
       </p>
       {!segments.some((s) => s.moments.count) && (

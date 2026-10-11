@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.5 (M1a interactive graph Ising, 2026-10-10)
+**Version:** 0.6 (M1a inspection/convergence refinement, 2026-10-10)
 
-**Status:** M0 and M0.5 are merged. M1a is implemented on its feature branch with validation tracked in the roadmap. M1b and later remain planned.
+**Status:** M0, M0.5 and M1a are merged. The local-inspection/convergence refinement is implemented on its feature branch with validation tracked in the roadmap. M1b and later remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -17,7 +17,7 @@ Start with two active distribution/trajectory plots (total magnetization for gra
 
 Apply starts separate measurements for changed parameters/algorithm/warm-up, retaining compatible configuration, RNG, previous segments and stable axes. Topology/model-family changes explicitly create new sessions. Reset clears/reseeds/refits; Fit All affects only plotting. Eight recent segments keep separate statistics, exact references, logarithmic checkpoints and up to 1000 exact transitions. Graph segments additionally accumulate full configuration counts and per-observable moments/checkpoints; plotting never reconstructs evicted trajectories or consumes RNG. Every post-warm-up state enters statistics, including rejected/stay states. Only direct Gaussian segments have known-variance uncertainty bands.
 
-M1b quartic/coupled continuous systems, larger lattices, gauge dynamics and M3 experiment management remain out of scope. Mathematical conventions are detailed in D-021–D-024 and sections 3–6 below.
+M1b quartic/coupled continuous systems, larger lattices, gauge dynamics and M3 experiment management remain out of scope. Mathematical conventions are detailed in D-021–D-025 and sections 3–6 below.
 
 ## 1. Mission and positioning
 
@@ -136,6 +136,7 @@ Open, fixed, and periodic boundaries must be distinguishable. A drawn cycle and 
 - Expose the seven presets; do not implement graphical edge creation/deletion or vertex dragging. Keep mathematical topology independent of drawing coordinates.
 - A compact numerical list of per-site fields and per-edge couplings is the primary editing mechanism on desktop and phone. K4’s six pairwise weights can realize any simple four-site interaction graph by setting unwanted weights to zero. Positive, negative and zero couplings are supported.
 - Graph selection remains interactive: separately selectable parallel arcs, site/bond selection, incident interaction highlighting and actual MCMC update inspection. Form-based selectors are the touch/keyboard alternative.
+- **Selected site / Selected bond:** synchronized graph and form selections open compact collapsible local inspectors. Show the current spin, external field, each incident non-self bond's neighbor/spin/contribution, effective field, flip action difference and exact conditional probabilities given current neighbors (not equilibrium marginals). List self-links as constant action with zero flip contribution. Bond inspection shows unique ID, orientation, coupling, endpoint spins/product, action contribution and ordinary/wrapped/self classification. Editing links to the existing numerical form; Apply alone commits validated parameters/new segment/warm-up. Dark selection outlines/halos differ from gold latest-update marks. Inspection consumes no randomness; the existing selected-spin plot action is retained.
 - Edge labels carry numeric weights; color/sign, thickness and fading distinguish positive/negative/zero interactions. Zero weights never remove mathematical bond records or faces.
 - Preserve canonical lattice metadata and signed plaquettes on preset parameter edits. The 2×2 torus remains eight distinct bonds/four faces and is not substituted with K4. No generic faces are inferred from a drawing.
 - Domain APIs and numerical tests retain arbitrary tiny graphs, parallel edges and self-links. Validate oriented face walks and `∂₁∂₂=0`; this UI simplification does not change mathematical requirements.
@@ -328,6 +329,12 @@ At `k_B=1`, one common fluctuation susceptibility convention is `χ=β N (<m²>-
 M0.5 preserves the narrowly scoped direct-Gaussian diagnostic: plot retained running means against logarithmic segment sample count `N`, each segment’s exact `μ`, and `μ±σ/√N` with known analytic `σ²`. At any fixed `N`, this envelope has about 68% coverage for independent Gaussian draws. It is **not** a simultaneous confidence band and does not promise containment of the whole trajectory. Optional log–log `|mean−μ|` displays the `σ N^(-1/2)` RMS reference (slope −½). A single stochastic error can rise, fall, or cross zero; zero errors are omitted from the log view and disclosed. Lines interpolate retained checkpoints, not every fluctuation.
 
 The worker records checkpoints at `n₀=1`, `nₖ₊₁=ceil(1.125 nₖ)` and keeps the latest endpoint, independent of snapshot/render cadence. At most 320 scheduled checkpoints plus one endpoint cover the supported safe-integer sample-count range. Moments, histogram, and checkpoint mean are updated from the same draw in the same segment. Tests compare seeded sequences across batching/parameter changes and check theoretical RMS scaling and fixed-N coverage over an ensemble. Only direct Gaussian segments receive these known-variance bands/RMS references. Metropolis and discrete-model segments show their separate running means and exact references without confidence bands. These diagnostics do not implement autocorrelation or generic MCMC uncertainty estimates. Sample variance uses N−1 but remains subject to finite-chain correlation bias.
+
+M1a refinement: zero-field odd expectations are exactly zero by global spin reversal, including heterogeneous signed pair couplings. Site means pair reversed configurations using their combined probability times `tanh(b·s)`; compute the field term separately from pair action to preserve tiny nonzero fields. M and m references derive from these site means. No blanket small-value rounding is permitted; correlations, covariance and log Z retain their mathematical definitions.
+
+Absolute-error plots show each segment's current retained N and numerical `|mean−exact|`. The logarithmic floor is `max(σ,0.1)/(125 sqrt(max(2,N)))`, minimized across retained segments; the upper bound includes all positive errors and `1.25 max(σ,0.1)`. Here σ is the exact observable standard deviation; the 0.1 fallback gives constant observables a usable display. This is a **display resolution policy, not a confidence or mixing estimate**. Accidental tiny checkpoints never set the floor. Zero and below-range positive checkpoints are omitted with separate counts; paths break at omissions. All-zero histories have an explicit message. Axes expand only automatically; Fit All refits retained segments with the same floor policy, and may omit exceptionally small errors rather than stretch the log range to them. Reset retains its clear/reseed/refit semantics.
+
+Observed error against an exact finite-volume reference differs from estimator uncertainty. Correlated MCMC updates can have far fewer effective independent samples than N. A small observed error proves neither equilibration nor adequate mixing. Graph heat bath and Metropolis receive no independent-sample uncertainty bands. The future exact tiny-chain spectral benchmarks are planned in the roadmap, not implemented here.
 
 Later measurement capabilities:
 

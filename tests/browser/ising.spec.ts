@@ -210,7 +210,7 @@ test('graph selection and six observable views do not mutate the paused experime
   const state = await page.getByTestId('spin-configuration').textContent();
   await page.getByRole('button', { name: /Select vertex v2,/ }).focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByLabel('Inspect site', { exact: true })).toHaveValue(
+  await expect(page.getByLabel('Selected site', { exact: true })).toHaveValue(
     'v2',
   );
   await page
@@ -301,5 +301,72 @@ test('Run, pause and inspect retain graph history across thousands of worker upd
   await expect(page.getByTestId('trajectory-retention')).toContainText(
     '100 exact transitions shown',
   );
+  await noOverflow(page);
+});
+
+test('local selection, edit handoff and log-error inspection preserve seeded sampling', async ({
+  page,
+}) => {
+  await start(page);
+  await sampler(page, 'heat-bath', '0');
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await step(page).click();
+  const state = await page.getByTestId('spin-configuration').textContent();
+  await page.getByLabel('Selected site', { exact: true }).selectOption('v2');
+  await expect(page.locator('.graph-vertex.selected')).toHaveCount(1);
+  await page.getByRole('button', { name: /Select vertex v1,/ }).click();
+  await expect(page.getByLabel('Selected site', { exact: true })).toHaveValue(
+    'v1',
+  );
+  const site = page.getByTestId('selected-site-panel');
+  await site.locator('summary').click();
+  await expect(site).toContainText(
+    'Conditional on the current neighbors, not the equilibrium marginal',
+  );
+  await expect(site.locator('.katex-mathml')).toHaveCount(4);
+  await page.getByRole('button', { name: /Select bond e2,/ }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByLabel('Selected bond', { exact: true })).toHaveValue(
+    'e2',
+  );
+  const bond = page.getByTestId('selected-bond-panel');
+  await bond.locator('summary').click();
+  await expect(bond).toContainText('endpoint spins');
+  await page
+    .getByRole('button', { name: 'Edit coupling e2', exact: true })
+    .click();
+  await expect(page.getByLabel('Coupling e2', { exact: true })).toBeFocused();
+  await overview(page);
+  await page.getByLabel('View for plot 1').selectOption('error');
+  const chart = page.getByRole('img', {
+    name: 'Log–log absolute error of running mean',
+    exact: true,
+  });
+  await expect(page.getByLabel('Current absolute errors')).toContainText(
+    'N = 1',
+  );
+  await expect(page.getByLabel('Current absolute errors')).toContainText(
+    'current absolute error:',
+  );
+  const viewport = await chart.getAttribute('data-viewport');
+  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await expect(chart).toHaveAttribute('data-viewport', viewport!);
+  await expect(page.getByTestId('spin-configuration')).toHaveText(state!);
+  await expect(page.getByTestId('total-updates')).toHaveText('1');
+  await step(page).click();
+  const nextTrace = await page.getByTestId('transition-details').textContent();
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await step(page).click();
+  await step(page).click();
+  await expect(page.getByTestId('transition-details')).toHaveText(nextTrace!);
+  await page.getByLabel('Coupling e2', { exact: true }).fill('-0.7');
+  await expect(page.getByTestId('active-segment')).toHaveText('Segment 1');
+  await page
+    .getByRole('button', { name: 'Apply graph parameters', exact: true })
+    .click();
+  await expect(page.getByTestId('active-segment')).toHaveText('Segment 2');
+  await expect(page.getByTestId('sample-count')).toHaveText('0');
+  await expect(bond).toContainText('K = -0.7');
+  await expect(page.getByTestId('segment-1')).toBeVisible();
   await noOverflow(page);
 });

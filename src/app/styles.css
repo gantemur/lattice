@@ -1623,3 +1623,51 @@ footer {
 .graph-edge.zero-weight {
   stroke: #71817a;
 }
+
+/* User selection is dark teal; latest sampler interactions retain gold marks. */
+.graph-edge.selected-interaction {
+  filter: drop-shadow(0 0 2px #153f37);
+}
+.graph-edge.updated-interaction + .edge-label {
+  text-decoration: underline;
+  text-decoration-color: #b68b29;
+  text-decoration-thickness: 2px;
+}
+.selection-panel {
+  border-top: 1px solid #d9ded5;
+  padding: 8px 0;
+  font-size: 13px;
+}
+.selection-panel summary {
+  min-height: 44px;
+  align-content: center;
+}
+.selection-panel p {
+  margin: 8px 0;
+}
+.selection-panel ul {
+  padding-left: 18px;
+  margin: 8px 0;
+}
+.selection-panel li {
+  margin: 4px 0;
+}
+.error-readouts p {
+  border-left: 3px solid;
+  padding-left: 7px;
+  margin: 5px 0;
+  font-size: 12px;
+}
+
+.selection-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 560px) {
+  .selection-panels {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}

@@ -383,3 +383,33 @@ it('reversing an edge and its signed incidences preserves the oriented cell comp
   for (let state = 0; state < 16; state++)
     expect(isingAction(reversed, state)).toBe(isingAction(base, state));
 });
+
+it.each(['ring', 'torus', 'complete'] as const)(
+  'respects reversal symmetry for signed and strong %s couplings',
+  (preset) => {
+    const model = isingPreset(preset);
+    model.parameters.domain.edges.forEach((e, i) => {
+      model.parameters.couplings[e.id] = i % 2 ? -9.3 : 10;
+    });
+    const exact = exactIsing(model);
+    expect(exact.means).toEqual([0, 0, 0, 0]);
+    for (const target of ['M', 'm', 'v0', 'v1', 'v2', 'v3'])
+      expect(isingReference({ ...model, observable: target }).mean).toBe(0);
+    expect(exact.covariance).toEqual(exact.correlations);
+    expect(exact.probabilities.reduce((s, p) => s + p, 0)).toBeCloseTo(1, 14);
+    expect(Number.isFinite(exact.logPartition)).toBe(true);
+  },
+);
+it('preserves a tiny nonzero field response even beside large pair actions', () => {
+  const model = isingPreset('complete');
+  for (const e of model.parameters.domain.edges)
+    model.parameters.couplings[e.id] = 10;
+  model.parameters.fields.v0 = 1e-18;
+  // With a field at only site 0, reversal symmetry gives <s0> = tanh(b0), for any pair couplings.
+  const exact = exactIsing(model);
+  expect(exact.means[0]! / Math.tanh(1e-18)).toBeCloseTo(1, 14);
+  expect(isingReference({ ...model, observable: 'v0' }).mean).toBeGreaterThan(
+    0,
+  );
+  expect(isingReference({ ...model, observable: 'M' }).mean).toBeGreaterThan(0);
+});
