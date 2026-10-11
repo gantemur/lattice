@@ -146,6 +146,24 @@ Refine D-022's exact references by pairing global spin reversals: odd site means
 
 Refine D-017/D-018's log-error fitting: use an observable-scale/sample-count floor, `max(σ,0.1)/(125 sqrt(max(2,N)))`, never the minimum positive checkpoint error. Fit All applies the same policy; automatic viewports expand only. Omit zero/below-range positive checkpoints and disclose their counts, break connecting lines, and explicitly label all-zero histories. Show current absolute error and retained N for each segment even when its point is omitted. The floor is a display choice, not a statistical bound. Independent Gaussian RMS/pointwise references remain unchanged; observed MCMC error is not uncertainty or proof of mixing. Exact transition-matrix spectral/autocorrelation/asymptotic-variance diagnostics remain a roadmap proposal.
 
+## Accepted M1b conventions — 2026-10-10
+
+### D-026 — Real-vector graph action and conservative stability
+
+M1b adds a real-valued vector state, separate from numeric single-variable states and Ising bit configurations. The graph domain remains model-independent. Use `S=Σᵢ(aᵢxᵢ²/2+λᵢxᵢ⁴/4−hᵢxᵢ)+½Σₑκₑ(xₜ−xₕ)²`, inverse temperature absorbed. Preserve parallel bonds, oriented IDs/faces, and zero gradient energy from self-links. Support 1–4 vertices with finite `−10≤a≤20`, `|h|≤10`, `0≤κ≤10`, and either `λ=0,a≥0.05` or `0.01≤λ≤10` with negative `a` allowed. These sufficient bounds avoid nonnormalizable and singular Gaussian modes; they intentionally exclude some mathematically normalizable actions. Existing M0 Gaussian behavior and RNG streams are unchanged.
+
+### D-027 — Gaussian benchmark and controlled quartic references
+
+The λ=0 precision `Q` sums every non-self incident κ on diagonals and subtracts each bond on its endpoint off-diagonal. A small Cholesky implementation checks positivity; triangular solves supply `Q⁻¹h` and `Q⁻¹`. Direct whole-vector Gaussian draws solve `Lᵀ(x−μ)=z` for standard normal z. Exact conditional and pair moments are distinct from sampled covariance. Cache immutable small-matrix references by parameter key with a bounded cache. For quartic one-site/independent-site references, use stationary-point partitioning, exponent shift, adaptive Simpson and a convex tail bound through fourth moments. Label these numerical quadrature references, disclose the integration interval/bound and reject unsupported tolerance. Coupled quartic marginals are sampled only; fixed-neighbor conditionals use one-dimensional quadrature but are never labeled as equilibrium marginals.
+
+### D-028 — Local vector updates, bounded measurements and scalar display
+
+Random-site Metropolis uses three uniforms per update (site, proposal, acceptance), with `xᵢ′=xᵢ+δ(2u−1)` and on-site plus incident-edge ΔS. Coordinate Gaussian heat bath uses one site and two Box–Muller uniforms; direct Gaussian samples replace the vector, using two Box–Muller uniforms per site. Run and Step share the worker path. Rejections retain the entire old vector and count after warm-up. N local attempts are a nominal sweep. Up to eight segments each own all retained target moments/histograms/log checkpoints, cross-sums, and 1000 recent exact vector traces/scatter pairs. Targets include individual values/squares, pair products, total/mean field and S. Six dynamic plot views remain display-only. The SVG graph uses a fixed numeric/color scale, selected local bare/conditional mathematics and bond gradient contributions. Parameter changes preserve compatible vector and RNG; topology resets the session. No MCMC ESS or uncertainty estimator is implied.
+
+### D-029 — Configuration-only sharing
+
+A version-1 URL query serializes scalar model/domain parameters, sampler and seed. Import validates schema, geometry, finite parameters and sampler compatibility before starting a fresh seeded session. Monte Carlo histories, raw trajectories and measurement datasets are never serialized in this M1b feature. Full experiment provenance/export remains M3.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

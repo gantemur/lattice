@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.6, 2026-10-10
+**Version:** 0.7, 2026-10-10
 
-**Status:** M0 and M0.5 merged. M1a merged in PR #3; local-inspection/convergence refinement implemented and locally validated on its feature branch. M1b–M6 remain planned or exploratory.
+**Status:** M0, M0.5 and M1a (including refinement) merged. M1b implemented and locally validated on its feature branch; M2–M6 remain planned or exploratory.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -19,7 +19,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M0: deployable foundation** | Responsive app shell, one 0D Gaussian with density/convergence and segment comparisons | Exact moments, seeded sample, static Pages deploy | Completed and deployed |
 | **M0.5: Comparative Sampling Laboratory** | Gaussian, single-spin and binomial models; direct/Markov sampling, trajectories and transition inspection | Exact distributions, transition-matrix balance, warm-up exclusion and seeded replay | Implemented; feature-branch validation complete |
 | **M1a: Interactive graph Ising** | Dynamic zero-to-six plots, preset graph parameter editor, local transition inspection | Full 1–4-spin enumeration; transfer matrix, periodic multiplicity, balance and sampling checks | Implemented; local validation complete |
-| **M1b: Continuous small systems** | Quartic and coupled continuous models | Gaussian limits and reference quadrature | Planned |
+| **M1b: Continuous small systems** | Real graph fields, quartic wells, local conditionals and sampled marginals | Exact 1–4-variable Gaussian, controlled 1D quadrature, local-action tests | Implemented and locally validated on feature branch |
 | **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Planned |
 | **M3: Measurements & Experiments** | Saved comparisons, autocorrelation, error analysis, exports and finite sweeps | Reference-estimator tests, reproducibility metadata | Planned |
 | **M4: Continuous lattice fields** | 1D/2D Gaussian and φ⁴, Euclidean lattice QM, HMC | Fourier covariance, oscillator correlators, HMC invariants | Planned |
@@ -120,7 +120,7 @@ Validation and visual evidence: [M1a review notes](M1A_REVIEW.md). Numerical tes
 
 No M1b continuous extension, large-lattice engine, gauge dynamics, cluster algorithm, backend, new dependency or M3 saved-run manager was introduced.
 
-### M1b — Continuous 0D potentials
+### M1b — Continuous scalar systems
 
 - Single-site quartic `V(x)=a x²/2 + λ x⁴/4 − h x`, with parameter validation and informative rejection of non-normalizable cases.
 - Numerical high-accuracy quadrature for moments/density of one real variable, explicitly **labeled reference quadrature**, not analytic exactness. Display integration domain and tolerance/reference limitations if used.
@@ -133,6 +133,10 @@ No M1b continuous extension, large-lattice engine, gauge dynamics, cluster algor
 - Gaussian limit agrees with M0 analytics; quadrature agrees with known test integrals and reports failure when error control is inadequate.
 - When coupling is zero, sampled marginals agree with independent references. For nonzero coupling, bare potential, conditional potential, and marginal remain distinguished in labeling.
 - Opening/closing plot controls does not alter sampler state.
+
+### M1b delivery record — 2026-10-10
+
+Implemented on `codex/m1b-continuous-scalars` from `origin/main` at the M1a refinement merge `c967e89`. Real-vector worker state, graph presets including a coupled pair, six editable experiment configurations, dimensionless gradient/quartic action, exact multivariate Gaussian benchmarks/direct and coordinate-heat-bath samplers, local Metropolis, conditional/potential inspections, bounded per-target measurements and product/covariance/scatter plots are included. Compatible parameter changes preserve vector/RNG and start separate warm-up/measurements; topology switches start a new session. Versioned configuration-only URL sharing is included. No M1b numerical behavior is represented as full multivariate quartic exactness. See [M1b review evidence](M1B_REVIEW.md) for validation results and screenshots.
 
 ## M2 — 2D Ising: the main lattice laboratory
 
@@ -232,7 +236,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0 and M0.5 are merged; the current feature branch implements **M1a only**, stopping before M1b. Keep later roadmap stages as context, not implied scope. Prefer a working, tested comparative laboratory to infrastructure for hypothetical future models.
+M0, M0.5 and M1a are merged. The current feature branch implements **M1b only**, stopping before M2. Keep later roadmap stages as context, not implied scope. Prefer a working, tested comparative laboratory to infrastructure for hypothetical future models.
 
 ## Definition of done for the initial public usable release
 

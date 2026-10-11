@@ -1,3 +1,4 @@
+import { ScalarRun } from './scalarRun';
 import { topologyKey } from '../domain/graph';
 import { observableValue } from '../models/ising';
 import { IsingMeasurements } from '../observables/isingMeasurements';
@@ -41,6 +42,8 @@ function newSegment(
   initialization: string,
 ) {
   const { model, sampler } = structuredClone(settings);
+  if (model.kind === 'scalar')
+    throw new Error('Use the vector simulation engine.');
   const reference = modelReference(model);
   const histogram =
     model.kind === 'gaussian'
@@ -102,6 +105,8 @@ export class SimulationRun {
     configuration: RunConfiguration,
   ) {
     validateSettings(configuration);
+    if (configuration.model.kind === 'scalar')
+      throw new Error('Use the vector simulation engine.');
     this.rng = createRng(configuration.seed);
     this.seed = configuration.seed;
     this.currentValue =
@@ -259,7 +264,7 @@ export class SimulationRun {
   }
 }
 export class SimulationEngine {
-  private run: SimulationRun | null = null;
+  private run: SimulationRun | ScalarRun | null = null;
   private runId = 0;
   handle(request: WorkerRequest): WorkerResponse {
     try {
@@ -267,7 +272,10 @@ export class SimulationEngine {
         throw new Error('Invalid run ID.');
       if (request.type === 'initialize') {
         if (request.runId <= this.runId) throw new Error('Stale run ID.');
-        const run = new SimulationRun(request.runId, request.configuration);
+        const run =
+          request.configuration.model.kind === 'scalar'
+            ? new ScalarRun(request.runId, request.configuration)
+            : new SimulationRun(request.runId, request.configuration);
         this.run = run;
         this.runId = request.runId;
       } else {

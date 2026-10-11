@@ -1671,3 +1671,33 @@ footer {
     gap: 0;
   }
 }
+
+.scalar-workspace .scalar-value {
+  fill: #183e37;
+  font-weight: 700;
+  font-size: 13px;
+  pointer-events: none;
+}
+.scalar-workspace .graph-diagram {
+  overflow: visible;
+  height: 190px;
+  max-height: 190px;
+}
+.model-card .scalar-formula {
+  font-size: 15px;
+}
+.scalar-workspace .selection-panel {
+  min-width: 0;
+}
+.scalar-workspace .selection-panel .katex,
+.model-card .formula .katex {
+  max-width: 100%;
+}
+.scalar-workspace .graph-fields {
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+}
+@media (max-width: 560px) {
+  .scalar-workspace .graph-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

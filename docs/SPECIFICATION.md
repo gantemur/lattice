@@ -1,15 +1,15 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.6 (M1a inspection/convergence refinement, 2026-10-10)
+**Version:** 0.7 (M1b continuous scalar systems, 2026-10-10)
 
-**Status:** M0, M0.5 and M1a are merged. The local-inspection/convergence refinement is implemented on its feature branch with validation tracked in the roadmap. M1b and later remain planned.
+**Status:** M0, M0.5 and M1a (including local inspection) are merged. M1b is implemented and locally validated on its feature branch; M2 and later remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
 
 > **How to use this document.** This specifies intended behavior and key mathematical invariants. A feature is not implemented just because it appears here. The roadmap identifies what belongs in the next milestone. Change the specification in the same pull request as an intentional behavior change, and record consequential architectural decisions in the decision log. Do not freeze incidental visual details or library choices prematurely.
 
-### Implemented scope through M1a
+### Implemented scope through M1b
 
 Small Systems retains the M0.5 Gaussian, single-spin and binomial models, and adds finite graph Ising on one to four sites. Seven graph/lattice presets, a lightweight SVG configuration view and numerical parameter editor, signed face topology, exact enumeration, direct configuration sampling and random-site local Metropolis/heat bath share the existing worker, bounded history and SVG plotting infrastructure. No new runtime dependency, backend or general plugin registry is introduced.
 
@@ -17,7 +17,7 @@ Start with two active distribution/trajectory plots (total magnetization for gra
 
 Apply starts separate measurements for changed parameters/algorithm/warm-up, retaining compatible configuration, RNG, previous segments and stable axes. Topology/model-family changes explicitly create new sessions. Reset clears/reseeds/refits; Fit All affects only plotting. Eight recent segments keep separate statistics, exact references, logarithmic checkpoints and up to 1000 exact transitions. Graph segments additionally accumulate full configuration counts and per-observable moments/checkpoints; plotting never reconstructs evicted trajectories or consumes RNG. Every post-warm-up state enters statistics, including rejected/stay states. Only direct Gaussian segments have known-variance uncertainty bands.
 
-M1b quartic/coupled continuous systems, larger lattices, gauge dynamics and M3 experiment management remain out of scope. Mathematical conventions are detailed in D-021–D-025 and sections 3–6 below.
+Larger lattices, HMC, gauge dynamics and M3 experiment management remain out of scope. Mathematical conventions are detailed in D-021–D-029 and sections 3–6 below.
 
 ## 1. Mission and positioning
 
@@ -155,7 +155,7 @@ This is a **model family**, not a universal assumption. Gauge actions naturally 
 
 | Model | Initial geometry | Parameters / outputs | Reference computation |
 |---|---|---|---|
-| 0D real scalar, Gaussian / quartic | 1 node; later up to 4 coupled nodes | `a, λ, h`, moments, distribution | Analytic Gaussian; explicitly labeled numerical quadrature for general quartic |
+| Real scalar Gaussian / quartic | 1–4 graph vertices | `aᵢ, λᵢ, hᵢ, κₑ`, moments, conditionals, distribution | Analytic multivariate Gaussian; controlled 1D quadrature for independent quartic sites |
 | Finite graph Ising | Graphs with ≤4 sites | bond weights, field, β, energy, magnetization, correlations | Exhaustive enumeration, at most 16 states |
 | 1D periodic Ising | N-site ring incl. N=4 | β, J, h, transfer-matrix spectrum, correlations | 2×2 transfer matrix and small-volume enumeration |
 | 2D square Ising | periodic/open rectangular lattices incl. 2×2 | β, Jx, Jy, h; M, E, correlations | Enumeration for tiny boxes; known large-lattice references where applicable |
@@ -179,6 +179,18 @@ Enumerate all `2^N` configurations independently of sampling, normalize stably a
 Local field `H_i=b_i+Σ_(incident non-self e=(i,j)) K_e s_j`; `ΔS_i=2s_i H_i`; heat bath `P(s_i=+1|others)=1/(1+exp(−2H_i))`. Local Metropolis uses ½-lazy spin flips. At each update choose a uniform random site with replacement. Direct exact sampling is an optional independent benchmark implemented via inverse CDF. Trace and highlighted graph show the actual selected site, incident contributions, all local RNG draws and resulting configuration. Warm-up is excluded, not hidden.
 
 For a uniform periodic four-site chain, `T_st=exp(Kst+b(s+t)/2)` and `Z=Tr(T^4)`. The one-dimensional 1×4 ring has four bonds; a 2D periodic 2×2 square has eight positive-axis bonds and four signed plaquettes. These geometries are independently validated, never deduplicated by endpoints.
+
+#### M1b finite-graph real scalar field
+
+For one real value per vertex, implement `S(x)=Σᵢ(aᵢxᵢ²/2+λᵢxᵢ⁴/4−hᵢxᵢ)+½Σₑκₑ(xₜ−xₕ)²` with weight `exp(−S)` and beta absorbed. Each oriented edge contributes once; orientation cancels in its gradient square, but parallel records remain distinct and self-links contribute zero. Reuse the M1a 1–4-site domain/presets plus a two-site Gaussian pair. Numeric bounds: `−10≤aᵢ≤20`, `|hᵢ|≤10`, `0≤κₑ≤10`; either `λᵢ=0, aᵢ≥0.05` or `0.01≤λᵢ≤10` with either sign of `aᵢ`. These are **sufficient**, not necessary, normalizability conditions; singular Gaussian zero modes are rejected.
+
+At `λ=0`, construct `Qᵢᵢ=aᵢ+Σ_(non-self incident e)κₑ`, `Qᵢⱼ=−Σ_(edges joining i,j)κₑ`. Cholesky checks positive definiteness, then `μ=Q⁻¹h`, `C=Q⁻¹`, `log Z=N log(2π)/2−Σᵢlog Lᵢᵢ+hᵀμ/2`. The exact site conditional has variance `1/Qᵢᵢ` and mean `(hᵢ−Σⱼ≠ᵢQᵢⱼxⱼ)/Qᵢᵢ`. Direct sampling solves `Lᵀ(x−μ)=z` for standard normal `z`, yielding covariance `Q⁻¹`; it replaces the whole vector. Coordinate heat bath resamples one uniformly selected site from that conditional. Local Metropolis selects a site uniformly with replacement, proposes `xᵢ′=xᵢ+δ(2u−1)`, computes on-site and every non-self incident-edge difference, then consumes an acceptance uniform even downhill. A nominal sweep is N local attempts, not physical time.
+
+One-dimensional quartic and quartic conditional references use stationary-point partitioning, an `exp(min V−V)` normalization, adaptive Simpson integration and a convex-tail bound on `1+x⁴` outside a disclosed `[-R,R]` interval. References include log Z, mean, variance, second/fourth moments and normalized density; failure to reach the supported tail/integration tolerance is reported. `λ=0` uses Gaussian formulas. Conditional quartic coefficients are `aᵢ+Σκₑ` and `hᵢ+Σκₑxⱼ`; neighbor-dependent constant terms cancel in its density. This **conditional** is distinct from the bare on-site potential and the equilibrium marginal. Independent quartic marginals and sums/products factor through 1D references. No exact coupled-quartic marginal is claimed.
+
+Vector configurations are explicit real arrays in the worker, separate from old numeric scalar states and Ising bit masks. Per-segment bounded online target moments/histograms/logarithmic checkpoints cover each `xᵢ`, `xᵢ²`, pair products, total/mean field and S. Pair cross-sums support sampled covariance; 1000 recent exact vector transitions and sampled scatter pairs are retained. Compatible physical/sampler changes preserve vector and RNG with separate statistics and warm-up; topology changes start a new seeded session. Plot controls, graph selection and Fit All never sample. Two default scalar plots lead into zero-to-six target/view choices, including bare/conditional energy, conditional density, sampled marginal, trajectory, scatter, covariance, running mean/error when referenced and acceptance. The color scale is fixed, with numeric values always visible. No MCMC independent-sample uncertainty band is attached.
+
+A version-1 shareable URL contains only scalar model/domain parameters, sampler and seed. Validation rejects unsupported schema versions, invalid geometry and nonnormalizable/incompatible settings. It restores a new seeded session, never a Monte Carlo history.
 
 ### 4.3 Next models (not initial release)
 
@@ -256,7 +268,7 @@ The RNG and sampler update sequence must not depend on how often the UI redraws.
 - Every Metropolis update consumes two uniforms (proposal, then acceptance), including self/automatic acceptance. Record ΔS and `α=exp(min(0,−ΔS))`; use the full-precision comparison `u<α`. Count accepted moves, rejections and self-proposals separately. Acceptance includes self; movement excludes self. Counters include warm-up.
 - Direct binomial uses n Bernoulli uniforms, spin direct/heat bath uses one. Single-spin heat bath is a resampling kernel with identical rows and therefore independent equilibrium draws. Do not attach fictitious Metropolis acceptance fields to these updates.
 - Metropolis discards a configurable 0–10000 updates (default 200) per new segment. This is not a mixing guarantee. Direct and isolated single-spin heat-bath sampling need zero warm-up. Initial chain configurations are 0 (Gaussian), +1 (spin), round(np) (binomial), not measurements. Accepted, rejected and self states after warm-up all enter estimators at stride one.
-- M1a implements graph Ising random-site local Metropolis/heat bath and direct enumeration sampling; M1b continuous quartic models remain deferred. Graph Metropolis consumes site/proposal/acceptance uniforms (three), graph heat bath site/resampling uniforms (two), direct exact one uniform for a full configuration. A nominal sweep is N local updates with replacement. Both local samplers discard configurable 0–10000 warm-up updates (default 200); local Reset starts all +1. Single-spin M0.5 heat bath retains zero warm-up and its original stream.
+- M1a implements graph Ising random-site local Metropolis/heat bath and direct enumeration sampling. Graph Metropolis consumes site/proposal/acceptance uniforms (three), graph heat bath site/resampling uniforms (two), direct exact one uniform for a full configuration. A nominal sweep is N local updates with replacement. Both local samplers discard configurable 0–10000 warm-up updates (default 200); local Reset starts all +1. Single-spin M0.5 heat bath retains zero warm-up and its original stream. M1b's real-scalar local updates and whole-vector Gaussian direct draws follow their separate conventions in §4.2.
 - Later: Wolff or Swendsen–Wang/FK cluster updates for compatible models; HMC with reversible symplectic integrator and Metropolis correction for smooth continuous fields.
 - Advanced samplers should be exposed only on models for which their validity has been implemented and tested; no universal algorithm picker with invalid choices.
 

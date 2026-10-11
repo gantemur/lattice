@@ -1,28 +1,35 @@
+import { ScalarNotes } from './ScalarNotes';
 import type { Model } from '../models/singleVariable';
 import { DisplayMath, InlineMath } from '../ui/Math';
 export function ModelFormula({ model }: { model: Model }) {
   return (
     <>
-      <div className="formula">
+      <div
+        className={`formula ${model.kind === 'scalar' ? 'scalar-formula' : ''}`}
+      >
         <DisplayMath>
-          {model.kind === 'ising'
-            ? String.raw`\begin{aligned}S(s)&=-\sum_e K_e s_t s_h\\&\quad-\sum_i b_i s_i\end{aligned}`
-            : model.kind === 'gaussian'
-              ? String.raw`S(x)=\frac{a x^2}{2}-hx`
-              : model.kind === 'spin'
-                ? String.raw`S(s)=-hs`
-                : String.raw`S(k)=-hk-\log\binom nk`}
+          {model.kind === 'scalar'
+            ? String.raw`\begin{aligned}S&=\sum_i V_i+\sum_e B_e\\V_i&=\frac{a_i x_i^2}{2}+\frac{\lambda_i x_i^4}{4}-h_ix_i\\B_e&=\frac{\kappa_e}{2}(x_t-x_h)^2\end{aligned}`
+            : model.kind === 'ising'
+              ? String.raw`\begin{aligned}S(s)&=-\sum_e K_e s_t s_h\\&\quad-\sum_i b_i s_i\end{aligned}`
+              : model.kind === 'gaussian'
+                ? String.raw`S(x)=\frac{a x^2}{2}-hx`
+                : model.kind === 'spin'
+                  ? String.raw`S(s)=-hs`
+                  : String.raw`S(k)=-hk-\log\binom nk`}
         </DisplayMath>
       </div>
       <p className="model-convention">
         <InlineMath>
-          {model.kind === 'ising'
-            ? String.raw`s_i\in\{-1,+1\}`
-            : model.kind === 'gaussian'
-              ? String.raw`x\in\mathbb R,\quad a>0`
-              : model.kind === 'spin'
-                ? String.raw`s\in\{-1,+1\}`
-                : String.raw`k\in\{0,\ldots,n\}`}
+          {model.kind === 'scalar'
+            ? String.raw`x_i\in\mathbb R,\quad \kappa_e\ge0`
+            : model.kind === 'ising'
+              ? String.raw`s_i\in\{-1,+1\}`
+              : model.kind === 'gaussian'
+                ? String.raw`x\in\mathbb R,\quad a>0`
+                : model.kind === 'spin'
+                  ? String.raw`s\in\{-1,+1\}`
+                  : String.raw`k\in\{0,\ldots,n\}`}
         </InlineMath>
         <br />
         Weight <InlineMath>{String.raw`e^{-S}`}</InlineMath>. Dimensionless; no
@@ -42,6 +49,7 @@ export function ModelFormula({ model }: { model: Model }) {
 }
 export function ModelNotes({ model }: { model: Model }) {
   if (model.kind === 'ising') return <IsingNotes />;
+  if (model.kind === 'scalar') return <ScalarNotes />;
   return (
     <details className="model-notes" id="model-notes">
       <summary>The mathematics & suggested experiments</summary>
