@@ -3,7 +3,6 @@ import type { Snapshot } from '../engine/protocol';
 import {
   scalarTargets,
   scalarReference,
-  scalarObservable,
   localPotential,
   conditionalPotential,
   quarticReference,
@@ -12,6 +11,8 @@ import {
 import type { ScalarModel } from '../models/scalarField';
 import { PlotFrame, formatNumber, tick } from '../plotting/PlotFrame';
 import { segmentColor } from '../plotting/viewport';
+import { ScalarTrajectoryPlot } from '../plotting/ScalarTrajectoryPlot';
+import { ScalarAcceptancePlot } from '../plotting/ScalarAcceptancePlot';
 type View =
   | 'histogram'
   | 'trajectory'
@@ -194,17 +195,16 @@ function ScalarPlot({
       </div>
     );
   }
-  if (view === 'acceptance')
+  if (view === 'acceptance') return <ScalarAcceptancePlot segments={allowed} />;
+  if (view === 'trajectory')
     return (
-      <p className="plot-note">
-        Current segment: accepted {current.accepted}, rejected{' '}
-        {current.rejected}; rate{' '}
-        {current.updates
-          ? formatNumber(current.accepted / current.updates)
-          : '—'}{' '}
-        (includes warm-up). Direct whole-vector draws and coordinate heat bath
-        do not have a Metropolis acceptance test.
-      </p>
+      <ScalarTrajectoryPlot
+        segments={allowed}
+        target={target}
+        bounds={{ min: bounds.min, max: bounds.max }}
+        runId={snapshot.runId}
+        fitVersion={fitVersion}
+      />
     );
   if (view === 'scatter') {
     if (model.parameters.domain.vertices.length < 2)
@@ -445,7 +445,7 @@ function ScalarPlot({
       snapshot={snapshot}
       segments={allowed}
       target={target}
-      view={view as 'trajectory' | 'mean' | 'error'}
+      view={view as 'mean' | 'error'}
       fitVersion={fitVersion}
     />
   );
@@ -460,7 +460,7 @@ function ScalarSeries({
   snapshot: Snapshot;
   segments: Snapshot['segments'];
   target: string;
-  view: 'trajectory' | 'mean' | 'error';
+  view: 'mean' | 'error';
   fitVersion: number;
 }) {
   const series = segments
@@ -469,13 +469,7 @@ function ScalarSeries({
       const model = s.model as ScalarModel,
         data = s.scalar!.targets[target]!,
         ref = scalarReference(model, target);
-      const points =
-        view === 'trajectory'
-          ? s.scalar!.trajectory.map((t) => ({
-              count: t.update,
-              mean: scalarObservable(model, t.result, target),
-            }))
-          : data.convergence;
+      const points = data.convergence;
       return {
         segment: s,
         data,
@@ -560,10 +554,7 @@ function ScalarSeries({
         {({ left, right, top, bottom, width, height }) => {
           const x = (n: number) =>
             left +
-            (view === 'trajectory'
-              ? n / nMax
-              : Math.log10(Math.max(1, n)) / Math.log10(nMax)) *
-              (right - left);
+            (Math.log10(Math.max(1, n)) / Math.log10(nMax)) * (right - left);
           const y = (v: number) =>
             bottom -
             (view === 'error'
@@ -607,9 +598,7 @@ function ScalarSeries({
                 );
               })}
               <text x={width / 2} y={height - 3} textAnchor="middle">
-                {view === 'trajectory'
-                  ? 'Global update number'
-                  : 'Retained N per segment (log)'}
+                Retained N per segment (log)
               </text>
               <text x={left - 5} y={top + 4} textAnchor="end">
                 {tick(hi)}
@@ -622,11 +611,9 @@ function ScalarSeries({
         }}
       </PlotFrame>
       <p className="plot-note">
-        {view === 'trajectory'
-          ? 'Recent exact transition records; warm-up and rejections included. Lines are algorithmic updates, not physical time.'
-          : view === 'mean'
-            ? 'Solid running means, dashed available analytic/quadrature references; each color is one parameter segment. MCMC samples can be correlated.'
-            : `Absolute error against each segment’s own reference; ${omitted} zero or below-range checkpoints omitted. A small observed error is not estimator uncertainty or proof of mixing.`}
+        {view === 'mean'
+          ? 'Solid running means, dashed available analytic/quadrature references; each color is one parameter segment. MCMC samples can be correlated.'
+          : `Absolute error against each segment’s own reference; ${omitted} zero or below-range checkpoints omitted. A small observed error is not estimator uncertainty or proof of mixing.`}
       </p>
       {view === 'error' &&
         series.map((s) => (
