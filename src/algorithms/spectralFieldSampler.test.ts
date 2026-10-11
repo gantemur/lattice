@@ -1,11 +1,12 @@
 import { expect, it } from 'vitest';
 import { createRng } from './rng';
 import type { Rng } from './rng';
-import { drawSpectralField } from './spectralFieldSampler';
+import { standardNormal } from './normalDraw';
+import { checkedRealInverse, drawSpectralField } from './spectralFieldSampler';
 import { createFieldLattice } from '../domain/fieldLattice';
 import { fieldAction } from '../models/gaussianField';
 import type { GaussianFieldParameters } from '../models/gaussianField';
-import { forwardRealFourier } from '../models/fieldFourier';
+import { forwardRealFourier, inverseFourier } from '../models/fieldFourier';
 import { spectralGaussianField } from '../models/gaussianFieldSpectral';
 import { sampledModePower } from '../observables/fieldSpectrum';
 
@@ -98,4 +99,137 @@ it('massive spectral draws include the sourced zero mode and independent covaria
     1 / (reference.basis.size * massive.r),
     1,
   );
+});
+
+const smallStiffnessCases: GaussianFieldParameters[] = [
+  {
+    measure: 'mean-zero',
+    shape: { kind: 'chain', length: 64, periodic: true },
+    r: 0,
+    kappaX: 1e-12,
+    kappaY: 0,
+    source: 0,
+  },
+  {
+    measure: 'mean-zero',
+    shape: {
+      kind: 'rectangle',
+      lx: 8,
+      ly: 8,
+      periodicX: true,
+      periodicY: true,
+    },
+    r: 0,
+    kappaX: 1e-12,
+    kappaY: 1e-12,
+    source: 0,
+  },
+];
+
+it.each(smallStiffnessCases)(
+  'small positive stiffness retains a real, mean-zero seeded field and exact scale',
+  (parameters) => {
+    const reference = spectralGaussianField(parameters);
+    const { basis, eigenvalues } = reference;
+    const seed = 12345;
+    // Replay the N real normals independently of the sampler to inspect the
+    // unrounded complex inverse and its scale before zero-mean projection.
+    const replayRng = createRng(seed);
+    const whiteNoise = Array.from({ length: basis.size }, () =>
+      standardNormal(replayRng),
+    );
+    const filtered = forwardRealFourier(whiteNoise, basis).map(
+      (coefficient, mode) =>
+        mode === 0
+          ? { re: 0, im: 0 }
+          : {
+              re: coefficient.re / Math.sqrt(eigenvalues[mode]!),
+              im: coefficient.im / Math.sqrt(eigenvalues[mode]!),
+            },
+    );
+    const inverse = inverseFourier(filtered, basis);
+    const coefficientScale =
+      filtered.reduce(
+        (sum, coefficient) => sum + Math.hypot(coefficient.re, coefficient.im),
+        0,
+      ) / basis.size;
+    const largestImaginary = Math.max(
+      ...inverse.map((value) => Math.abs(value.im)),
+    );
+    expect(largestImaginary / coefficientScale).toBeLessThan(1e-12);
+
+    let uniforms = 0;
+    const source = createRng(seed);
+    const countedRng: Rng = {
+      uniform() {
+        uniforms++;
+        return source.uniform();
+      },
+    };
+    const field = drawSpectralField(reference, countedRng);
+    expect(uniforms).toBe(2 * basis.size);
+    expect(drawSpectralField(reference, createRng(seed))).toEqual(field);
+    const fieldScale = Math.hypot(...field) / Math.sqrt(basis.size);
+    const mean = field.reduce((sum, value) => sum + value, 0) / basis.size;
+    expect(Math.abs(mean) / fieldScale).toBeLessThan(1e-12);
+    const rawMean =
+      inverse.reduce((sum, value) => sum + value.re, 0) / basis.size;
+    inverse.forEach((value, site) =>
+      expect(
+        Math.abs(field[site]! - (value.re - rawMean)) / fieldScale,
+      ).toBeLessThan(1e-12),
+    );
+
+    // The finite spectral reference gives the variance of a selected site.
+    // An independent ensemble checks that the large amplitude is physical,
+    // not a numerical instability introduced by the reality check.
+    const ensembleRng = createRng(8128);
+    let secondMoment = 0;
+    const samples = 3000;
+    for (let sample = 0; sample < samples; sample++) {
+      const draw = drawSpectralField(reference, ensembleRng);
+      secondMoment += draw[0]! ** 2;
+    }
+    const relativeVarianceError = Math.abs(
+      secondMoment / samples / reference.covariance[0]![0]! - 1,
+    );
+    expect(relativeVarianceError).toBeLessThan(0.1);
+  },
+);
+
+it('rejects a deliberately non-conjugate Fourier coefficient', () => {
+  const reference = spectralGaussianField(p);
+  const realInput = [0.5, -1, 2, 0.25];
+  const conjugateCoefficients = forwardRealFourier(realInput, reference.basis);
+  checkedRealInverse(conjugateCoefficients, reference.basis).forEach(
+    (value, site) => expect(value).toBeCloseTo(realInput[site]!, 12),
+  );
+  const corrupted = conjugateCoefficients.map((value) => ({ ...value }));
+  corrupted[1]!.im += 0.1; // Leave its partner at k=3 unchanged.
+  expect(() => checkedRealInverse(corrupted, reference.basis, 2)).toThrow(
+    /conjugate reality/,
+  );
+});
+
+it('uses the pre-filter scale when retained coefficients nearly cancel', () => {
+  const twoSite: GaussianFieldParameters = {
+    measure: 'mean-zero',
+    shape: { kind: 'chain', length: 2, periodic: true },
+    r: 0,
+    kappaX: 3,
+    kappaY: 0,
+    source: 0,
+  };
+  const reference = spectralGaussianField(twoSite);
+  let uniforms = 0;
+  const equalNormals: Rng = {
+    uniform() {
+      uniforms++;
+      return 0.5;
+    },
+  };
+  const field = drawSpectralField(reference, equalNormals);
+  expect(uniforms).toBe(4);
+  expect(field[0]).toBeCloseTo(0, 14);
+  expect(field[1]).toBeCloseTo(0, 14);
 });
