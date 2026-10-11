@@ -1923,6 +1923,11 @@ footer {
 .field-run-readings span {
   min-width: 105px;
 }
+.oscillator-quality-warning {
+  border-left: 4px solid #b0612b;
+  background: #fff0dd;
+  padding: 10px 12px;
+}
 .field-display-controls {
   margin: 14px 0;
 }

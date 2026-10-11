@@ -95,6 +95,85 @@ export function transferQuadrature(
   };
 }
 
+export type QuadratureQuality = {
+  status: 'usable' | 'under-resolved' | 'unavailable';
+  relativeGapDiscrepancy: number | null;
+  exactGap: number;
+  exactLeadingEigenvalue: number;
+  gridSpacing: number | null;
+  kineticWidth: number;
+  reasons: string[];
+};
+
+/** Assess this particular finite grid, not the validity of Nyström quadrature.
+ * We know the oscillator answer independently: a >5% gap discrepancy marks
+ * under-resolution. The exact leading eigenvalue is e^(−aΩ/2)<1, so a
+ * computed value above 1+1e−8 is another warning. Both tests diagnose the
+ * teaching discretization; neither changes its approximate eigenvalues. */
+export function assessTransferQuadrature(
+  p: OscillatorParameters,
+  numerical: ReturnType<typeof transferQuadrature> | null,
+): QuadratureQuality {
+  const a = oscillatorSpacing(p);
+  const exactGap = latticeGap(p);
+  const exactLeadingEigenvalue = Math.exp((-a * exactGap) / 2);
+  const kineticWidth = Math.sqrt(a);
+  const gridSpacing =
+    numerical !== null &&
+    Number.isInteger(numerical.nodes) &&
+    numerical.nodes >= 2 &&
+    Number.isFinite(numerical.cutoff) &&
+    numerical.cutoff > 0
+      ? (2 * numerical.cutoff) / (numerical.nodes - 1)
+      : null;
+  const { first, second, gap } = numerical ?? {
+    first: NaN,
+    second: NaN,
+    gap: null,
+  };
+  const inferredGap = -Math.log(second / first) / a;
+  if (
+    numerical === null ||
+    gridSpacing === null ||
+    !Number.isFinite(first) ||
+    !Number.isFinite(second) ||
+    !(first > second && second > 0) ||
+    gap === null ||
+    !Number.isFinite(gap) ||
+    !(gap > 0) ||
+    Math.abs(gap - inferredGap) > 1e-10 * Math.max(1, gap)
+  ) {
+    return {
+      status: 'unavailable',
+      relativeGapDiscrepancy: null,
+      exactGap,
+      exactLeadingEigenvalue,
+      gridSpacing,
+      kineticWidth,
+      reasons: ['The finite-grid eigenvalues or their gap are unusable.'],
+    };
+  }
+  const relativeGapDiscrepancy = Math.abs(gap - exactGap) / exactGap;
+  const reasons: string[] = [];
+  if (relativeGapDiscrepancy > 0.05)
+    reasons.push(
+      'The finite-grid gap differs from the exact lattice gap by more than 5%.',
+    );
+  if (first > 1 + 1e-8)
+    reasons.push(
+      'The leading grid eigenvalue exceeds the exact transfer bound t₀<1.',
+    );
+  return {
+    status: reasons.length ? 'under-resolved' : 'usable',
+    relativeGapDiscrepancy,
+    exactGap,
+    exactLeadingEigenvalue,
+    gridSpacing,
+    kineticWidth,
+    reasons,
+  };
+}
+
 export function transferLevels(p: OscillatorParameters) {
   const gap = latticeGap(p);
   const a = oscillatorSpacing(p);

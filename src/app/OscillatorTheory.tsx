@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import type { FieldSampler } from '../algorithms/gaussianFieldSampler';
 import type { OscillatorParameters } from '../models/oscillator';
 import { oscillatorSpacing } from '../models/oscillator';
 import {
@@ -8,11 +9,15 @@ import {
   oscillatorPartition,
 } from '../models/oscillatorReference';
 import {
+  assessTransferQuadrature,
   reflectionExample,
   transferLevels,
   transferQuadrature,
 } from '../models/oscillatorTransfer';
-import { effectiveGap } from '../observables/oscillatorCorrelator';
+import {
+  assessSampledGap,
+  minimumEffectiveGapPaths,
+} from '../observables/oscillatorCorrelator';
 import { formatNumber } from '../plotting/PlotFrame';
 import { DisplayMath } from '../ui/Math';
 
@@ -21,26 +26,39 @@ export function OscillatorTheory({
   p,
   sampled,
   shownLag,
+  measurements,
+  samplerKind,
 }: {
   p: OscillatorParameters;
   sampled: number[] | null;
   shownLag: number;
+  measurements: number;
+  samplerKind: FieldSampler['kind'];
 }) {
   const a = oscillatorSpacing(p);
   const gap = latticeGap(p);
   const partition = oscillatorPartition(p);
   const levels = transferLevels(p);
-  const quadrature = useMemo(
-    () => transferQuadrature(p),
-    [p.sites, p.beta, p.omega],
-  );
+  const quadrature = useMemo(() => {
+    try {
+      return transferQuadrature(p);
+    } catch {
+      // A failed teaching eigensolve must not hide the analytic reference.
+      return null;
+    }
+  }, [p.sites, p.beta, p.omega]);
+  const quality = assessTransferQuadrature(p, quadrature);
   const reflection = useMemo(
     () => reflectionExample(p),
     [p.sites, p.beta, p.omega],
   );
-  const empiricalGap = sampled
-    ? effectiveGap(sampled, shownLag, a, p.sites)
-    : null;
+  const empiricalGap = assessSampledGap(
+    sampled,
+    measurements,
+    shownLag,
+    a,
+    p.sites,
+  );
   return (
     <>
       <section className="field-results">
@@ -53,16 +71,33 @@ export function OscillatorTheory({
             Exact lattice Ωₐ <strong>{formatNumber(gap)}</strong>
           </span>
           <span>
-            Sampled Ωeff({shownLag}){' '}
+            Provisional sampled Ωeff({shownLag}){' '}
             <strong data-testid="oscillator-effective-gap">
-              {formatNumber(empiricalGap)}
+              {empiricalGap.value === null
+                ? 'N/A'
+                : formatNumber(empiricalGap.value)}
             </strong>
           </span>
         </div>
+        <p
+          className="plot-note"
+          data-testid="oscillator-gap-status"
+          role="status"
+        >
+          {empiricalGap.status === 'insufficient-samples'
+            ? `N/A: insufficient samples (${measurements}/${minimumEffectiveGapPaths} retained paths).`
+            : empiricalGap.status === 'invalid-ratio'
+              ? `N/A: the sampled arcosh ratio is outside the real domain after ${measurements} retained paths.`
+              : `Uncorrected plug-in estimate from ${measurements} retained paths; no nonlinear uncertainty is available.`}{' '}
+          {samplerKind === 'spectral'
+            ? 'Independent full-path draws still require enough measurements.'
+            : 'Local paths may be autocorrelated; fixed warm-up does not certify equilibrium.'}
+        </p>
         <p className="plot-note">
-          Ωeff(ℓ)=acosh[(C(ℓ−1)+C(ℓ+1))/(2C(ℓ))]/a. N/A means too few
-          measurements or a noisy ratio outside the real domain. No uncertainty
-          is inferred from one correlator standard error.
+          Ωeff(ℓ)=acosh[(C(ℓ−1)+C(ℓ+1))/(2C(ℓ))]/a. The sampled correlator below
+          is shown before the gap threshold; the exact finite-spacing lattice
+          gap remains the reference. No gap uncertainty is inferred from one
+          correlator standard error.
         </p>
         <div className="field-table-scroll">
           <table className="field-covariance">
@@ -110,14 +145,40 @@ export function OscillatorTheory({
             Gap <strong>{formatNumber(gap)}</strong>
           </span>
           <span>
-            Finite-grid gap <strong>{formatNumber(quadrature.gap)}</strong>
+            Finite-grid gap (approximate){' '}
+            <strong data-testid="oscillator-quadrature-gap">
+              {quadrature?.gap === null || !quadrature
+                ? 'N/A'
+                : formatNumber(quadrature.gap)}
+            </strong>
           </span>
         </div>
-        <p className="plot-note">
-          Finite coordinate-grid trapezoid quadrature: {quadrature.nodes} nodes
-          on [−{formatNumber(quadrature.cutoff)}, +
-          {formatNumber(quadrature.cutoff)}]. Its gap is approximate; Ωₐ is the
-          analytic finite-spacing reference.
+        <p
+          className={`plot-note ${quality.status === 'usable' ? '' : 'oscillator-quality-warning'}`}
+          data-testid="oscillator-quadrature-quality"
+          role="status"
+        >
+          <strong>
+            {quality.status === 'usable'
+              ? 'Usable approximation.'
+              : quality.status === 'under-resolved'
+                ? 'Under-resolved approximation.'
+                : 'Unavailable numerical result.'}
+          </strong>{' '}
+          {quadrature
+            ? `${quadrature.nodes} coordinate nodes on [−${formatNumber(quadrature.cutoff)}, +${formatNumber(quadrature.cutoff)}]; `
+            : ''}
+          grid spacing {formatNumber(quality.gridSpacing)} versus kinetic width
+          √a={formatNumber(quality.kineticWidth)}. Numerical leading eigenvalue{' '}
+          {formatNumber(quadrature?.first ?? null)} versus exact{' '}
+          {formatNumber(quality.exactLeadingEigenvalue)}. Gap discrepancy{' '}
+          {quality.relativeGapDiscrepancy === null
+            ? 'N/A'
+            : `${formatNumber(quality.relativeGapDiscrepancy * 100)}%`}{' '}
+          from exact Ωₐ={formatNumber(quality.exactGap)}.{' '}
+          {quality.reasons.join(' ')} The analytic finite-spacing reference is
+          authoritative; a poorly resolved grid does not invalidate the transfer
+          theory.
         </p>
         <p>
           Raw Gaussian log Z: {formatNumber(partition.logRaw)}. Physical trace

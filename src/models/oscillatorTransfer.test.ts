@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { latticeGap } from './oscillatorReference';
 import {
+  assessTransferQuadrature,
   reflectionExample,
   symmetricEigenvalues,
   transferKernel,
@@ -36,6 +37,34 @@ describe('symmetric transfer demonstration', () => {
       Math.abs(coarse.gap! - latticeGap(p)),
     );
     expect(fine.gap).toBeCloseTo(latticeGap(p), 3);
+  });
+  it('discloses fixed-grid quality against the exact finite-spacing gap', () => {
+    const usual = assessTransferQuadrature(p, transferQuadrature(p));
+    expect(usual.status).toBe('usable');
+    expect(usual.relativeGapDiscrepancy).toBeLessThan(0.05);
+
+    const narrow = { sites: 64, beta: 2, omega: 0.25 };
+    const grid = transferQuadrature(narrow);
+    const quality = assessTransferQuadrature(narrow, grid);
+    expect(grid.first).toBeCloseTo(1.1673, 3);
+    expect(grid.gap).toBeCloseTo(0.131145, 3);
+    expect(quality.exactGap).toBeCloseTo(0.25, 4);
+    expect(quality.exactLeadingEigenvalue).toBeCloseTo(0.9961, 4);
+    expect(quality.gridSpacing).toBeCloseTo(0.5, 12);
+    expect(quality.kineticWidth).toBeCloseTo(Math.sqrt(1 / 32), 12);
+    expect(quality.relativeGapDiscrepancy).toBeGreaterThan(0.45);
+    expect(quality.status).toBe('under-resolved');
+    expect(quality.reasons).toHaveLength(2);
+  });
+  it('never certifies missing or unusable eigenvalue data', () => {
+    const grid = transferQuadrature(p);
+    expect(assessTransferQuadrature(p, null).status).toBe('unavailable');
+    expect(assessTransferQuadrature(p, { ...grid, second: NaN }).status).toBe(
+      'unavailable',
+    );
+    expect(
+      assessTransferQuadrature(p, { ...grid, gap: grid.gap! * 2 }).status,
+    ).toBe('unavailable');
   });
   it('finds positive-semidefinite reflection Gram matrices (allowing zeros)', () => {
     for (const sites of [4, 8, 16, 32]) {

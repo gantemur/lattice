@@ -54,3 +54,26 @@ export function effectiveGap(
   const argument = (left! + right!) / (2 * center!);
   return argument >= 1 ? Math.acosh(argument) / a : null;
 }
+
+export const minimumEffectiveGapPaths = 64;
+
+/** Presentation gate only: the arcosh estimator above remains a pure formula.
+ * 64 retained paths is an educational minimum, not an equilibration test or
+ * an effective-sample-size calculation for a correlated local chain. */
+export function assessSampledGap(
+  correlation: readonly number[] | null,
+  measurements: number,
+  lag: number,
+  a: number,
+  sites: number,
+): {
+  status: 'insufficient-samples' | 'invalid-ratio' | 'provisional';
+  value: number | null;
+} {
+  if (measurements < minimumEffectiveGapPaths)
+    return { status: 'insufficient-samples', value: null };
+  const value = correlation ? effectiveGap(correlation, lag, a, sites) : null;
+  return value === null
+    ? { status: 'invalid-ratio', value: null }
+    : { status: 'provisional', value };
+}

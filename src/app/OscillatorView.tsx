@@ -429,7 +429,13 @@ export function OscillatorView({
               without subtracting each path mean. Exact finite lattice,
               continuum theory and each measurement segment are distinct.
             </p>
-            <OscillatorTheory p={p} sampled={sampled} shownLag={shownLag} />
+            <OscillatorTheory
+              p={p}
+              sampled={sampled}
+              shownLag={shownLag}
+              measurements={current?.measurements ?? 0}
+              samplerKind={current?.settings.sampler.kind ?? 'spectral'}
+            />
             <p className="plot-note">
               Seed {snapshot?.seed ?? seed}; segment {current?.id ?? '—'} began
               at update {current?.startUpdate ?? 0}.{' '}

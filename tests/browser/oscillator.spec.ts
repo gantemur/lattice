@@ -13,6 +13,10 @@ test('harmonic oscillator path, segment correlator and transfer view work on des
   await expect(page.getByText('● Exact finite lattice')).toBeVisible();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('oscillator-samples')).toHaveText('1');
+  await expect(page.getByTestId('oscillator-effective-gap')).toHaveText('N/A');
+  await expect(page.getByTestId('oscillator-gap-status')).toContainText(
+    'insufficient samples (1/64 retained paths)',
+  );
   const firstPath = await page
     .getByRole('img', { name: /Current periodic path/ })
     .locator('polyline')
@@ -47,9 +51,10 @@ test('harmonic oscillator path, segment correlator and transfer view work on des
   await page
     .getByText('Transfer operator, normalization & reflection positivity')
     .click();
-  await expect(
-    page.getByText(/Finite coordinate-grid trapezoid quadrature/),
-  ).toBeVisible();
+  await expect(page.getByTestId('oscillator-quadrature-quality')).toBeVisible();
+  await expect(page.getByTestId('oscillator-quadrature-quality')).toContainText(
+    'Usable approximation',
+  );
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 2,
@@ -74,9 +79,24 @@ test('fine time spacing and local sampler remain usable', async ({ page }) => {
   await expect(page.getByText(/κ=1\/a=32/)).toBeVisible();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('oscillator-samples')).toHaveText('1');
+  await page
+    .getByText('Transfer operator, normalization & reflection positivity')
+    .click();
+  await expect(page.getByTestId('oscillator-quadrature-quality')).toContainText(
+    'Under-resolved approximation',
+  );
+  await expect(page.getByTestId('oscillator-quadrature-quality')).toContainText(
+    '47.',
+  );
+  await expect(page.getByTestId('oscillator-quadrature-gap')).not.toHaveText(
+    'N/A',
+  );
   await page.getByLabel('Oscillator sampler').selectOption('heat-bath');
   await page.getByLabel('Oscillator warm-up sweeps').fill('0');
   await page.getByRole('button', { name: 'Apply parameters' }).click();
+  await expect(page.getByTestId('oscillator-gap-status')).toContainText(
+    'Local paths may be autocorrelated',
+  );
   await page.getByRole('button', { name: 'Run', exact: true }).click();
   await expect
     .poll(async () =>

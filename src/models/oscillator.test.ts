@@ -16,6 +16,7 @@ import {
   oscillatorPartition,
 } from './oscillatorReference';
 import {
+  assessSampledGap,
   effectiveGap,
   pathCorrelator,
   segmentCorrelator,
@@ -94,6 +95,26 @@ describe('periodic oscillator mathematics', () => {
     expect(
       effectiveGap(fourierCorrelator(odd).slice(0, 3), 2, 1, 5),
     ).toBeCloseTo(latticeGap(odd), 12);
+  });
+
+  it('withholds the plug-in gap until 64 retained paths and keeps invalid ratios unavailable', () => {
+    const correlation = fourierCorrelator(physical).slice(0, 3);
+    expect(assessSampledGap(correlation, 1, 1, 1, 4)).toEqual({
+      status: 'insufficient-samples',
+      value: null,
+    });
+    expect(assessSampledGap(correlation, 63, 1, 1, 4).value).toBeNull();
+    const admitted = assessSampledGap(correlation, 64, 1, 1, 4);
+    expect(admitted.status).toBe('provisional');
+    expect(admitted.value).toBeCloseTo(latticeGap(physical), 12);
+    expect(assessSampledGap([1, 2, 1], 1000, 1, 1, 4)).toEqual({
+      status: 'invalid-ratio',
+      value: null,
+    });
+    expect(effectiveGap(correlation, 1, 1, 4)).toBeCloseTo(
+      latticeGap(physical),
+      12,
+    );
   });
 
   it('retains the fluctuating constant mode and the kinetic partition factor', () => {
