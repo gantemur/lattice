@@ -35,3 +35,17 @@ The production build uses Vite base `/lattice/` and locally bundled KaTeX assets
 ## Remaining limits
 
 The accepted parameter bounds deliberately exclude some normalizable actions. The quadrature method is one-dimensional; it does not provide exact coupled-quartic marginals or partition functions. Sampled covariance and a small observed mean error are not MCMC uncertainty estimates or proof of mixing; warm-up is a configurable count rather than an equilibration test. Scatter and exact transition windows are bounded and can omit older updates; older segment summary statistics remain separate. The phone runs are browser emulations, not physical-device performance measurements. M2 larger lattices, HMC, gauge fields, ESS/autocorrelation estimators, generic topology editing and M3 saved-run management remain outside this milestone.
+
+## Plotting refinement — 2026-10-10
+
+Scalar trajectories now default to a 100-update global window and offer 500/1000, Follow latest, Older/Newer and end-update navigation. The x-axis uses the selected window. Direct independent Gaussian draws appear as unconnected points; local heat-bath and Metropolis transitions use steps, including horizontal holds for unchanged observables and crosses for rejected proposals. The UI reports the earliest retained update and does not reconstruct evicted records or connect separate parameter segments. This corrects the previous long-run compression without changing the worker trace, sampler or RNG.
+
+Scalar Metropolis acceptance uses the existing green/orange graphical style, with accepted/rejected counts, percentage, warm-up disclosure and segment colors. Direct Gaussian and coordinate heat bath display **Acceptance N/A** and their draw/resampling counts, since neither has an accept/reject test. Plot navigation and Fit All remain display-only.
+
+Numerical and display regression checks cover a real 102,400-update worker run, window coordinates after 100,000 updates, retained-history boundaries, direct points versus local steps, rejected/unchanged states, segment separation, graphical statistics, N/A modes, seeded Reset replay, and desktop/phone browser interactions. The complete `npm run check` pipeline passes: formatting, typecheck, **178 unit tests in 20 files**, production build, and **78 browser tests** across desktop Chromium, 360px phone Chromium and emulated iPhone WebKit. `git diff --check` passes. The screenshots below were captured from the production preview and visually checked for axis labels, touch controls, color distinctions and horizontal overflow.
+
+![Desktop inspector after 25,088 direct updates, showing the latest 100 spread across the plot](screenshots/m1b-refinement-trajectory-desktop.png)
+
+![360px phone local Metropolis trajectory with a 100-update window](screenshots/m1b-refinement-trajectory-phone.png)
+
+![360px phone graphical Metropolis acceptance diagnostics](screenshots/m1b-refinement-acceptance-phone.png)

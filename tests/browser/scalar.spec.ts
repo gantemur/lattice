@@ -231,3 +231,142 @@ test('running means keep separately labeled parameter-segment histories', async 
   await page.getByRole('button', { name: 'Fit All', exact: true }).click();
   await expect(page.getByTestId('total-updates')).toHaveText('2');
 });
+
+test('long direct run keeps 100 recent points spread across a browsable update window', async ({
+  page,
+}) => {
+  test.setTimeout(120_000);
+  await start(page);
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  const firstTrace = await page
+    .getByTestId('scalar-transition-details')
+    .textContent();
+  await page.getByRole('button', { name: '▷ Run', exact: true }).click();
+  await expect
+    .poll(
+      async () => Number(await page.getByTestId('total-updates').textContent()),
+      { timeout: 90_000 },
+    )
+    .toBeGreaterThanOrEqual(20_000);
+  await page.getByRole('button', { name: 'Ⅱ Pause', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: 'Step', exact: true }),
+  ).toBeEnabled();
+  const total = Number(await page.getByTestId('total-updates').textContent());
+  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
+  const chart = page.getByRole('img', {
+    name: 'Scalar sample trajectory by elementary update',
+  });
+  await expect(chart).toBeVisible();
+  const viewport = JSON.parse((await chart.getAttribute('data-viewport'))!);
+  expect([viewport.firstShown, viewport.lastShown]).toEqual([
+    total - 100,
+    total,
+  ]);
+  await expect(chart).toContainText(total.toLocaleString('en'));
+  await expect(chart.getByTestId('scalar-point')).toHaveCount(100);
+  await expect(chart.getByTestId('scalar-step')).toHaveCount(0);
+  const points = await chart.getByTestId('scalar-point').all();
+  const firstX = Number(await points[0]!.getAttribute('cx'));
+  const lastX = Number(await points.at(-1)!.getAttribute('cx'));
+  expect(lastX - firstX).toBeGreaterThan(100);
+  const plot = page.getByRole('article').filter({
+    has: page.getByLabel('View for plot 3'),
+  });
+  await plot.getByText('Window & history', { exact: true }).click();
+  await plot.getByLabel('Scalar trajectory window').selectOption('500');
+  await expect(chart.getByTestId('scalar-point')).toHaveCount(500);
+  await plot.getByRole('button', { name: 'Older', exact: true }).click();
+  await expect(plot.getByLabel('Scalar trajectory end update')).toHaveValue(
+    String(total - 500),
+  );
+  await expect(plot.getByTestId('scalar-trajectory-retention')).toContainText(
+    'Earliest retained update',
+  );
+  await plot.getByLabel('Scalar trajectory window').selectOption('1000');
+  await plot.getByLabel('Scalar trajectory end update').fill('1');
+  const earliest = total - 999;
+  await expect(plot.getByLabel('Scalar trajectory end update')).toHaveValue(
+    String(earliest),
+  );
+  await expect(
+    plot.getByRole('button', { name: 'Older', exact: true }),
+  ).toBeDisabled();
+  await expect(chart.getByTestId('scalar-point')).toHaveCount(1);
+  await plot.getByRole('button', { name: 'Newer', exact: true }).click();
+  await plot.getByLabel('Follow latest').check();
+  await expect(plot.getByLabel('Scalar trajectory end update')).toHaveValue(
+    String(total),
+  );
+  await expect(page.getByTestId('total-updates')).toHaveText(String(total));
+  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await expect(page.getByTestId('total-updates')).toHaveText(String(total));
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page.getByRole('button', { name: 'Reset', exact: true }).click();
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await expect(page.getByTestId('scalar-transition-details')).toHaveText(
+    firstTrace!,
+  );
+});
+
+test('scalar acceptance bars separate Metropolis from direct and heat-bath N/A', async ({
+  page,
+}) => {
+  await start(page);
+  const plotTwo = page.getByRole('button', { name: 'Plot 2', exact: true });
+  if (await plotTwo.isVisible()) await plotTwo.click();
+  await page.getByLabel('View for plot 2').selectOption('acceptance');
+  const diagnostics = page.getByRole('group', {
+    name: 'Real scalar acceptance diagnostics',
+  });
+  await expect(diagnostics).toContainText('Acceptance N/A');
+  await expect(diagnostics.locator('.acceptance-bar')).toHaveCount(0);
+  await page.getByText('Model & sampler settings', { exact: true }).click();
+  await page.getByLabel('Sampling algorithm').selectOption('heat-bath');
+  await page.getByLabel('Warm-up updates').fill('0');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await expect(diagnostics).toContainText(
+    'coordinate Gaussian heat-bath resamplings',
+  );
+  await expect(diagnostics.locator('.acceptance-bar')).toHaveCount(0);
+  await page.getByLabel('Sampling algorithm').selectOption('metropolis');
+  await page.getByLabel('Proposal half-width δ').fill('50');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: '▷ Run', exact: true }).click();
+  await expect
+    .poll(async () =>
+      Number(await page.getByTestId('total-updates').textContent()),
+    )
+    .toBeGreaterThanOrEqual(300);
+  await page.getByRole('button', { name: 'Ⅱ Pause', exact: true }).click();
+  await expect(diagnostics.locator('.acceptance-bar')).toHaveCount(1);
+  await expect(diagnostics).toContainText('% accepted');
+  await expect(diagnostics).toContainText('rejected proposals');
+  await expect(diagnostics).toContainText('including 0 warm-up');
+  await expect(diagnostics).toContainText('S1');
+  await expect(diagnostics).toContainText('S2');
+  await expect(diagnostics).toContainText('S3');
+  await page.getByLabel('View for plot 2').selectOption('trajectory');
+  const chart = page.getByRole('img', {
+    name: 'Scalar sample trajectory by elementary update',
+  });
+  await expect
+    .poll(async () => chart.getByTestId('scalar-step').count())
+    .toBeGreaterThan(0);
+  await expect
+    .poll(async () => chart.getByTestId('scalar-rejection').count())
+    .toBeGreaterThan(0);
+  const total = await page.getByTestId('total-updates').textContent();
+  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await expect(page.getByTestId('total-updates')).toHaveText(total!);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

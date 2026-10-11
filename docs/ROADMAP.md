@@ -138,6 +138,8 @@ No M1b continuous extension, large-lattice engine, gauge dynamics, cluster algor
 
 Implemented on `codex/m1b-continuous-scalars` from `origin/main` at the M1a refinement merge `c967e89`. Real-vector worker state, graph presets including a coupled pair, six editable experiment configurations, dimensionless gradient/quartic action, exact multivariate Gaussian benchmarks/direct and coordinate-heat-bath samplers, local Metropolis, conditional/potential inspections, bounded per-target measurements and product/covariance/scatter plots are included. Compatible parameter changes preserve vector/RNG and start separate warm-up/measurements; topology switches start a new session. Versioned configuration-only URL sharing is included. No M1b numerical behavior is represented as full multivariate quartic exactness. See [M1b review evidence](M1B_REVIEW.md) for validation results and screenshots.
 
+The plotting refinement on the same branch gives scalar trajectories 100/500/1000-update history windows and sampler-appropriate point/step rendering. Scalar Metropolis acceptance now uses per-segment graphical bars; direct Gaussian and coordinate heat bath show N/A. These are display-only corrections; worker measurements and sampler sequences remain unchanged.
+
 ## M2 — 2D Ising: the main lattice laboratory
 
 **Objective:** deliver a robust demonstration of ordered/disordered regimes with controls and measurable observables.
