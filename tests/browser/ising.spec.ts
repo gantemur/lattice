@@ -354,6 +354,7 @@ test('local selection, edit handoff and log-error inspection preserve seeded sam
   await expect(page.getByTestId('spin-configuration')).toHaveText(state!);
   await expect(page.getByTestId('total-updates')).toHaveText('1');
   await step(page).click();
+  await expect(page.getByTestId('total-updates')).toHaveText('2');
   const nextTrace = await page.getByTestId('transition-details').textContent();
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await step(page).click();

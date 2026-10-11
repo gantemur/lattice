@@ -1,8 +1,15 @@
+import { ScalarShare } from './ScalarShare';
+import { decodeScalarConfiguration } from './shareConfiguration';
+import { ScalarWorkspace } from './ScalarWorkspace';
+import { ScalarInspector } from './ScalarInspector';
+import { ScalarStepInspector } from './ScalarStepInspector';
+import { ScalarReferences } from './ScalarReferences';
+import type { ScalarModel } from '../models/scalarField';
 import { GraphWorkspace, ExactIsingPanel } from './GraphWorkspace';
 import { topologyKey } from '../domain/graph';
 import { observableValue, spins } from '../models/ising';
 import type { IsingModel } from '../models/ising';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { standardGaussianPreset } from '../engine/preset';
 import type { RunConfiguration } from '../engine/protocol';
 import { MAX_SEGMENTS } from '../engine/protocol';
@@ -42,8 +49,23 @@ export function App() {
   const [notice, setNotice] = useState('Draw one sample or start a run.');
   const [selectedSite, setSelectedSite] = useState('v0');
   const [inspectOpen, setInspectOpen] = useState(false);
-  const reference = modelReference(model),
+  const reference = model.kind === 'scalar' ? null : modelReference(model),
     variable = variableName(model);
+  useEffect(() => {
+    if (!location.search.includes('config=')) return;
+    try {
+      const shared = decodeScalarConfiguration(location.href);
+      client.current?.initialize(shared);
+      setSeed(String(shared.seed));
+      setNotice(
+        'Loaded schema-v1 scalar configuration from URL as a new seeded session.',
+      );
+    } catch (error) {
+      setFormError(
+        error instanceof Error ? error.message : 'Invalid scalar share link.',
+      );
+    }
+  }, []);
   const status = view.error
     ? 'Worker unavailable'
     : view.running
@@ -85,6 +107,33 @@ export function App() {
             seed: seed.trim() ? Number(seed) : NaN,
           }),
         'Topology changed: new session, history cleared and selected seed restarted.',
+      );
+    }
+  }
+  function applyScalar(next: ScalarModel) {
+    if (model.kind !== 'scalar') return;
+    const gaussian = next.parameters.domain.vertices.every(
+      (v) => next.parameters.lambda[v.id] === 0,
+    );
+    const nextSampler =
+      !gaussian && sampler.kind !== 'metropolis'
+        ? { kind: 'metropolis' as const, width: 1, warmup: 200 }
+        : sampler;
+    if (
+      topologyKey(next.parameters.domain) ===
+      topologyKey(model.parameters.domain)
+    )
+      apply({ model: next, sampler: nextSampler });
+    else {
+      setSelectedSite('v0');
+      attempt(
+        () =>
+          client.current?.initialize({
+            model: next,
+            sampler: nextSampler,
+            seed: seed.trim() ? Number(seed) : NaN,
+          }),
+        'Topology changed: new real-vector session, history cleared and seed restarted.',
       );
     }
   }
@@ -159,7 +208,7 @@ export function App() {
               keep the mathematics in view.
             </p>
           </div>
-          <span className="milestone">M1a · Interactive Ising graphs</span>
+          <span className="milestone">M1b · Continuous scalar systems</span>
         </section>
         <div className="lab-layout">
           <aside className="sidebar" aria-label="Model and settings">
@@ -195,7 +244,20 @@ export function App() {
               apply={apply}
               disabled={!snapshot || !!view.error}
             />
-            {model.kind !== 'ising' && (
+            {model.kind === 'scalar' && (
+              <ScalarShare
+                configuration={configuration}
+                load={(shared) => {
+                  setSeed(String(shared.seed));
+                  setSelectedSite('v0');
+                  attempt(
+                    () => client.current?.initialize(shared),
+                    'Loaded scalar configuration as a new seeded session.',
+                  );
+                }}
+              />
+            )}
+            {model.kind !== 'ising' && model.kind !== 'scalar' && (
               <section
                 className="geometry-card"
                 aria-labelledby="geometry-title"
@@ -290,7 +352,7 @@ export function App() {
                   <strong data-testid="warmup-count">
                     {current?.warmupUpdates ?? 0} / {current?.warmupTarget ?? 0}
                   </strong>
-                  {sampler.kind !== 'metropolis' && ' · not needed'}
+                  {sampler.kind === 'direct' && ' · not needed'}
                 </span>
                 <span>
                   All updates{' '}
@@ -361,13 +423,33 @@ export function App() {
                 </p>
               )}
               <p className="run-notice">{notice}</p>
-              <StepInspector
-                model={model}
-                record={current?.trajectory.at(-1)}
-                open={inspectOpen}
-                setOpen={setInspectOpen}
-              />
+              {model.kind === 'scalar' ? (
+                <ScalarStepInspector
+                  record={current?.scalar?.trajectory.at(-1)}
+                  open={inspectOpen}
+                  setOpen={setInspectOpen}
+                />
+              ) : (
+                <StepInspector
+                  model={model}
+                  record={current?.trajectory.at(-1)}
+                  open={inspectOpen}
+                  setOpen={setInspectOpen}
+                />
+              )}
             </section>
+            {model.kind === 'scalar' && (
+              <ScalarWorkspace
+                key={`scalar:${topologyKey(model.parameters.domain)}`}
+                model={model}
+                state={snapshot?.scalarState ?? null}
+                trace={current?.scalar?.trajectory.at(-1)}
+                selected={selectedSite}
+                setSelected={setSelectedSite}
+                apply={applyScalar}
+                disabled={!snapshot || !!view.error}
+              />
+            )}
             {model.kind === 'ising' && (
               <GraphWorkspace
                 key={`graph:${topologyKey(model.parameters.domain)}`}
@@ -452,16 +534,29 @@ export function App() {
                 </p>
               )}
             </section>
-            <Inspector
-              key={
-                model.kind === 'ising'
-                  ? `plots:${topologyKey(model.parameters.domain)}`
-                  : model.kind
-              }
-              snapshot={snapshot}
-              selectedSite={model.kind === 'ising' ? selectedSite : undefined}
-            />
-            {model.kind === 'ising' && current ? (
+            {model.kind === 'scalar' && snapshot && (
+              <ScalarInspector
+                key={`scalar-plots:${topologyKey(model.parameters.domain)}`}
+                snapshot={snapshot}
+                selected={selectedSite}
+              />
+            )}
+            {model.kind !== 'scalar' && (
+              <Inspector
+                key={
+                  model.kind === 'ising'
+                    ? `plots:${topologyKey(model.parameters.domain)}`
+                    : model.kind
+                }
+                snapshot={snapshot}
+                selectedSite={model.kind === 'ising' ? selectedSite : undefined}
+              />
+            )}
+            {model.kind === 'scalar' ? (
+              current ? (
+                <ScalarReferences segment={current} />
+              ) : null
+            ) : model.kind === 'ising' && current ? (
               <ExactIsingPanel segment={current} />
             ) : (
               <section
@@ -490,7 +585,7 @@ export function App() {
                         <InlineMath>{String.raw`\langle ${variable}\rangle`}</InlineMath>
                       </th>
                       <td data-testid="exact-mean">
-                        {formatNumber(reference.mean)}
+                        {formatNumber(reference!.mean)}
                       </td>
                       <td data-testid="sample-mean">
                         {formatNumber(snapshot?.moments.mean ?? null)}
@@ -499,7 +594,7 @@ export function App() {
                     <tr>
                       <th scope="row">Variance</th>
                       <td data-testid="exact-variance">
-                        {formatNumber(reference.variance)}
+                        {formatNumber(reference!.variance)}
                       </td>
                       <td>
                         {formatNumber(snapshot?.moments.variance ?? null)}
@@ -510,7 +605,7 @@ export function App() {
                         Second moment{' '}
                         <InlineMath>{String.raw`\langle ${variable}^2\rangle`}</InlineMath>
                       </th>
-                      <td>{formatNumber(reference.secondMoment)}</td>
+                      <td>{formatNumber(reference!.secondMoment)}</td>
                       <td>
                         {formatNumber(snapshot?.moments.secondMoment ?? null)}
                       </td>
@@ -519,10 +614,10 @@ export function App() {
                 </table>
                 <p className="plot-note">
                   Exact <InlineMath>{String.raw`\log Z`}</InlineMath> ={' '}
-                  {formatNumber(reference.logPartition)}. Sample variance uses N
-                  − 1 and needs two retained measurements; this does not remove
-                  finite-chain correlation bias. No autocorrelation-adjusted
-                  uncertainty or ESS is estimated.
+                  {formatNumber(reference!.logPartition)}. Sample variance uses
+                  N − 1 and needs two retained measurements; this does not
+                  remove finite-chain correlation bias. No
+                  autocorrelation-adjusted uncertainty or ESS is estimated.
                 </p>
               </section>
             )}
@@ -532,7 +627,9 @@ export function App() {
       </main>
       <footer>
         <span>Lattice Lab / Small systems, explicit mathematics.</span>
-        <span>Gaussian · Spin · Binomial · Graph Ising</span>
+        <span>
+          Gaussian · Spin · Binomial · Graph Ising · Real scalar field
+        </span>
       </footer>
     </>
   );

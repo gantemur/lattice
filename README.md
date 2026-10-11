@@ -1,10 +1,18 @@
 # Lattice Lab
 
-**Status:** M0, M0.5 and M1a are merged. The M1a local-inspection and convergence refinement is implemented on its feature branch; validation and limits are tracked in the [roadmap](docs/ROADMAP.md). M1b and later remain planned.
+**Status:** M0, M0.5 and M1a (including local inspection) are merged. M1b continuous scalar systems are implemented and locally validated on the feature branch; tests and limits are recorded in the [review](docs/M1B_REVIEW.md). M2 and later remain planned.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
+
+## New in M1b
+
+Choose **Real scalar field** to explore one to four real variables on the existing graph/lattice presets, plus a coupled two-site pair. The dimensionless action is `Σᵢ(aᵢxᵢ²/2 + λᵢxᵢ⁴/4 − hᵢxᵢ) + Σₑκₑ(xₜ−xₕ)²/2`. Six editable experiment presets cover a one-site Gaussian, Gaussian pair, symmetric/tilted double wells and four-site Gaussian/quartic systems. Numeric site/bond controls preserve distinct periodic bonds and faces. Positive quartic terms permit negative `a`; positive Gaussian `a` and nonnegative `κ` keep the supported region normalizable.
+
+The graph shows actual real values with a fixed color scale. Selected sites compare bare and fixed-neighbor conditional potentials; selected bonds show gradient action. A normalized conditional density is labeled separately from the sampled equilibrium marginal. Gaussian models expose analytic mean, covariance, pair moments, conditionals and log Z, with independent whole-vector draws or local heat bath/Metropolis. Independent quartic sites have controlled one-dimensional quadrature references. Coupled quartic marginals remain sampled estimates.
+
+The existing Run/Pause/Step, warm-up, historical segments, Reset and Fit All workflows apply to vector configurations. Up to six plots can show marginal histograms, local potentials and conditionals, trajectories, running means/errors when referenced, scatter, covariance and acceptance. A versioned URL shares **configuration only** (model, graph, parameters, sampler and seed); it contains no Monte Carlo history. [M1b review notes](docs/M1B_REVIEW.md) document numerical tests, browser screenshots and limits.
 
 ## New in M1a
 
@@ -17,7 +25,7 @@ The action is `S=−Σ_e K_e s_tail s_head−Σ_i b_i s_i`, weight `exp(−S)` (
 - **Graph observables:** M, m=M/N, |M|, total dimensionless action E=S and each spin; distributions, exact/sample running means, trajectories, local conditionals and connected correlations. Configuration probability tables show exact and sampled masses. Local conditionals are explicitly distinct from equilibrium marginals.
 - **Measurements:** local warm-up defaults to 200 updates (0–10000), excluded from all estimates; a fixed budget is not a mixing guarantee. Coupling/field/sampler changes preserve compatible configurations/RNG and create separate segments. Topology changes explicitly restart/reseed. Reset clears/reseeds/refits; Fit All is display-only. Eight segments retain 1000 exact transitions each plus full configuration counts and bounded per-observable summaries. No MCMC confidence bands, ESS or saved-run manager.
 
-[Initial review notes](docs/M1A_REVIEW.md) and [local-inspection refinement screenshots](docs/M1A_REFINEMENT_REVIEW.md) record the numerical and desktop/phone validation. M1b continuous-variable models, larger lattices, gauge dynamics and cluster algorithms are deferred.
+[Initial review notes](docs/M1A_REVIEW.md) and [local-inspection refinement screenshots](docs/M1A_REFINEMENT_REVIEW.md) record the numerical and desktop/phone validation. Larger lattices, gauge dynamics and cluster algorithms remain deferred.
 
 ## Preserved single-variable laboratory
 

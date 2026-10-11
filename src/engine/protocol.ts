@@ -1,3 +1,4 @@
+import type { ScalarSegmentSnapshot } from './scalarRun';
 import type { IsingMeasurementSnapshot } from '../observables/isingMeasurements';
 import type { Settings } from '../algorithms/transitions';
 import type { Histogram } from '../observables/histogram';
@@ -9,6 +10,7 @@ export const MAX_SEGMENTS = 8;
 export type RunConfiguration = Settings & Readonly<{ seed: number }>;
 export type SegmentSnapshot = Settings & {
   ising?: IsingMeasurementSnapshot;
+  scalar?: ScalarSegmentSnapshot;
   id: number;
   startUpdate: number;
   initialValue: number | null;
@@ -29,6 +31,7 @@ export type Snapshot = {
   version: number;
   configuration: RunConfiguration;
   currentValue: number | null;
+  scalarState?: number[];
   currentAction: number | null;
   updates: number;
   warmupUpdates: number;

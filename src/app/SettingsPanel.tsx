@@ -1,3 +1,4 @@
+import { ScalarSettings } from './ScalarSettings';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Settings, Sampler } from '../algorithms/transitions';
@@ -265,7 +266,9 @@ function ScalarSettingsPanel({
 export function SettingsPanel(
   props: Parameters<typeof ScalarSettingsPanel>[0],
 ) {
-  return props.settings.model.kind === 'ising' ? (
+  return props.settings.model.kind === 'scalar' ? (
+    <ScalarSettings {...props} />
+  ) : props.settings.model.kind === 'ising' ? (
     <GraphSamplerSettings {...props} />
   ) : (
     <ScalarSettingsPanel {...props} />

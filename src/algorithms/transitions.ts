@@ -46,15 +46,32 @@ export type Transition = { ising?: IsingTrace } & (
 );
 export function validateSettings({ model, sampler }: Settings): void {
   validateModel(model);
+  if (model.kind === 'scalar') {
+    if (
+      sampler.kind === 'direct' &&
+      model.parameters.domain.vertices.some(
+        (v) => model.parameters.lambda[v.id] !== 0,
+      )
+    )
+      throw new Error('Direct sampling requires a Gaussian scalar field.');
+    if (
+      sampler.kind === 'heat-bath' &&
+      model.parameters.domain.vertices.some(
+        (v) => model.parameters.lambda[v.id] !== 0,
+      )
+    )
+      throw new Error('Coordinate Gaussian heat bath requires λ = 0.');
+  }
   if (
     sampler.kind === 'heat-bath' &&
     model.kind !== 'spin' &&
-    model.kind !== 'ising'
+    model.kind !== 'ising' &&
+    model.kind !== 'scalar'
   )
     throw new Error('Heat bath is available for the single spin only.');
   if (
     sampler.kind === 'heat-bath' &&
-    model.kind === 'ising' &&
+    (model.kind === 'ising' || model.kind === 'scalar') &&
     (!Number.isInteger(sampler.warmup ?? 200) ||
       (sampler.warmup ?? 200) < 0 ||
       (sampler.warmup ?? 200) > 10000)
@@ -89,6 +106,8 @@ export function metropolisProposal(
   width: number,
   uniform: number,
 ) {
+  if (model.kind === 'scalar')
+    throw new Error('Use vector Metropolis transition.');
   if (model.kind === 'gaussian')
     return {
       attempted: current + width * (2 * uniform - 1),
@@ -114,6 +133,7 @@ export function transition(
   current: number | null,
   rng: Rng,
 ): Transition {
+  if (model.kind === 'scalar') throw new Error('Use vector scalar transition.');
   if (model.kind === 'ising')
     return isingTransition(model, sampler, current, rng);
   if (sampler.kind === 'heat-bath') {

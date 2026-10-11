@@ -1,3 +1,5 @@
+import { scalarPreset, validateScalar, scalarReference } from './scalarField';
+import type { ScalarModel } from './scalarField';
 import {
   isingPreset,
   validateIsing,
@@ -16,12 +18,14 @@ import type { GaussianParameters } from './gaussian';
 
 export type Model =
   | IsingModel
+  | ScalarModel
   | { kind: 'gaussian'; parameters: GaussianParameters }
   | { kind: 'spin'; parameters: Readonly<{ h: number }> }
   | { kind: 'binomial'; parameters: Readonly<{ n: number; p: number }> };
 export type ModelKind = Model['kind'];
 export const modelNames: Record<ModelKind, string> = {
   ising: 'Graph Ising',
+  scalar: 'Real scalar field',
   gaussian: '0D Gaussian',
   spin: 'Single Ising spin',
   binomial: 'Binomial count',
@@ -30,6 +34,8 @@ export function defaultModel(kind: ModelKind): Model {
   switch (kind) {
     case 'ising':
       return isingPreset();
+    case 'scalar':
+      return scalarPreset();
     case 'gaussian':
       return { kind, parameters: { a: 1, h: 0 } };
     case 'spin':
@@ -40,10 +46,15 @@ export function defaultModel(kind: ModelKind): Model {
 }
 export function variableName(model: Model): string {
   if (model.kind === 'ising') return model.observable ?? 'M';
+  if (model.kind === 'scalar')
+    return model.observable ?? model.parameters.domain.vertices[0]!.id;
   return model.kind === 'gaussian' ? 'x' : model.kind === 'spin' ? 's' : 'K';
 }
 export function validateModel(model: Model): void {
   switch (model.kind) {
+    case 'scalar':
+      validateScalar(model);
+      return;
     case 'ising':
       validateIsing(model);
       return;
@@ -85,6 +96,7 @@ export function logChoose(n: number, k: number): number {
   return logFactorials[n]! - logFactorials[k]! - logFactorials[n - k]!;
 }
 export function validState(model: Model, value: number): boolean {
+  if (model.kind === 'scalar') return false;
   if (model.kind === 'ising')
     return (
       Number.isInteger(value) &&
@@ -104,6 +116,8 @@ export function modelAction(model: Model, value: number): number {
   switch (model.kind) {
     case 'gaussian':
       return gaussianAction(value, model.parameters);
+    case 'scalar':
+      throw new Error('Scalar fields require a real-vector state.');
     case 'ising':
       return isingAction(model, value);
     case 'spin':
@@ -121,6 +135,7 @@ export function actionDifference(
 ): number {
   if (!validState(model, current) || !validState(model, proposed))
     throw new Error('Transition state is outside model support.');
+  if (model.kind === 'scalar') throw new Error('Use vector local difference.');
   if (model.kind === 'gaussian') {
     const { a, h } = model.parameters;
     return (proposed - current) * ((a * (proposed + current)) / 2 - h);
@@ -130,6 +145,15 @@ export function actionDifference(
 export function modelReference(model: Model) {
   validateModel(model);
   if (model.kind === 'ising') return isingReference(model);
+  if (model.kind === 'scalar') {
+    const r = scalarReference(model);
+    if (!r) throw new Error('No exact marginal for coupled quartic field.');
+    return {
+      ...r,
+      secondMoment: r.mean * r.mean + r.variance,
+      standardDeviation: Math.sqrt(r.variance),
+    };
+  }
   if (model.kind === 'gaussian') return gaussianReference(model.parameters);
   let mean: number, variance: number, logPartition: number;
   if (model.kind === 'spin') {
@@ -153,6 +177,8 @@ export function modelReference(model: Model) {
   };
 }
 export function probability(model: Model, value: number): number {
+  if (model.kind === 'scalar')
+    throw new Error('Use the scalar density reference when available.');
   if (model.kind === 'ising')
     return (
       isingDistribution(model).find((d) => d.value === value)?.probability ?? 0
@@ -176,6 +202,7 @@ export function probability(model: Model, value: number): number {
   }
 }
 export function support(model: Model): number[] {
+  if (model.kind === 'scalar') return [];
   if (model.kind === 'ising')
     return isingDistribution(model).map((d) => d.value);
   if (model.kind === 'gaussian') return [];
@@ -184,6 +211,8 @@ export function support(model: Model): number[] {
     : Array.from({ length: model.parameters.n + 1 }, (_, k) => k);
 }
 export function initialState(model: Model): number {
+  if (model.kind === 'scalar')
+    throw new Error('Scalar initial state is a real vector.');
   if (model.kind === 'ising')
     return 2 ** model.parameters.domain.vertices.length - 1;
   return model.kind === 'gaussian'
@@ -194,6 +223,8 @@ export function initialState(model: Model): number {
 }
 export function modelSummary(model: Model): string {
   switch (model.kind) {
+    case 'scalar':
+      return `${model.parameters.domain.name}; a=[${Object.values(model.parameters.a)}], λ=[${Object.values(model.parameters.lambda)}], h=[${Object.values(model.parameters.h)}], κ=[${Object.values(model.parameters.kappa)}]`;
     case 'ising':
       return `${model.parameters.domain.name}; K=[${model.parameters.domain.edges.map((e) => model.parameters.couplings[e.id]).join(',')}], b=[${Object.values(model.parameters.fields).join(',')}]`;
     case 'gaussian':
