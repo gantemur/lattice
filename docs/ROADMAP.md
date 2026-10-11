@@ -202,7 +202,7 @@ M3b1 adds a third mounted Experiments workspace. Paused/idle, version-checked wo
 
 The M3b2 slice extends the merged M3b1 archive with independently seeded bounded 2D Ising sweep points, a dedicated worker, editable sweep presets, a parameter-axis comparison plot and complete permitted point records. Each point is a fresh run, never an inherited-temperature trajectory. A version-2 portable manifest references the original point records; version-1 imports remain valid. Completed results survive Cancel, whereas partial point data are marked discarded. See [M3b2 review](M3B2_REVIEW.md) for limits and validation.
 
-**M3b2 feature-branch validation — 2026-10-11:** `npm run check` passes formatting, typecheck, 269 unit tests, production build and 124 browser tests across desktop Chromium, 360px Chromium phone and iPhone WebKit (two desktop-only benchmark instances intentionally skip on phone/WebKit). Screenshots, resource observation and remaining limits are in [M3b2 review](M3B2_REVIEW.md). Merge and Pages deployment remain separate review steps.
+**M3b2 feature-branch validation — 2026-10-11:** The pre-merge worker-protocol correction makes repeated controls safe and completed-point ACKs identity-specific, with single terminal replies and retry-safe archival. `npm run check` passes formatting, typecheck, 274 unit tests, production build and 130 browser tests across desktop Chromium, 360px Chromium phone and iPhone WebKit (two desktop-only benchmark instances intentionally skip on phone/WebKit). Screenshots, resource observation and remaining limits are in [M3b2 review](M3B2_REVIEW.md). Merge and Pages deployment remain separate review steps.
 
 **Deliverables**
 

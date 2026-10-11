@@ -122,3 +122,122 @@ test('sweep execution leaves both mounted interactive workspaces untouched', asy
   await page.goto('./#lattice-systems');
   await expect(page.getByTestId('lattice-updates')).toHaveText('1');
 });
+
+test('an ACK send failure retries the committed point without duplicating its record', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const original = Worker.prototype.postMessage;
+    Worker.prototype.postMessage = function (message, ...options) {
+      const state = window as unknown as { failedSweepAck?: boolean };
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        (message as { type?: string }).type === 'ack' &&
+        !state.failedSweepAck
+      ) {
+        state.failedSweepAck = true;
+        throw new Error('Injected ACK send failure');
+      }
+      return (
+        original as (
+          message: unknown,
+          transfer?: Transferable[] | StructuredSerializeOptions,
+        ) => void
+      ).call(this, message, ...options);
+    };
+  });
+  await page.goto('./#experiments');
+  const sweep = page.getByRole('region', { name: 'Parameter sweeps' });
+  await sweep.getByText('Edit sweep plan').click();
+  await sweep.getByLabel('Ordered values').fill('2, 3');
+  await sweep.getByLabel('Sweep base horizontal sites').fill('2');
+  await sweep.getByLabel('Sweep base vertical sites').fill('2');
+  await sweep.getByLabel('Point warm-up (sweeps)').fill('0');
+  await sweep.getByLabel('Measurements / point').fill('8');
+  await sweep.getByRole('button', { name: 'Start sweep' }).click();
+  await expect(
+    sweep.getByRole('button', { name: 'Retry archiving staged point 1' }),
+  ).toBeVisible();
+  await expect(sweep.getByText(/Injected ACK send failure/)).toBeVisible();
+  await sweep
+    .getByRole('button', { name: 'Retry archiving staged point 1' })
+    .click();
+  await expect(
+    sweep.getByText(/2 completed point\(s\) archived/),
+  ).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    sweep.getByRole('button', { name: 'Download sweep JSON' }).click(),
+  ]);
+  const bundle = JSON.parse(await readFile((await download.path())!, 'utf8'));
+  expect(bundle.records).toHaveLength(2);
+  expect(
+    new Set(
+      bundle.records.map(
+        (r: { scientific: { datasetId: string } }) => r.scientific.datasetId,
+      ),
+    ).size,
+  ).toBe(2);
+  expect(
+    bundle.sweeps[0].points.map((p: { status: string }) => p.status),
+  ).toEqual(['completed', 'completed']);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test('Cancel after the final numerical point preserves both staged captures', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const original = Worker.prototype.postMessage;
+    let acknowledgments = 0;
+    Worker.prototype.postMessage = function (message, ...options) {
+      if (
+        typeof message === 'object' &&
+        message !== null &&
+        (message as { type?: string }).type === 'ack' &&
+        ++acknowledgments === 2
+      )
+        throw new Error('Injected final ACK send failure');
+      return (
+        original as (
+          message: unknown,
+          transfer?: Transferable[] | StructuredSerializeOptions,
+        ) => void
+      ).call(this, message, ...options);
+    };
+  });
+  await page.goto('./#experiments');
+  const sweep = page.getByRole('region', { name: 'Parameter sweeps' });
+  await sweep.getByText('Edit sweep plan').click();
+  await sweep.getByLabel('Ordered values').fill('2, 3');
+  await sweep.getByLabel('Sweep base horizontal sites').fill('2');
+  await sweep.getByLabel('Sweep base vertical sites').fill('2');
+  await sweep.getByLabel('Point warm-up (sweeps)').fill('0');
+  await sweep.getByLabel('Measurements / point').fill('8');
+  await sweep.getByRole('button', { name: 'Start sweep' }).click();
+  await expect(
+    sweep.getByRole('button', { name: 'Retry archiving staged point 2' }),
+  ).toBeVisible();
+  await sweep.getByRole('button', { name: 'Cancel sweep' }).click();
+  await sweep
+    .getByRole('button', { name: 'Retry archiving staged point 2' })
+    .click();
+  await expect(
+    sweep.getByText(/2 completed point\(s\) archived/),
+  ).toBeVisible();
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    sweep.getByRole('button', { name: 'Download sweep JSON' }).click(),
+  ]);
+  const bundle = JSON.parse(await readFile((await download.path())!, 'utf8'));
+  expect(bundle.records).toHaveLength(2);
+  expect(bundle.sweeps[0].status).toBe('completed');
+  expect(
+    bundle.sweeps[0].points.map((p: { status: string }) => p.status),
+  ).toEqual(['completed', 'completed']);
+});

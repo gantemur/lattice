@@ -9,10 +9,15 @@ let commandId = 0;
 let sequence = 0;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let lastProgressAt = 0;
-let awaitingPointAck = false;
+let pendingPointIndex: number | null = null;
+let terminalSent = false;
 
 type WorkerPayload =
   | Pick<Extract<SweepReply, { type: 'state' }>, 'type' | 'progress'>
+  | Pick<
+      Extract<SweepReply, { type: 'command-error' }>,
+      'type' | 'progress' | 'error'
+    >
   | Pick<Extract<SweepReply, { type: 'point' }>, 'type' | 'progress' | 'point'>
   | Pick<
       Extract<SweepReply, { type: 'terminal' }>,
@@ -21,10 +26,22 @@ type WorkerPayload =
 function emit(reply: WorkerPayload) {
   context.postMessage({ ...reply, sweepId, commandId, sequence: ++sequence });
 }
+function emitTerminal(
+  partial: { index: number; updates: number; measurements: number } | null,
+  error: string | null,
+) {
+  if (!run || terminalSent) return;
+  terminalSent = true;
+  if (timer !== null) clearTimeout(timer);
+  timer = null;
+  pendingPointIndex = null;
+  emit({ type: 'terminal', progress: run.progress(), partial, error });
+}
 function schedule() {
   if (
+    terminalSent ||
     timer !== null ||
-    awaitingPointAck ||
+    pendingPointIndex !== null ||
     run?.progress().status !== 'running'
   )
     return;
@@ -32,17 +49,23 @@ function schedule() {
 }
 function pump() {
   timer = null;
-  if (!run || run.progress().status !== 'running') return;
+  if (
+    terminalSent ||
+    pendingPointIndex !== null ||
+    !run ||
+    run.progress().status !== 'running'
+  )
+    return;
   try {
     const point = run.advance(4096);
     if (point) {
-      awaitingPointAck = true;
+      pendingPointIndex = point.index;
       emit({ type: 'point', progress: run.progress(), point });
       return;
     }
     const progress = run.progress();
     if (progress.status === 'completed') {
-      emit({ type: 'terminal', progress, partial: null, error: null });
+      emitTerminal(null, null);
       return;
     }
     const now = Date.now();
@@ -54,19 +77,21 @@ function pump() {
   } catch (cause) {
     const message =
       cause instanceof Error ? cause.message : 'Sweep worker failed.';
-    const partial = run.cancel();
-    emit({
-      type: 'terminal',
-      progress: run.progress(),
-      partial,
-      error: message,
-    });
+    const partial = run.progress().status === 'completed' ? null : run.cancel();
+    emitTerminal(partial, message);
   }
 }
 context.onmessage = ({ data }: MessageEvent<SweepCommand>) => {
   if (!Number.isSafeInteger(data.commandId) || data.commandId < 1) return;
   if (data.type === 'start') {
-    if (run && ['running', 'paused'].includes(run.progress().status)) return;
+    if (run && (data.sweepId === sweepId || data.commandId <= commandId))
+      return;
+    if (
+      run &&
+      (!terminalSent || pendingPointIndex !== null) &&
+      ['running', 'paused', 'completed'].includes(run.progress().status)
+    )
+      return;
     try {
       run = new SweepRun(data.plan);
       run.start();
@@ -74,7 +99,8 @@ context.onmessage = ({ data }: MessageEvent<SweepCommand>) => {
       commandId = data.commandId;
       sequence = 0;
       lastProgressAt = 0;
-      awaitingPointAck = false;
+      pendingPointIndex = null;
+      terminalSent = false;
       emit({ type: 'state', progress: run.progress() });
       schedule();
     } catch (cause) {
@@ -94,15 +120,14 @@ context.onmessage = ({ data }: MessageEvent<SweepCommand>) => {
     return;
   }
   if (!run || data.sweepId !== sweepId || data.commandId <= commandId) return;
+  if (terminalSent) return;
   commandId = data.commandId;
   try {
     if (data.type === 'ack') {
-      if (!awaitingPointAck)
-        throw new Error('No completed point awaits archival.');
-      awaitingPointAck = false;
+      if (data.pointIndex !== pendingPointIndex) return;
+      pendingPointIndex = null;
       const progress = run.progress();
-      if (progress.status === 'completed')
-        emit({ type: 'terminal', progress, partial: null, error: null });
+      if (progress.status === 'completed') emitTerminal(null, null);
       else schedule();
       return;
     }
@@ -111,12 +136,7 @@ context.onmessage = ({ data }: MessageEvent<SweepCommand>) => {
     else {
       const partial =
         run.progress().status === 'completed' ? null : run.cancel();
-      emit({
-        type: 'terminal',
-        progress: run.progress(),
-        partial,
-        error: null,
-      });
+      emitTerminal(partial, null);
       return;
     }
     emit({ type: 'state', progress: run.progress() });
@@ -124,11 +144,6 @@ context.onmessage = ({ data }: MessageEvent<SweepCommand>) => {
   } catch (cause) {
     const message =
       cause instanceof Error ? cause.message : 'Sweep command failed.';
-    emit({
-      type: 'terminal',
-      progress: run.progress(),
-      partial: null,
-      error: message,
-    });
+    emit({ type: 'command-error', progress: run.progress(), error: message });
   }
 };

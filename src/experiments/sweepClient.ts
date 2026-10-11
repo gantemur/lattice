@@ -43,14 +43,19 @@ export class SweepClient {
     this.post({ type: 'start', sweepId: this.sweepId, plan });
     return this.sweepId;
   }
-  command(type: 'pause' | 'resume' | 'cancel' | 'ack') {
+  command(type: 'pause' | 'resume' | 'cancel') {
     if (!this.active) throw new Error('No active sweep.');
     this.post({ type, sweepId: this.sweepId });
+  }
+  acknowledge(pointIndex: number) {
+    if (!this.active) throw new Error('No active sweep.');
+    this.post({ type: 'ack', sweepId: this.sweepId, pointIndex });
   }
   private post(
     command:
       | { type: 'start'; sweepId: string; plan: SweepPlan }
-      | { type: 'pause' | 'resume' | 'cancel' | 'ack'; sweepId: string },
+      | { type: 'pause' | 'resume' | 'cancel'; sweepId: string }
+      | { type: 'ack'; sweepId: string; pointIndex: number },
   ) {
     this.worker.postMessage({ ...command, commandId: ++this.commandId });
   }

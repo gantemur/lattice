@@ -49,10 +49,12 @@ export class SweepRun {
     this.status = 'running';
   }
   pause() {
+    if (this.status === 'paused') return;
     if (this.status !== 'running') throw new Error('Sweep is not running.');
     this.status = 'paused';
   }
   resume() {
+    if (this.status === 'running') return;
     if (this.status !== 'paused') throw new Error('Sweep is not paused.');
     this.status = 'running';
   }

@@ -259,6 +259,10 @@ export function SweepWorkspace({
   const [chosenIds, setChosenIds] = useState<string[]>([]);
   const [pending, setPending] = useState<CompletedPoint | null>(null);
   const pendingRef = useRef<CompletedPoint | null>(null);
+  const stagedArchiveRef = useRef<{
+    pointIndex: number;
+    entry: ArchiveEntry;
+  } | null>(null);
   const clientRef = useRef<SweepClient | null>(null);
   const runIdRef = useRef('');
   const runPlanRef = useRef<SweepPlan | null>(null);
@@ -324,30 +328,54 @@ export function SweepWorkspace({
   }
   function archivePoint(point: CompletedPoint) {
     try {
-      const entry = createArchiveEntry(
-        point.capture,
-        runIdRef.current,
-        `${runPlanRef.current?.name} · point ${point.index + 1} (${runPlanRef.current?.varying}=${formatNumber(point.value)})`,
+      // Commit the record identity before publishing or acknowledging it. A
+      // failed publish/ACK can then be retried without appending it again.
+      const alreadyCompleted = completedRef.current.some(
+        (done) => done.index === point.index,
       );
-      const next = addArchiveEntries(entriesRef.current, [entry]);
       if (
-        archiveBytes({ entries: next, sweeps: sweepsRef.current }) >
-        MAX_ARCHIVE_BYTES
+        alreadyCompleted &&
+        stagedArchiveRef.current?.pointIndex !== point.index
       )
-        throw new Error(
-          'Archive byte limit reached. Remove other records or export them before continuing.',
+        return;
+      if (!alreadyCompleted) {
+        const entry = createArchiveEntry(
+          point.capture,
+          runIdRef.current,
+          `${runPlanRef.current?.name} · point ${point.index + 1} (${runPlanRef.current?.varying}=${formatNumber(point.value)})`,
         );
-      entriesRef.current = next;
-      updateEntries(next);
-      completedRef.current.push({
-        index: point.index,
-        datasetId: entry.scientific.datasetId,
-        updates: point.updates,
-        measurements: point.capture.segment.samples,
-      });
+        const next = addArchiveEntries(entriesRef.current, [entry]);
+        if (
+          archiveBytes({ entries: next, sweeps: sweepsRef.current }) >
+          MAX_ARCHIVE_BYTES
+        )
+          throw new Error(
+            'Archive byte limit reached. Remove other records or export them before continuing.',
+          );
+        entriesRef.current = next;
+        stagedArchiveRef.current = { pointIndex: point.index, entry };
+        completedRef.current.push({
+          index: point.index,
+          datasetId: entry.scientific.datasetId,
+          updates: point.updates,
+          measurements: point.capture.segment.samples,
+        });
+      } else if (
+        !entriesRef.current.some(
+          (entry) =>
+            entry.libraryId === stagedArchiveRef.current!.entry.libraryId,
+        )
+      ) {
+        entriesRef.current = addArchiveEntries(entriesRef.current, [
+          stagedArchiveRef.current!.entry,
+        ]);
+      }
+      updateEntries(entriesRef.current);
+      if (!terminalRef.current) clientRef.current?.acknowledge(point.index);
+      stagedArchiveRef.current = null;
       pendingRef.current = null;
       setPending(null);
-      if (!terminalRef.current) clientRef.current?.command('ack');
+      setError(null);
       if (terminalRef.current) finalize(terminalRef.current);
     } catch (cause) {
       pendingRef.current = point;
@@ -368,6 +396,11 @@ export function SweepWorkspace({
       if (reply.type === 'error') {
         setError(reply.error);
         runPlanRef.current = null;
+        return;
+      }
+      if (reply.type === 'command-error') {
+        setProgress(reply.progress);
+        setError(reply.error);
         return;
       }
       setProgress(reply.progress);
@@ -430,6 +463,7 @@ export function SweepWorkspace({
         throw new Error('Archive the pending point or manifest first.');
       const fixed = structuredClone(configured);
       completedRef.current = [];
+      stagedArchiveRef.current = null;
       runPlanRef.current = fixed;
       runIdRef.current = clientRef.current!.start(fixed);
       setProgress(null);
@@ -734,7 +768,11 @@ export function SweepWorkspace({
         </button>
         <button
           className="button"
-          disabled={!running}
+          disabled={
+            (!running && !pending) ||
+            !!terminalRef.current ||
+            !runPlanRef.current
+          }
           onClick={() => command('cancel')}
         >
           Cancel sweep

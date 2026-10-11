@@ -58,3 +58,42 @@ it('rejects duplicate Start, stale sweep identities and out-of-order progress fr
   expect(received).toHaveLength(2);
   expect(next).not.toBe(id);
 });
+
+it('sends a point-specific ACK and remains active after a recoverable command error', () => {
+  const messages: unknown[] = [];
+  const worker = {
+    onmessage: null as ((event: MessageEvent<SweepReply>) => void) | null,
+    postMessage(message: unknown) {
+      messages.push(message);
+    },
+    terminate() {},
+  };
+  const client = new SweepClient(worker as unknown as Worker);
+  const received: SweepReply[] = [];
+  client.onReply = (reply) => received.push(reply);
+  const sweepId = client.start(sweepPresets.temperature);
+  client.acknowledge(2);
+  expect(messages[1]).toMatchObject({ type: 'ack', sweepId, pointIndex: 2 });
+  const progress = {
+    status: 'running' as const,
+    pointIndex: 2,
+    completedPoints: 2,
+    currentPointUpdates: 0,
+    currentPointMeasurements: 0,
+    totalUpdates: 20,
+    requestedUpdates: 40,
+  };
+  worker.onmessage!({
+    data: {
+      type: 'command-error',
+      sweepId,
+      commandId: 2,
+      sequence: 1,
+      progress,
+      error: 'Recoverable command error.',
+    },
+  } as MessageEvent<SweepReply>);
+  expect(received).toHaveLength(1);
+  client.command('pause');
+  expect(messages[2]).toMatchObject({ type: 'pause', sweepId, commandId: 3 });
+});
