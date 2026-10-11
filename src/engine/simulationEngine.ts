@@ -27,6 +27,7 @@ import type {
   WorkerRequest,
   WorkerResponse,
   SegmentSnapshot,
+  SmallCapture,
 } from './protocol';
 
 function settingsKey({ model, sampler }: Settings) {
@@ -264,6 +265,26 @@ export class SimulationRun {
       droppedSegments: this.droppedSegments,
     };
   }
+  capture(segmentId: number): SmallCapture {
+    const segment = this.snapshot().segments.find((s) => s.id === segmentId);
+    const internal = this.segments.find((s) => s.id === segmentId);
+    if (!segment || !internal)
+      throw new Error('Segment is no longer available.');
+    return {
+      workspace: 'small',
+      runId: this.runId,
+      version: this.version,
+      seed: this.seed,
+      captureUpdate: this.updates,
+      segment,
+      diagnosticRecord:
+        internal.isingMeasurements?.captureDiagnostics() ?? null,
+      currentState:
+        segmentId === this.current.id
+          ? { update: this.updates, value: this.currentValue }
+          : null,
+    };
+  }
 }
 export class SimulationEngine {
   private run: SimulationRun | ScalarRun | null = null;
@@ -283,6 +304,13 @@ export class SimulationEngine {
       } else {
         if (request.runId !== this.runId || !this.run)
           throw new Error('Stale or uninitialized run.');
+        if (request.type === 'capture')
+          return {
+            type: 'capture',
+            runId: this.runId,
+            requestId: request.requestId,
+            capture: this.run.capture(request.segmentId),
+          };
         if (request.type === 'advance') this.run.advance(request.count);
         else if (request.type === 'changeSettings')
           this.run.changeSettings(request.settings);

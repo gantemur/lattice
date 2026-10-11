@@ -12,7 +12,12 @@ import type { WorkerResponse } from './protocol';
 
 const configuration = standardGaussianPreset.configuration;
 function snapshot(response: WorkerResponse) {
-  if (response.type !== 'snapshot') throw new Error(response.message);
+  if (response.type !== 'snapshot')
+    throw new Error(
+      response.type === 'error'
+        ? response.message
+        : 'Unexpected capture reply.',
+    );
   return response.snapshot;
 }
 

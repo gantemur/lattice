@@ -53,7 +53,7 @@ test('production subpath loads workers and locally bundled accessible math', asy
   expect(assets.every((url) => url.includes('/lattice/assets/'))).toBe(true);
   await expect(
     page.getByRole('navigation', { name: 'Workspaces' }).getByRole('link'),
-  ).toHaveCount(2);
+  ).toHaveCount(3);
 });
 
 test('settings, display changes, and keyboard controls preserve seed replay', async ({

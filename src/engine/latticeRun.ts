@@ -21,6 +21,7 @@ import {
 import { createHistogram, recordHistogram } from '../observables/histogram';
 import { ConvergenceHistory } from '../observables/convergence';
 import { DiagnosticHistory } from '../observables/statisticalDiagnostics';
+import type { DiagnosticRecord } from '../observables/statisticalDiagnostics';
 import {
   axialProducts,
   bondProducts,
@@ -99,12 +100,30 @@ export type LatticeSnapshot = {
   segments: LatticeSegmentSnapshot[];
   lastTrace: LatticeTrace | null;
 };
+export type LatticeCapture = {
+  workspace: 'lattice';
+  runId: number;
+  version: number;
+  seed: number;
+  initialization: LatticeConfiguration['initialization'];
+  captureUpdate: number;
+  segment: LatticeSegmentSnapshot;
+  diagnosticRecord: DiagnosticRecord;
+  currentState: { update: number; spins: number[] } | null;
+};
 export type LatticeRequest =
   | { type: 'initialize'; runId: number; configuration: LatticeConfiguration }
   | { type: 'change'; runId: number; settings: LatticeSettings }
-  | { type: 'advance'; runId: number; count: number };
+  | { type: 'advance'; runId: number; count: number }
+  | { type: 'capture'; runId: number; requestId: number; segmentId: number };
 export type LatticeResponse =
   | { type: 'snapshot'; snapshot: LatticeSnapshot }
+  | {
+      type: 'capture';
+      runId: number;
+      requestId: number;
+      capture: LatticeCapture;
+    }
   | { type: 'error'; runId: number; message: string };
 
 export function validateLatticeSettings(settings: LatticeSettings): void {
@@ -401,6 +420,24 @@ export class LatticeRun {
         : null,
     };
   }
+  capture(segmentId: number): LatticeCapture {
+    const internal = this.segments.find((s) => s.id === segmentId);
+    if (!internal) throw new Error('Segment is no longer available.');
+    return {
+      workspace: 'lattice',
+      runId: this.runId,
+      version: this.version,
+      seed: this.initial.seed,
+      initialization: this.initial.initialization,
+      captureUpdate: this.updates,
+      segment: segmentSnapshot(internal),
+      diagnosticRecord: internal.diagnostics.capture(),
+      currentState:
+        segmentId === this.current.id
+          ? { update: this.updates, spins: Array.from(this.spins) }
+          : null,
+    };
+  }
 }
 export class LatticeEngine {
   private run: LatticeRun | null = null;
@@ -416,6 +453,13 @@ export class LatticeEngine {
       } else {
         if (request.runId !== this.runId || !this.run)
           throw new Error('Stale or uninitialized run.');
+        if (request.type === 'capture')
+          return {
+            type: 'capture',
+            runId: this.runId,
+            requestId: request.requestId,
+            capture: this.run.capture(request.segmentId),
+          };
         if (request.type === 'change')
           this.run.changeSettings(request.settings);
         else this.run.advance(request.count);

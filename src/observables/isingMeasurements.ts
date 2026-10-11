@@ -52,6 +52,9 @@ export class IsingMeasurements {
       ),
     };
   }
+  captureDiagnostics() {
+    return this.diagnostics.capture();
+  }
 }
 export type IsingMeasurementSnapshot = ReturnType<
   IsingMeasurements['snapshot']

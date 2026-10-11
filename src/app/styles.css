@@ -401,6 +401,7 @@ summary::marker {
 }
 .command-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 8px;
   margin: 18px 0;
@@ -1880,5 +1881,132 @@ footer {
 @media (max-width: 560px) {
   .scalar-workspace .graph-fields {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.experiments-workspace {
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.experiments-workspace > .model-card,
+.experiments-workspace > .local-note {
+  margin-bottom: 18px;
+}
+.experiments-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.8fr) minmax(0, 1.6fr);
+  gap: 18px;
+  align-items: start;
+  margin: 18px 0;
+}
+.experiments-grid > * {
+  min-width: 0;
+}
+.archive-list {
+  display: grid;
+  gap: 8px;
+}
+.archive-row {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: #fff;
+  display: grid;
+  gap: 4px;
+}
+.archive-row.active {
+  border-color: var(--teal);
+}
+.archive-row label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+}
+.archive-open {
+  color: var(--teal);
+  background: none;
+  border: none;
+  padding: 3px 0;
+  text-align: left;
+  font-weight: 700;
+  min-height: 36px;
+}
+.archive-row small,
+.archive-detail p,
+.archive-detail code {
+  overflow-wrap: anywhere;
+}
+.archive-fields {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1.5fr;
+}
+.archive-fields label {
+  font-size: 12px;
+}
+.archive-fields textarea {
+  display: block;
+  min-height: 70px;
+  width: 100%;
+  padding: 9px;
+  border: 1px solid #b8c7c0;
+  border-radius: 7px;
+}
+.archive-observables {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+.archive-observables > div {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+.archive-observables strong {
+  color: var(--muted);
+}
+.archive-plot {
+  display: block;
+  width: 100%;
+  max-width: 580px;
+  height: auto;
+  margin: 8px 0;
+}
+.archive-json {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 300px;
+  overflow: auto;
+  font-size: 11px;
+}
+.archive-table-wrap {
+  overflow-x: auto;
+}
+.archive-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.archive-table-wrap td,
+.archive-table-wrap th {
+  padding: 8px;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+}
+@media (max-width: 800px) {
+  .experiments-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .archive-fields,
+  .archive-observables {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .experiments-workspace nav {
+    gap: 6px;
   }
 }

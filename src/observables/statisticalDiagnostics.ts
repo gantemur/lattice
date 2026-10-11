@@ -35,6 +35,13 @@ export type DiagnosticSummary = {
   blocking: { blockSize: number; blocks: number; standardError: number }[];
   cappedEss: boolean;
 };
+export type DiagnosticRecord = {
+  firstMeasurement: number;
+  count: number;
+  m: number[];
+  absM: number[];
+  e: number[];
+};
 
 /** γ(k) uses the full-window mean and denominator n−k; γ(0) uses n. */
 export function analyzeSeries(
@@ -278,5 +285,16 @@ export class DiagnosticHistory {
   }
   snapshot() {
     return structuredClone(this.summaries);
+  }
+  /** Read-only on-demand copy; routine snapshots continue to carry summaries only. */
+  capture(): DiagnosticRecord {
+    const count = Math.min(this.count, DIAGNOSTIC_CAPACITY);
+    return {
+      firstMeasurement: count ? this.count - count + 1 : 0,
+      count,
+      m: this.ordered('m'),
+      absM: this.ordered('absM'),
+      e: this.ordered('e'),
+    };
   }
 }

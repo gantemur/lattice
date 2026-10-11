@@ -46,6 +46,30 @@ function setup() {
 
 afterEach(() => vi.useRealTimers());
 describe('client scheduling and acknowledgment', () => {
+  it('captures only at an idle paused version and ignores a stale reply after Reset', async () => {
+    const { client, worker, view } = setup();
+    client.start();
+    client.pause();
+    await expect(client.capture(1)).rejects.toThrow(/Pause/);
+    worker.deliver();
+    const before = view().snapshot;
+    const capture = client.capture(1);
+    expect(view().busy).toBe(true);
+    expect(() => client.changeSettings(settings({ a: 2, h: 0 }))).toThrow(
+      /capture/,
+    );
+    worker.deliver();
+    expect((await capture).segment.moments.count).toBe(128);
+    expect(view().snapshot).toEqual(before);
+    const stale = client.capture(1);
+    client.initialize(standardGaussianPreset.configuration);
+    await expect(stale).rejects.toThrow(/Session changed/);
+    worker.deliver();
+    worker.deliver();
+    expect(view().snapshot?.runId).toBe(2);
+    expect(view().snapshot?.updates).toBe(0);
+    client.dispose();
+  });
   it('pauses at the last posted batch and prevents Step until its acknowledgment', () => {
     vi.useFakeTimers();
     const { client, worker, view } = setup();

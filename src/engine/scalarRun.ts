@@ -24,7 +24,12 @@ import {
 import type { Moments } from '../observables/moments';
 import { ConvergenceHistory } from '../observables/convergence';
 import { MAX_SEGMENTS } from './protocol';
-import type { RunConfiguration, Snapshot, SegmentSnapshot } from './protocol';
+import type {
+  RunConfiguration,
+  Snapshot,
+  SegmentSnapshot,
+  SmallCapture,
+} from './protocol';
 
 export type ScalarTrace = {
   kind: 'direct' | 'heat-bath' | 'metropolis';
@@ -394,6 +399,23 @@ export class ScalarRun {
       segments,
       activeSegmentId: current.id,
       droppedSegments: this.droppedSegments,
+    };
+  }
+  capture(segmentId: number): SmallCapture {
+    const segment = this.snapshot().segments.find((s) => s.id === segmentId);
+    if (!segment) throw new Error('Segment is no longer available.');
+    return {
+      workspace: 'small',
+      runId: this.runId,
+      version: this.version,
+      seed: this.seed,
+      captureUpdate: this.updates,
+      segment,
+      diagnosticRecord: null,
+      currentState:
+        segmentId === this.current.id
+          ? { update: this.updates, value: this.state?.slice() ?? null }
+          : null,
     };
   }
 }
