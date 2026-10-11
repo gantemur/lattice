@@ -286,6 +286,15 @@ export class DiagnosticHistory {
   snapshot() {
     return structuredClone(this.summaries);
   }
+  /** Fresh read-only analysis for an on-demand terminal capture. */
+  analyzeCurrent() {
+    return Object.fromEntries(
+      (['m', 'absM', 'e'] as const).map((target) => [
+        target,
+        analyzeSeries(this.ordered(target), target, this.cadence, this.count),
+      ]),
+    ) as Record<DiagnosticTarget, DiagnosticSummary>;
+  }
   /** Read-only on-demand copy; routine snapshots continue to carry summaries only. */
   capture(): DiagnosticRecord {
     const count = Math.min(this.count, DIAGNOSTIC_CAPACITY);

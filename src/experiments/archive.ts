@@ -451,7 +451,7 @@ function validateAnnotation(value: unknown): Annotation {
   if (!name) throw new Error('Record name cannot be empty.');
   return { name, notes: string(a.notes, 'Notes', 2000) };
 }
-function bytes(value: unknown): number {
+export function archiveBytes(value: unknown): number {
   return new TextEncoder().encode(JSON.stringify(value)).length;
 }
 function plainCopy<T>(value: T): T {
@@ -510,7 +510,7 @@ export function addArchiveEntries(
     throw new Error(
       `Archive limit is ${MAX_ARCHIVE_RECORDS} records. Export or remove records before saving more.`,
     );
-  if (bytes(next) > MAX_ARCHIVE_BYTES)
+  if (archiveBytes(next) > MAX_ARCHIVE_BYTES)
     throw new Error(
       'Archive limit is 12 MiB. Export or remove records before saving more.',
     );

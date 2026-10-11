@@ -204,6 +204,14 @@ Add a third mounted Experiments workspace and preserve both live simulation sess
 
 The authoritative portable file is a validated JSON `lattice-lab-experiments` bundle with `schemaVersion:1`, stable scientific dataset IDs, local library IDs, and explicit source workspace/run/segment, model/domain/settings, seed, initialization, update/count/coverage, diagnostic status, capture timestamp and build revision or `unknown`. A parameter-changed inherited-state segment is snapshot-only, not reproducible from the final settings and original seed alone. Imported duplicate scientific IDs remain distinct local copies without overwriting provenance. Validate the complete bundle before mutation; reject oversize/inconsistent/non-finite data. Cap the memory library at 16 records and 12 MiB, with a 16 MiB file-input limit; never silently evict. CSV measurements, metadata sidecar and aggregate summary are derived exports. No automatic persistence, backend, upload, or history-bearing URL is introduced. Existing scalar configuration-only links retain their meaning. Automated sweep execution and parameter-axis plots remain M3b2.
 
+## Accepted M3b2 conventions — 2026-10-11
+
+### D-035 — Independent bounded Ising sweeps and portable manifests
+
+M3b2 uses a dedicated sequential worker. Every point constructs a fresh M2 `LatticeRun` with a deterministic indexed seed, independent initialization, warm-up and stride; a parameter sweep is not a quench trajectory. The editable plan has 2–12 ordered values, at most 8192 measurements per point and 10 million elementary updates total. Completion captures the final read-only M3a analysis without updating state or RNG. Pause/Resume retain the worker point; Cancel discards only the partial point and keeps completed records.
+
+Keep M3b1's immutable point datasets and 16-record/12 MiB in-memory limits. A version-2 JSON envelope contains a sweep manifest referring to those records, with explicit per-point plan, seed, status, work count and dataset ID. Version-1 imports remain valid. Validate the complete envelope atomically, reserve capacity before Start, and stage a completed capture in memory if a concurrent archive change prevents saving it. Imported sweeps are read-only until their plan is explicitly copied. Comparison uses numeric parameter spacing and only labels the theoretical infinite-volume Tc for the isotropic Jx=Jy=1, h=0 temperature configuration. CSV is derived and uses M3b1 formula-text protection. No backend, persistent job scheduler, automatic fit or later model is introduced.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

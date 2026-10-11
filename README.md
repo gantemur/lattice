@@ -1,16 +1,22 @@
 # Lattice Lab
 
-**Status:** M0–M3a are merged. M3b1 adds saved experiments and portable data on a feature branch; automated sweeps remain planned for M3b2.
+**Status:** M0–M3b1 are merged. M3b2 independent 2D Ising sweeps are under feature-branch review.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
+## New in M3b2 (feature branch)
+
+Experiments can run a bounded 2D Ising parameter sweep in a dedicated worker. Temperature, field, and finite-size presets fill an editable plan. Start displays the validated elementary-update and archive budget. Every point creates a fresh seeded lattice run with its own warm-up and retained measurements; Pause/Resume preserve the current point, while Cancel discards its partial data and archives completed points. A numeric parameter-axis plot and table compare m, |m|, physical e=H/N, susceptibility, Binder, heat capacity and directional bond products. Short runs near criticality may mix slowly. The infinite-volume Tc marker appears only for the isotropic Jx=Jy=1, h=0 temperature configuration.
+
+Completed captures and the sweep plan are portable in version-2 JSON; version-1 record bundles still import. Sweep summary and bounded m, |m|, e measurement CSVs are available. The in-memory library still has a 16-record and 12 MiB limit. Imported sweeps remain read-only until their plan is explicitly copied and started. See [M3b2 review](docs/M3B2_REVIEW.md).
+
 ## New in M3b1
 
 Pause either live workspace, then save its current or available parameter segments to **Experiments**. Navigation preserves both live simulations. Each archived segment keeps its own settings, seed, worker version, full aggregate statistics, histograms, diagnostic quality and actually available bounded raw history. Graph/lattice Ising copies up to 8192 recent M3a observations on demand; other Small Systems retain up to 1000 recent transitions. Earlier raw records may be gone even when full-segment moments remain. A historical segment does not inherit today's configuration or falsely claim fresh-seed replayability.
 
-Experiments stores at most 16 records and 12 MiB in browser memory. Rename, annotate, inspect and compare records through compatible observable definitions. Download a portable version-1 JSON bundle, measurements CSV, its metadata JSON sidecar or aggregate summary CSV. Import validates the complete JSON file before adding records; duplicate scientific IDs retain their original provenance. **Export before refreshing:** the library has no automatic persistence, backend or upload. Existing scalar configuration links still share settings only. [M3b1 review](docs/M3B1_REVIEW.md) documents schema, coverage and validation. Parameter sweeps are not part of this stage.
+Experiments stores at most 16 records and 12 MiB in browser memory. Rename, annotate, inspect and compare records through compatible observable definitions. Download a portable version-1 JSON bundle, measurements CSV, its metadata JSON sidecar or aggregate summary CSV. Import validates the complete JSON file before adding records; duplicate scientific IDs retain their original provenance. **Export before refreshing:** the library has no automatic persistence, backend or upload. Existing scalar configuration links still share settings only. [M3b1 review](docs/M3B1_REVIEW.md) documents schema, coverage and validation.
 
 ## New in M3a
 
@@ -128,7 +134,7 @@ TypeScript + Vite + React, native accessible form controls, small SVG plots, a C
 
 Vite uses **`base: '/lattice/'`** in development and production. Navigation uses hash anchors, so `/lattice/#small-systems` can load directly or reload on GitHub Pages without server rewrites.
 
-[CI/Pages workflow](.github/workflows/ci-pages.yml) validates pull requests and pushes to `main`. It uploads and deploys `dist` **only from `main`, after validation passes**. Hosting uses **Settings → Pages → Source → GitHub Actions**. M0–M3a are merged; an approved M3b1 merge and successful workflow are required to publish this feature branch. This follows the [Vite Pages guide](https://vite.dev/guide/static-deploy.html#github-pages) and [GitHub publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Feature-branch validation does not establish that the live site is deployed; the live URL and hash reload must be checked after deployment.
+[CI/Pages workflow](.github/workflows/ci-pages.yml) validates pull requests and pushes to `main`. It uploads and deploys `dist` **only from `main`, after validation passes**. Hosting uses **Settings → Pages → Source → GitHub Actions**. M0–M3b1 are merged; an approved M3b2 merge and successful workflow are required to publish this feature branch. This follows the [Vite Pages guide](https://vite.dev/guide/static-deploy.html#github-pages) and [GitHub publishing documentation](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site). Feature-branch validation does not establish that the live site is deployed; the live URL and hash reload must be checked after deployment.
 
 ## License
 

@@ -2,7 +2,6 @@ import { useRef, useState } from 'react';
 import type { ArchiveEntry } from '../experiments/archive';
 import {
   exportBundle,
-  importBundle,
   MAX_ARCHIVE_BYTES,
   MAX_ARCHIVE_RECORDS,
   renameEntry,
@@ -14,6 +13,9 @@ import {
 } from '../experiments/export';
 import { commonDescriptors, descriptors } from '../experiments/comparison';
 import { formatNumber } from '../plotting/PlotFrame';
+import { SweepWorkspace } from './SweepWorkspace';
+import type { SavedSweep } from '../experiments/sweepArchive';
+import { importPortableBundle } from '../experiments/sweepArchive';
 
 function download(filename: string, content: string, mime: string) {
   const url = URL.createObjectURL(new Blob([content], { type: mime }));
@@ -270,9 +272,13 @@ function Detail({
 export function Experiments({
   entries,
   update,
+  sweeps,
+  updateSweeps,
 }: {
   entries: ArchiveEntry[];
   update: (entries: ArchiveEntry[]) => void;
+  sweeps: SavedSweep[];
+  updateSweeps: (sweeps: SavedSweep[]) => void;
 }) {
   const entriesRef = useRef(entries);
   entriesRef.current = entries;
@@ -324,10 +330,11 @@ export function Experiments({
         throw new Error('Import exceeds the 16 MiB file limit.');
       const content = await file.text();
       const current = entriesRef.current;
-      const next = importBundle(current, content);
-      update(next);
+      const next = importPortableBundle(current, sweeps, content);
+      update(next.entries);
+      updateSweeps(next.sweeps);
       setNotice(
-        `Imported ${next.length - current.length} validated record(s). Duplicate scientific IDs retain their provenance and receive separate local library identities.`,
+        `Imported ${next.entries.length - current.length} validated record(s) and ${next.sweeps.length - sweeps.length} sweep(s). Duplicate scientific IDs receive separate local library identities.`,
       );
       setError(null);
     } catch (cause) {
@@ -375,7 +382,7 @@ export function Experiments({
               provenance, and compare compatible results.
             </p>
           </div>
-          <span className="milestone">M3b1 · Saved experiments</span>
+          <span className="milestone">M3b2 · Experiments</span>
         </section>
         <p className="local-note">
           ◌ This library lives only in browser memory. Refreshing this page may
@@ -397,7 +404,7 @@ export function Experiments({
         <section className="model-card" aria-label="Import and export">
           <h2>Portable data</h2>
           <label>
-            Import version-1 JSON bundle{' '}
+            Import version-1 or version-2 JSON bundle{' '}
             <input
               type="file"
               accept="application/json,.json"
@@ -441,6 +448,17 @@ export function Experiments({
               className="button"
               disabled={!selectedEntries.length}
               onClick={() => {
+                const linked = new Set(
+                  sweeps.flatMap((s) =>
+                    s.sourceRecordIds.map((record) => record.libraryId),
+                  ),
+                );
+                if (selectedEntries.some((e) => linked.has(e.libraryId))) {
+                  setError(
+                    'Selected record belongs to an archived sweep. Remove the sweep before deleting its source data.',
+                  );
+                  return;
+                }
                 update(entries.filter((e) => !selected.includes(e.libraryId)));
                 setSelected([]);
                 setNotice(
@@ -452,6 +470,13 @@ export function Experiments({
             </button>
           </div>
         </section>
+        <SweepWorkspace
+          entries={entries}
+          sweeps={sweeps}
+          updateEntries={update}
+          updateSweeps={updateSweeps}
+          openRecord={setActiveId}
+        />
         <div className="experiments-grid">
           <section className="model-card" aria-label="Saved records">
             <h2>Saved records</h2>
