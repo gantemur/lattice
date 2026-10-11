@@ -20,6 +20,12 @@ import {
 } from '../observables/moments';
 import { createHistogram, recordHistogram } from '../observables/histogram';
 import { ConvergenceHistory } from '../observables/convergence';
+import { DiagnosticHistory } from '../observables/statisticalDiagnostics';
+import {
+  axialProducts,
+  bondProducts,
+  equilibriumFluctuations,
+} from '../observables/latticePhysics';
 
 export type LatticeSettings = {
   parameters: LatticeParameters;
@@ -63,7 +69,14 @@ export type LatticeSegmentSnapshot = {
   absM: Summary;
   e: Summary;
   m2: Summary;
+  m4: Summary;
   e2: Summary;
+  gx: Summary;
+  gy: Summary;
+  spatialX: { r: number; pairs: number; moments: Summary }[];
+  spatialY: { r: number; pairs: number; moments: Summary }[];
+  fluctuations: ReturnType<typeof equilibriumFluctuations> | null;
+  diagnostics: ReturnType<DiagnosticHistory['snapshot']>;
   mHistogram: ReturnType<typeof createHistogram>;
   eHistogram: ReturnType<typeof createHistogram>;
   measurements: Measurement[];
@@ -124,6 +137,13 @@ function newSegment(
     (Math.abs(parameters.jy) * lattice.verticalBonds) / lattice.size +
     Math.abs(parameters.field) +
     0.001;
+  const referenceSpins = new Int8Array(lattice.size).fill(1);
+  const spatial = (axis: 'x' | 'y') =>
+    axialProducts(lattice, referenceSpins, axis).map(({ r, pairs }) => ({
+      r,
+      pairs,
+      moments: emptyMoments(),
+    }));
   return {
     id,
     settings: {
@@ -144,7 +164,13 @@ function newSegment(
     absM: emptyMoments(),
     e: emptyMoments(),
     m2: emptyMoments(),
+    m4: emptyMoments(),
     e2: emptyMoments(),
+    gx: emptyMoments(),
+    gy: emptyMoments(),
+    spatialX: spatial('x'),
+    spatialY: spatial('y'),
+    diagnostics: new DiagnosticHistory(settings.strideSweeps),
     mHistogram: createHistogram(-1.001, 1.001, 41),
     eHistogram: createHistogram(-eLimit, eLimit, 41),
     measurements: [] as Measurement[],
@@ -171,7 +197,32 @@ function segmentSnapshot(segment: Segment): LatticeSegmentSnapshot {
     absM: summarizeMoments(segment.absM),
     e: summarizeMoments(segment.e),
     m2: summarizeMoments(segment.m2),
+    m4: summarizeMoments(segment.m4),
     e2: summarizeMoments(segment.e2),
+    gx: summarizeMoments(segment.gx),
+    gy: summarizeMoments(segment.gy),
+    spatialX: segment.spatialX.map(({ r, pairs, moments }) => ({
+      r,
+      pairs,
+      moments: summarizeMoments(moments),
+    })),
+    spatialY: segment.spatialY.map(({ r, pairs, moments }) => ({
+      r,
+      pairs,
+      moments: summarizeMoments(moments),
+    })),
+    fluctuations:
+      segment.m.count > 0
+        ? equilibriumFluctuations(
+            segment.settings.parameters.lx * segment.settings.parameters.ly,
+            segment.settings.parameters.temperature,
+            segment.m2.mean,
+            segment.m4.mean,
+            segment.m.m2 / segment.m.count,
+            segment.e.m2 / segment.e.count,
+          )
+        : null,
+    diagnostics: segment.diagnostics.snapshot(),
     mHistogram: { ...segment.mHistogram, bins: [...segment.mHistogram.bins] },
     eHistogram: { ...segment.eHistogram, bins: [...segment.eHistogram.bins] },
     measurements: segment.measurements.map((m) => ({ ...m })),
@@ -286,7 +337,19 @@ export class LatticeRun {
         recordMoment(segment.absM, Math.abs(m));
         recordMoment(segment.e, e);
         recordMoment(segment.m2, m * m);
+        recordMoment(segment.m4, m ** 4);
         recordMoment(segment.e2, e * e);
+        segment.diagnostics.record(m, Math.abs(m), e);
+        const bonds = bondProducts(this.lattice, this.spins);
+        recordMoment(segment.gx, bonds.x);
+        recordMoment(segment.gy, bonds.y);
+        for (const [axis, entries] of [
+          ['x', segment.spatialX],
+          ['y', segment.spatialY],
+        ] as const)
+          axialProducts(this.lattice, this.spins, axis).forEach((point, i) =>
+            recordMoment(entries[i]!.moments, point.value),
+          );
         recordHistogram(segment.mHistogram, m);
         recordHistogram(segment.eHistogram, e);
         segment.meanCheckpoints.record(segment.m.count, segment.m.mean);

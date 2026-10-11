@@ -5,6 +5,10 @@ import {
   validateLatticeParameters,
 } from './latticeIsing';
 import type { LatticeParameters } from './latticeIsing';
+import {
+  bondProducts,
+  equilibriumFluctuations,
+} from '../observables/latticePhysics';
 
 /** Exact 16-state reference in physical M2 units, independent of M1a UI limits. */
 export function exactLatticeTwoByTwo(p: LatticeParameters) {
@@ -15,12 +19,17 @@ export function exactLatticeTwoByTwo(p: LatticeParameters) {
   const lattice = createIndexedLattice(p);
   const energies: number[] = [];
   const magnetizations: number[] = [];
+  const xProducts: number[] = [];
+  const yProducts: number[] = [];
   for (let code = 0; code < 16; code++) {
     const spins = Int8Array.from({ length: 4 }, (_, i) =>
       code & (1 << i) ? 1 : -1,
     );
     energies.push(totalEnergy(lattice, p, spins));
     magnetizations.push(magnetization(spins) / 4);
+    const bonds = bondProducts(lattice, spins);
+    xProducts.push(bonds.x);
+    yProducts.push(bonds.y);
   }
 
   // Subtract the lowest action before exponentiation, so even T=0.05 and
@@ -40,26 +49,52 @@ export function exactLatticeTwoByTwo(p: LatticeParameters) {
   let meanM = 0;
   let meanAbsM = 0;
   let secondM = 0;
+  let fourthM = 0;
   let meanE = 0;
   let secondE = 0;
+  let meanGx = 0;
+  let meanGy = 0;
   probabilities.forEach((probability, code) => {
     const m = magnetizations[code]!;
     const e = energies[code]! / 4;
     meanM += probability * m;
     meanAbsM += probability * Math.abs(m);
     secondM += probability * m * m;
+    fourthM += probability * m ** 4;
     meanE += probability * e;
     secondE += probability * e * e;
+    meanGx += probability * xProducts[code]!;
+    meanGy += probability * yProducts[code]!;
     distribution.set(m, distribution.get(m)! + probability);
   });
+  const fluctuations = equilibriumFluctuations(
+    4,
+    p.temperature,
+    secondM,
+    fourthM,
+    probabilities.reduce(
+      (sum, probability, code) =>
+        sum + probability * (magnetizations[code]! - meanM) ** 2,
+      0,
+    ),
+    probabilities.reduce(
+      (sum, probability, code) =>
+        sum + probability * (energies[code]! / 4 - meanE) ** 2,
+      0,
+    ),
+  );
   return {
     logPartition: Math.log(weightSum) - minimumAction,
     probabilities,
     meanM,
     meanAbsM,
     secondM,
+    fourthM,
     meanE,
     secondE,
+    meanGx,
+    meanGy,
+    ...fluctuations,
     magnetizationDistribution: [...distribution],
     bondCount: lattice.tails.length,
   };

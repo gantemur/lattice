@@ -176,6 +176,18 @@ Both local samplers draw uniformly selected sites with replacement. Lazy Metropo
 
 M2 presents the 2×2 exact M1a enumeration and the infinite-volume ferromagnetic zero-field critical relation under explicitly separate assumptions. It excludes Ly=1 rather than generating vertical self-links or misapplying 2D theory. Nearest-neighbor bond-product plots are postponed until their per-segment normalization and rendering are fully validated; they are not needed for the current core acceptance gate.
 
+## Accepted M3a conventions — 2026-10-11
+
+### D-031 — Physical equilibrium observables and bounded spatial pairs
+
+Extend D-030's measurement record, without changing its update kernel, with every retained `m⁴`, directional bond product and positive-axis displacement pair product. Use `χ=βN(〈m²〉−〈m〉²)`, `U₄=1−〈m⁴〉/(3〈m²〉²)`, and `cV=β²N(〈e²〉−〈e〉²)` for the fixed physical Hamiltonian. The fluctuation formulas use population moments; the separate N−1 sample variance remains labeled as such. Binder is unavailable when its denominator is numerically unusable. Periodic length-two bonds retain parallel multiplicity; open pair averages divide by actual valid origins. Periodic plots subtract the square of the segment's mean m, while open plots remain raw pair correlations, since a global subtraction would misstate boundary-dependent connected covariance. Cap displacement at four and compute only at retained measurements. No structure factor or fitted correlation length is implied.
+
+### D-032 — Recent-window diagnostics and exact tiny-chain theory
+
+Add a separate 8192-observation ring per retained segment for m, |m| and e/E, preserving order and configured stride. Keep full-segment moments/histograms and 1000 recent plot records independent. Worker analyses refresh deterministically by measurement count; snapshots send compact summaries, not all raw observations. The empirical ACF uses lag-specific n−k normalization and a positive-pair/self-consistent window, at most 128 lags; insufficient, constant, drifting, unresolved and window-sensitive cases are explicit. Quote τ in retained measurements and sweeps separately. ESS is capped at n for noisy estimates; SE applies only to the recent-window mean and uses n−1 sample variance. Blocking uses nonoverlapping powers-of-two blocks with at least 16 blocks. These diagnostics do not certify equilibrium.
+
+For 1–4-spin graph Ising and M2 2×2, reproduce the actual direct, lazy Metropolis or heat-bath one-update matrix and compare with exact Gibbs probabilities. Reversible symmetric Jacobi diagonalization yields stationary ACF, spectral gap and asymptotic variance at the actual measurement interval; highly concentrated or numerically closed chains report unavailable. This exact equilibrium benchmark is distinct from empirical recent-window uncertainty and is not a mixing guarantee for one run. Preserve M0–M2 RNG/update behavior. Saved experiments, sweeps, full exports and generalized graph editing remain outside M3a.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.
