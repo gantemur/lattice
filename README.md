@@ -1,6 +1,6 @@
 # Lattice Lab
 
-**Status:** M0 and M0.5 are merged. M1a — Interactive Small Graphs and Exact Ising Models is implemented on its feature branch; validation and limits are tracked in the [roadmap](docs/ROADMAP.md). M1b and later remain planned.
+**Status:** M0, M0.5 and M1a are merged. The M1a local-inspection and convergence refinement is implemented on its feature branch; validation and limits are tracked in the [roadmap](docs/ROADMAP.md). M1b and later remain planned.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
@@ -17,7 +17,7 @@ The action is `S=−Σ_e K_e s_tail s_head−Σ_i b_i s_i`, weight `exp(−S)` (
 - **Graph observables:** M, m=M/N, |M|, total dimensionless action E=S and each spin; distributions, exact/sample running means, trajectories, local conditionals and connected correlations. Configuration probability tables show exact and sampled masses. Local conditionals are explicitly distinct from equilibrium marginals.
 - **Measurements:** local warm-up defaults to 200 updates (0–10000), excluded from all estimates; a fixed budget is not a mixing guarantee. Coupling/field/sampler changes preserve compatible configurations/RNG and create separate segments. Topology changes explicitly restart/reseed. Reset clears/reseeds/refits; Fit All is display-only. Eight segments retain 1000 exact transitions each plus full configuration counts and bounded per-observable summaries. No MCMC confidence bands, ESS or saved-run manager.
 
-[Review notes and screenshots](docs/M1A_REVIEW.md) record the numerical and desktop/phone validation. M1b continuous-variable models, larger lattices, gauge dynamics and cluster algorithms are deferred.
+[Initial review notes](docs/M1A_REVIEW.md) and [local-inspection refinement screenshots](docs/M1A_REFINEMENT_REVIEW.md) record the numerical and desktop/phone validation. M1b continuous-variable models, larger lattices, gauge dynamics and cluster algorithms are deferred.
 
 ## Preserved single-variable laboratory
 

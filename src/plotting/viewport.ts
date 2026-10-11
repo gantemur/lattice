@@ -46,14 +46,15 @@ export function fitSegments(segments: SegmentSnapshot[]): PlotViewport {
     errorMax = Math.max(errorMax, sd, 0.1);
     errorMin = Math.min(
       errorMin,
-      Math.max(sd, 1e-10) / Math.sqrt(Math.max(2, moments.count)),
+      // Display resolution, not an uncertainty estimate: two decades below
+      // the observable scale / sqrt(N). Never fit an accidental near-zero.
+      Math.max(sd, 0.1) / (100 * Math.sqrt(Math.max(2, moments.count))),
     );
     nMax = Math.max(nMax, moments.count);
     for (const point of convergence) {
       meanMin = Math.min(meanMin, point.mean);
       meanMax = Math.max(meanMax, point.mean);
       const error = Math.abs(point.mean - mean);
-      if (error > 0) errorMin = Math.min(errorMin, error);
       errorMax = Math.max(errorMax, error);
     }
     trajectoryMin = Math.min(

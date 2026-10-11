@@ -55,6 +55,39 @@ export function isingAction(model: IsingModel, state: number): number {
     domain.vertices.reduce((sum, v) => sum + fields[v.id]! * values[v.id]!, 0)
   );
 }
+/** Read-only bond inspection; stored orientation does not change Ising energy. */
+export function bondInspection(
+  model: IsingModel,
+  state: number,
+  edgeId: string,
+) {
+  const { domain, couplings } = model.parameters;
+  const edge = domain.edges.find((e) => e.id === edgeId);
+  if (!edge) throw new Error('Unknown bond.');
+  const tailSpin = spinAt(
+    state,
+    domain.vertices.findIndex((v) => v.id === edge.tail),
+  );
+  const headSpin = spinAt(
+    state,
+    domain.vertices.findIndex((v) => v.id === edge.head),
+  );
+  const coupling = couplings[edgeId]!;
+  return {
+    ...edge,
+    coupling,
+    tailSpin,
+    headSpin,
+    product: tailSpin * headSpin,
+    action: -coupling * tailSpin * headSpin,
+    kind:
+      edge.tail === edge.head
+        ? 'Self-link'
+        : edge.wraps
+          ? 'Periodic/wrapped'
+          : 'Ordinary',
+  };
+}
 export function neighborhood(model: IsingModel, state: number, index: number) {
   const { domain, couplings, fields } = model.parameters,
     id = domain.vertices[index]!.id;
@@ -136,15 +169,29 @@ function enumerate(model: IsingModel) {
     sum = weights.reduce((s, w) => s + w, 0),
     logPartition = Math.log(sum) - offset;
   const probabilities = weights.map((w) => w / sum);
+  // Pair s and −s. Their probability difference is pair mass × tanh(b·s).
+  // Compute b·s separately: tiny fields must not be lost subtracting large actions.
+  const differences = Array.from({ length: size / 2 }, (_, state) => {
+    const field = model.parameters.domain.vertices.reduce(
+      (sum, v, i) => sum + model.parameters.fields[v.id]! * spinAt(state, i),
+      0,
+    );
+    return (
+      (probabilities[state]! + probabilities[size - 1 - state]!) *
+      Math.tanh(field)
+    );
+  });
   const means = model.parameters.domain.vertices.map((_, i) =>
-    probabilities.reduce((s, p, state) => s + p * spinAt(state, i), 0),
+    differences.reduce((sum, d, state) => sum + d * spinAt(state, i), 0),
   );
   const correlations = means.map((_, i) =>
     means.map((_, j) =>
-      probabilities.reduce(
-        (s, p, state) => s + p * spinAt(state, i) * spinAt(state, j),
-        0,
-      ),
+      i === j
+        ? 1
+        : probabilities.reduce(
+            (s, p, state) => s + p * spinAt(state, i) * spinAt(state, j),
+            0,
+          ),
     ),
   );
   return {
@@ -183,7 +230,16 @@ export function isingDistribution(
 }
 export function isingReference(model: IsingModel) {
   const dist = isingDistribution(model),
-    mean = dist.reduce((s, d) => s + d.value * d.probability, 0),
+    exact = exactIsing(model),
+    target = model.observable ?? 'M',
+    site = model.parameters.domain.vertices.findIndex((v) => v.id === target),
+    mean =
+      target === 'M' || target === 'm'
+        ? exact.means.reduce((s, v) => s + v, 0) /
+          (target === 'm' ? exact.means.length : 1)
+        : site >= 0
+          ? exact.means[site]!
+          : dist.reduce((s, d) => s + d.value * d.probability, 0),
     variance = dist.reduce(
       (s, d) => s + (d.value - mean) ** 2 * d.probability,
       0,

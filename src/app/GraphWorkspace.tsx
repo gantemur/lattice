@@ -1,16 +1,21 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { IsingModel } from '../models/ising';
 import {
   exactIsing,
   isingPreset,
   isingTargets,
-  observableValue,
+  isingReference,
+  neighborhood,
+  flipDifference,
+  conditionalPlus,
+  bondInspection,
   spins,
 } from '../models/ising';
 import { drawingPositions, presetNames } from '../domain/graph';
 import type { GraphPreset } from '../domain/graph';
 import type { SegmentSnapshot } from '../engine/protocol';
 import type { TransitionRecord } from '../observables/trajectory';
+import { InlineMath } from '../ui/Math';
 import { formatNumber } from '../plotting/PlotFrame';
 export function GraphWorkspace({
   model,
@@ -66,6 +71,13 @@ export function GraphWorkspace({
     );
   }, [parameterKey]);
   const selectedEdge = domain.edges.find((e) => e.id === edge);
+  const editor = useRef<HTMLDetailsElement>(null);
+  const couplingInputs = useRef<Record<string, HTMLInputElement | null>>({});
+  const index = domain.vertices.findIndex((v) => v.id === selected);
+  const local = state === null ? null : neighborhood(model, state, index);
+  const plus = state === null ? null : conditionalPlus(model, state, index);
+  const bond =
+    state === null || !selectedEdge ? null : bondInspection(model, state, edge);
   return (
     <section className="graph-workspace" aria-label="Interactive Ising graph">
       <div className="section-heading">
@@ -129,10 +141,7 @@ export function GraphWorkspace({
             ? `M${x1 - 12},${y1 - 12} C${x1 - 65 - rank * 15},${y1 - 75} ${x1 + 65 + rank * 15},${y1 - 75} ${x1 + 12},${y1 - 12}`
             : `M${x1 + (26 * (cx - x1)) / startLength},${y1 + (26 * (cy - y1)) / startLength} Q${cx},${cy} ${x2 + (26 * (cx - x2)) / endLength},${y2 + (26 * (cy - y2)) / endLength}`;
           const highlight =
-            e.id === edge ||
-            e.tail === selected ||
-            e.head === selected ||
-            record?.ising?.contributions.some((c) => c.edgeId === e.id);
+            e.id === edge || e.tail === selected || e.head === selected;
           return (
             <g
               key={e.id}
@@ -155,7 +164,7 @@ export function GraphWorkspace({
               />
               <path
                 d={path}
-                className={`graph-edge ${highlight ? 'highlighted' : ''} ${model.parameters.couplings[e.id] === 0 ? 'zero-weight' : model.parameters.couplings[e.id]! < 0 ? 'negative-weight' : 'positive-weight'}`}
+                className={`graph-edge ${highlight ? 'selected-interaction' : ''} ${record?.ising?.contributions.some((c) => c.edgeId === e.id) ? 'updated-interaction' : ''} ${model.parameters.couplings[e.id] === 0 ? 'zero-weight' : model.parameters.couplings[e.id]! < 0 ? 'negative-weight' : 'positive-weight'}`}
                 style={{
                   strokeWidth:
                     1 +
@@ -229,14 +238,15 @@ export function GraphWorkspace({
         ± signs encode spins; gold ring marks the last updated site. Dashed ↻
         bonds wrap periodically. Every labeled bond contributes separately;
         arrows define stored orientation. Teal: positive K; purple: negative K;
-        faded: zero K. Thickness indicates |K|. Highlighted bonds have a gold
-        halo. Selected: {selected}.
+        faded: zero K. Thickness indicates |K|. Dark outlines/halos mark your
+        selection; gold underlines mark bonds used in the latest update.
+        Selected: {selected}.
       </p>
       <div className="graph-form-row">
         <label>
-          Inspect site
+          Selected site
           <select
-            aria-label="Inspect site"
+            aria-label="Selected site"
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
           >
@@ -246,9 +256,9 @@ export function GraphWorkspace({
           </select>
         </label>
         <label>
-          Inspect bond
+          Selected bond
           <select
-            aria-label="Inspect bond"
+            aria-label="Selected bond"
             value={edge}
             onChange={(e) => setEdge(e.target.value)}
           >
@@ -262,17 +272,99 @@ export function GraphWorkspace({
           </select>
         </label>
       </div>
-      {selectedEdge && (
-        <p className="plot-note">
-          {selectedEdge.id}: K = {model.parameters.couplings[selectedEdge.id]}.{' '}
-          {selectedEdge.tail === selectedEdge.head
-            ? 'Self-link: constant action, zero spin-flip difference.'
-            : selectedEdge.wraps
-              ? 'Periodic boundary bond.'
-              : 'Distinct oriented bond record.'}
-        </p>
-      )}
-      <details className="graph-editor">
+      <div className="selection-panels">
+        <details className="selection-panel" data-testid="selected-site-panel">
+          <summary>
+            Site {selected} · spin {values?.[index] ?? '—'} · local mathematics
+          </summary>
+          {local && state !== null ? (
+            <>
+              <p>
+                <InlineMath>{String.raw`b_i`}</InlineMath> ={' '}
+                {formatNumber(local.field)};{' '}
+                <InlineMath>{String.raw`H_i=b_i+\sum_{e\ni i,\ e\text{ non-self}}K_es_{j(e)}`}</InlineMath>{' '}
+                = {formatNumber(local.localField)}
+              </p>
+              <ul>
+                {local.contributions.map((c) => (
+                  <li key={c.edgeId}>
+                    {c.edgeId} · {c.neighbor}: spin {c.spin}, K ={' '}
+                    {formatNumber(c.coupling)}, K·spin ={' '}
+                    {formatNumber(c.contribution)}
+                  </li>
+                ))}
+                {domain.edges
+                  .filter((e) => e.tail === selected && e.head === selected)
+                  .map((e) => (
+                    <li key={e.id}>
+                      {e.id} · self-link: constant action{' '}
+                      {formatNumber(-model.parameters.couplings[e.id]!)}; zero
+                      flip contribution.
+                    </li>
+                  ))}
+              </ul>
+              <p>
+                <InlineMath>{String.raw`\Delta S_i=2s_iH_i`}</InlineMath> ={' '}
+                {formatNumber(flipDifference(model, state, index))}
+              </p>
+              <p>
+                <InlineMath>{String.raw`P(+1\mid s_{j\ne i})=(1+e^{-2H_i})^{-1}`}</InlineMath>{' '}
+                = {formatNumber(plus)}; P(−1 | neighbors) ={' '}
+                {formatNumber(1 - plus!)}
+              </p>
+              <p className="plot-note">
+                Conditional on the current neighbors, not the equilibrium
+                marginal. Use “Plot selected spin {selected}” in the plots below
+                to inspect its trajectory.
+              </p>
+            </>
+          ) : (
+            <p className="plot-note">Step to inspect a configuration.</p>
+          )}
+        </details>
+        {selectedEdge && (
+          <details
+            className="selection-panel"
+            data-testid="selected-bond-panel"
+          >
+            <summary>
+              Bond {edge} · {selectedEdge.tail} → {selectedEdge.head} · K ={' '}
+              {formatNumber(model.parameters.couplings[edge]!)}
+            </summary>
+            {bond && (
+              <>
+                <p>
+                  {bond.kind} · endpoint spins {bond.tailSpin}, {bond.headSpin};
+                  product {bond.product}.
+                </p>
+                <p>
+                  <InlineMath>{String.raw`S_e=-K_es_{t(e)}s_{h(e)}`}</InlineMath>{' '}
+                  = {formatNumber(bond.action)}
+                </p>
+                {bond.kind === 'Self-link' && (
+                  <p className="plot-note">
+                    Constant action; zero spin-flip difference.
+                  </p>
+                )}
+              </>
+            )}
+            <button
+              className="button secondary"
+              onClick={() => {
+                if (editor.current) editor.current.open = true;
+                couplingInputs.current[edge]?.focus();
+              }}
+            >
+              Edit coupling {edge}
+            </button>
+            <p className="plot-note">
+              Edit in the parameter list, then Apply to begin a new measurement
+              segment.
+            </p>
+          </details>
+        )}
+      </div>
+      <details className="graph-editor" ref={editor}>
         <summary>Geometry & numerical parameters</summary>
         <label>
           Geometry preset
@@ -337,6 +429,9 @@ export function GraphWorkspace({
               <label key={e.id}>
                 K {e.id} · {e.tail} → {e.head}
                 <input
+                  ref={(input) => {
+                    couplingInputs.current[e.id] = input;
+                  }}
                   aria-label={`Coupling ${e.id}`}
                   type="number"
                   step="any"
@@ -383,11 +478,7 @@ export function ExactIsingPanel({ segment }: { segment: SegmentSnapshot }) {
               <th>{target === 'E' ? 'E = S' : target}</th>
               <td>
                 {formatNumber(
-                  exact.probabilities.reduce(
-                    (sum, p, state) =>
-                      sum + p * observableValue(model, state, target),
-                    0,
-                  ),
+                  isingReference({ ...model, observable: target }).mean,
                 )}
               </td>
               <td>

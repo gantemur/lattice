@@ -64,3 +64,28 @@ it('keeps small nonzero values visible instead of rounding them to zero', () => 
   expect(formatNumber(0)).toBe('0');
   expect(formatNumber(null)).toBe('—');
 });
+
+it('fits error axes from scale and N rather than accidental near-zero checkpoints', () => {
+  const run = new SimulationRun(1, { ...settings({ a: 1, h: 0 }), seed: 1 });
+  run.advance(100);
+  const segment = run.snapshot().segments[0]!;
+  segment.convergence = [
+    { count: 1, mean: 0.2 },
+    { count: 2, mean: 1e-18 },
+    { count: 100, mean: 0.01 },
+  ];
+  const viewport = fitSegments([segment]);
+  expect(viewport.error.min).toBeCloseTo(0.0008, 14);
+  segment.convergence[1]!.mean = 0;
+  expect(fitSegments([segment]).error).toEqual(viewport.error);
+  segment.convergence[1]!.mean = 0.1;
+  expect(fitSegments([segment]).error).toEqual(viewport.error);
+  segment.convergence[1]!.mean = 10;
+  const wider = expandViewport(viewport, fitSegments([segment]));
+  expect(wider.error.max).toBe(12.5);
+  segment.convergence[1]!.mean = 0;
+  expect(expandViewport(wider, fitSegments([segment])).error).toEqual(
+    wider.error,
+  );
+  expect(fitSegments([segment]).error.max).toBeLessThan(wider.error.max);
+});
