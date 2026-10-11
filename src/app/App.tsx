@@ -1,6 +1,8 @@
+import { SiteHeader } from './SiteHeader';
 import { ScalarShare } from './ScalarShare';
 import { LatticeSystems } from './LatticeSystems';
 import { FieldWorkspace } from './FieldWorkspace';
+import { OscillatorWorkspace } from './OscillatorWorkspace';
 import { decodeScalarConfiguration } from './shareConfiguration';
 import { ScalarWorkspace } from './ScalarWorkspace';
 import { ScalarInspector } from './ScalarInspector';
@@ -39,6 +41,17 @@ import { SettingsPanel } from './SettingsPanel';
 import { ModelFormula, ModelNotes } from './ModelNotes';
 import { StepInspector } from './StepInspector';
 
+type Workspace = 'small' | 'lattice' | 'qm' | 'fields' | 'experiments';
+
+export function workspaceForHash(hash: string): Workspace {
+  if (hash.startsWith('#experiments')) return 'experiments';
+  // The QM route must precede the broad lattice prefix.
+  if (hash.startsWith('#lattice-qm')) return 'qm';
+  if (hash.startsWith('#lattice-systems')) return 'lattice';
+  if (hash.startsWith('#fields-paths')) return 'fields';
+  return 'small';
+}
+
 export function App() {
   // Keep hidden workspaces mounted so tab navigation does not reset their
   // worker sessions, measurements, or local view state.
@@ -46,27 +59,11 @@ export function App() {
   const [sweeps, setSweeps] = useState<SavedSweep[]>([]);
   const archiveRef = useRef<ArchiveEntry[]>([]);
   const sessionId = useRef(crypto.randomUUID());
-  const [workspace, setWorkspace] = useState(() =>
-    typeof location !== 'undefined' && location.hash.startsWith('#experiments')
-      ? 'experiments'
-      : typeof location !== 'undefined' && location.hash.startsWith('#fields-')
-        ? 'fields'
-        : typeof location !== 'undefined' &&
-            location.hash.startsWith('#lattice-')
-          ? 'lattice'
-          : 'small',
+  const [workspace, setWorkspace] = useState<Workspace>(() =>
+    typeof location === 'undefined' ? 'small' : workspaceForHash(location.hash),
   );
   useEffect(() => {
-    const changed = () =>
-      setWorkspace(
-        location.hash.startsWith('#experiments')
-          ? 'experiments'
-          : location.hash.startsWith('#fields-')
-            ? 'fields'
-            : location.hash.startsWith('#lattice-')
-              ? 'lattice'
-              : 'small',
-      );
+    const changed = () => setWorkspace(workspaceForHash(location.hash));
     window.addEventListener('hashchange', changed);
     return () => window.removeEventListener('hashchange', changed);
   }, []);
@@ -118,6 +115,9 @@ export function App() {
       </div>
       <div className="workspace-surface" hidden={workspace !== 'fields'}>
         <FieldWorkspace />
+      </div>
+      <div className="workspace-surface" hidden={workspace !== 'qm'}>
+        <OscillatorWorkspace />
       </div>
     </>
   );
@@ -290,33 +290,7 @@ function SmallSystemsApp({
       <a className="skip-link" href="#laboratory">
         Skip to laboratory
       </a>
-      <header className="site-header">
-        <a
-          className="brand"
-          href="#small-systems"
-          aria-label="Lattice Lab home"
-        >
-          <span className="brand-mark" aria-hidden="true">
-            ▦
-          </span>
-          <span>
-            Lattice <strong>Lab</strong>
-          </span>
-        </a>
-        <nav aria-label="Workspaces">
-          <a className="nav-active" href="#small-systems" aria-current="page">
-            Small Systems
-          </a>
-          <a href="#lattice-systems">Lattice Systems</a>
-          <a href="#fields-paths">Fields &amp; Paths</a>
-          <a href="#experiments">
-            Experiments{archiveCount ? ` (${archiveCount})` : ''}
-          </a>
-        </nav>
-        <a className="source-link" href="https://github.com/gantemur/lattice">
-          Source ↗
-        </a>
-      </header>
+      <SiteHeader active="small" archiveCount={archiveCount} />
       <main id="laboratory">
         <section
           className="intro"

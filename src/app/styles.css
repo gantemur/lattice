@@ -112,6 +112,9 @@ small {
   padding: 14px max(28px, calc((100vw - 1384px) / 2));
   background: #fbfbf7;
 }
+.site-header nav {
+  min-width: 0;
+}
 .brand {
   display: inline-flex;
   align-items: center;
@@ -788,6 +791,17 @@ footer {
     gap: 14px;
     font-size: 12px;
     min-height: 56px;
+  }
+  .site-header nav {
+    justify-content: flex-start;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+  .site-header nav a {
+    flex: none;
+    padding: 0 3px;
   }
   .nav-planned {
     flex-direction: row;
@@ -1922,6 +1936,139 @@ footer {
 }
 .field-run-readings span {
   min-width: 105px;
+}
+
+/* M4c0 teaching tools own display state only; nested scientific views retain
+   their original markup, equations and accessibility labels. */
+.tool-deck {
+  min-width: 0;
+  margin: 18px 0;
+}
+.tool-deck-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.tool-deck-controls h2 {
+  flex: 1 1 100%;
+  margin: 0;
+}
+.tool-deck-controls label,
+.tool-change {
+  font-size: 12px;
+  min-width: 0;
+}
+.tool-deck-controls label {
+  flex: 1 1 210px;
+}
+.tool-deck-controls select,
+.tool-change select {
+  margin-top: 4px;
+}
+.tool-deck-controls > .plot-note {
+  align-self: center;
+  margin: 0;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.tool-card {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 14px;
+  background: #fdfdf9;
+}
+.tool-card.tool-expanded {
+  grid-column: 1 / -1;
+}
+.tool-card-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+}
+.tool-card-heading h3 {
+  margin: 0;
+}
+.tool-card-heading p {
+  color: var(--muted);
+  font-size: 12px;
+  margin: 3px 0 0;
+}
+.tool-card-heading small {
+  color: var(--teal);
+  font-weight: 700;
+}
+.tool-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.tool-card-actions button {
+  min-height: 44px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--teal);
+  background: #fff;
+}
+.tool-change {
+  display: block;
+  margin: 9px 0;
+}
+.tool-body {
+  min-width: 0;
+}
+.tool-body > .field-results,
+.tool-body > .field-visual,
+.tool-body > .oscillator-chart,
+.tool-body > section {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+.tool-body > .plot-note {
+  margin: 10px 0 0;
+}
+.tool-empty {
+  padding: 20px;
+  border: 1px dashed var(--line);
+  border-radius: 10px;
+}
+.tool-overview-toggle,
+.tool-detail-select,
+.tool-view-detail {
+  display: none;
+}
+@media (max-width: 700px) {
+  .tool-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tool-overview-toggle,
+  .tool-detail-select {
+    display: block;
+  }
+  .tool-deck:not(.tool-overview) .tool-card:not(.tool-detail) {
+    display: none;
+  }
+  .tool-overview .tool-card {
+    display: block;
+  }
+  .tool-overview .tool-body,
+  .tool-overview .tool-change,
+  .tool-overview .tool-card-actions {
+    display: none;
+  }
+  .tool-overview .tool-view-detail {
+    display: block;
+  }
 }
 .oscillator-quality-warning {
   border-left: 4px solid #b0612b;

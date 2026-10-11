@@ -1,10 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import { FieldClient } from '../engine/fieldClient';
-import type { FieldView, FieldWorkerPort } from '../engine/fieldClient';
-import {
-  defaultFieldConfiguration,
-  defaultOscillatorConfiguration,
-} from '../engine/fieldRun';
+import { SiteHeader } from './SiteHeader';
+import { useState } from 'react';
+import { defaultFieldConfiguration } from '../engine/fieldRun';
 import type { FieldConfiguration, FieldSettings } from '../engine/fieldRun';
 import { createFieldLattice } from '../domain/fieldLattice';
 import { formatNumber } from '../plotting/PlotFrame';
@@ -15,37 +11,47 @@ import { FieldInspection, FieldStepInspection } from './FieldResults';
 import { FieldVisual } from './FieldVisual';
 import { FieldSpectrum } from './FieldSpectrum';
 import { fieldMeasure } from '../models/gaussianField';
-import { OscillatorView } from './OscillatorView';
+import { useField } from './useField';
+import { RunPauseControl } from './RunPauseControl';
+import { ToolDeck } from './ToolDeck';
+import type { ToolDefinition } from './ToolDeck';
 
-function useField() {
-  const [view, setView] = useState<FieldView>({
-    snapshot: null,
-    running: false,
-    busy: false,
-    error: null,
-  });
-  const client = useRef<FieldClient | null>(null);
-  useEffect(() => {
-    const instance = new FieldClient(
-      () =>
-        new Worker(new URL('../workers/field.worker.ts', import.meta.url), {
-          type: 'module',
-        }) as unknown as FieldWorkerPort,
-      setView,
-    );
-    client.current = instance;
-    instance.initialize(defaultFieldConfiguration);
-    return () => {
-      instance.dispose();
-      client.current = null;
-    };
-  }, []);
-  return { view, client };
-}
+type FieldTool = 'profile' | 'inspection' | 'spectrum' | 'history' | 'update';
+const fieldTools: ToolDefinition<FieldTool>[] = [
+  {
+    id: 'profile',
+    title: 'Current field configuration',
+    kind: 'Visualization',
+    description: 'Spatial profile or heatmap at the current update.',
+  },
+  {
+    id: 'inspection',
+    title: 'Selected site and covariance',
+    kind: 'Analysis',
+    description: 'Local terms, conditional law and segment pair comparison.',
+  },
+  {
+    id: 'spectrum',
+    title: 'Fourier spectrum',
+    kind: 'Plot',
+    description: 'Momentum-index power for fully periodic fields.',
+  },
+  {
+    id: 'history',
+    title: 'Measurement history',
+    kind: 'Plot',
+    description: 'Recent bounded measurements in algorithmic update order.',
+  },
+  {
+    id: 'update',
+    title: 'Latest update',
+    kind: 'Analysis',
+    description: 'The actual latest draw or local transition.',
+  },
+];
 
 export function FieldWorkspace() {
-  const { view, client } = useField();
-  const [mode, setMode] = useState<'gaussian' | 'oscillator'>('gaussian');
+  const { view, client } = useField(defaultFieldConfiguration);
   const snapshot = view.snapshot;
   const current = snapshot?.segments.at(-1);
   const [draft, setDraft] = useState<FieldConfiguration>(
@@ -122,44 +128,12 @@ export function FieldWorkspace() {
     knownSiteVariance !== null
       ? Math.sqrt(knownSiteVariance / samples)
       : null;
-  if (mode === 'oscillator')
-    return (
-      <OscillatorView
-        view={view}
-        client={client.current}
-        onBack={() => {
-          client.current?.initialize(defaultFieldConfiguration);
-          setDraft(defaultFieldConfiguration);
-          setMode('gaussian');
-        }}
-      />
-    );
   return (
     <>
       <a className="skip-link" href="#field-laboratory">
         Skip to field laboratory
       </a>
-      <header className="site-header">
-        <a className="brand" href="#small-systems">
-          <span className="brand-mark" aria-hidden="true">
-            ▦
-          </span>
-          <span>
-            Lattice <strong>Lab</strong>
-          </span>
-        </a>
-        <nav aria-label="Workspaces">
-          <a href="#small-systems">Small Systems</a>
-          <a href="#lattice-systems">Lattice Systems</a>
-          <a className="nav-active" aria-current="page" href="#fields-paths">
-            Fields &amp; Paths
-          </a>
-          <a href="#experiments">Experiments</a>
-        </nav>
-        <a className="source-link" href="https://github.com/gantemur/lattice">
-          Source ↗
-        </a>
-      </header>
+      <SiteHeader active="fields" />
       <main id="field-laboratory">
         <section className="intro" id="fields-paths">
           <div>
@@ -172,16 +146,6 @@ export function FieldWorkspace() {
               field. Compare exact finite-volume covariance and Fourier modes
               with independent draws or local updates.
             </p>
-            <button
-              className="button"
-              type="button"
-              onClick={() => {
-                client.current?.initialize(defaultOscillatorConfiguration);
-                setMode('oscillator');
-              }}
-            >
-              Euclidean QM — Harmonic Oscillator
-            </button>
           </div>
           <span className="milestone">M4a2 · Fourier Gaussian fields</span>
         </section>
@@ -222,27 +186,18 @@ export function FieldWorkspace() {
                 </span>
               </div>
               <div className="field-run-buttons">
-                <button
-                  type="button"
-                  className="button"
-                  onClick={() => client.current?.start()}
-                  disabled={busy || view.running}
-                >
-                  Run
-                </button>
-                <button
-                  type="button"
-                  className="button"
-                  onClick={() => client.current?.pause()}
-                  disabled={!view.running}
-                >
-                  Pause
-                </button>
+                <RunPauseControl
+                  running={view.running}
+                  busy={view.busy}
+                  ready={!!snapshot && !view.error}
+                  run={() => client.current?.start()}
+                  pause={() => client.current?.pause()}
+                />
                 <button
                   type="button"
                   className="button"
                   onClick={() => client.current?.step()}
-                  disabled={busy || view.running}
+                  disabled={busy || view.running || !!view.error}
                 >
                   Step
                 </button>
@@ -345,29 +300,57 @@ export function FieldWorkspace() {
                 />
               </label>
             </div>
-            <FieldVisual
-              shape={applied.parameters.shape}
-              field={snapshot?.field ?? null}
-              selected={site}
-              onSelect={setSelected}
-              limit={displayLimit}
+            <ToolDeck
+              title="Lattice Fields tools"
+              tools={fieldTools}
+              defaults={['profile', 'inspection']}
+              renderTool={(tool) => {
+                switch (tool) {
+                  case 'profile':
+                    return (
+                      <FieldVisual
+                        shape={applied.parameters.shape}
+                        field={snapshot?.field ?? null}
+                        selected={site}
+                        onSelect={setSelected}
+                        limit={displayLimit}
+                      />
+                    );
+                  case 'inspection':
+                    return snapshot ? (
+                      <FieldInspection
+                        snapshot={snapshot}
+                        site={site}
+                        partner={pairSite}
+                      />
+                    ) : (
+                      <p>Wait for the field worker to initialize.</p>
+                    );
+                  case 'spectrum':
+                    return current ? (
+                      <FieldSpectrum segment={current} />
+                    ) : (
+                      <p>Wait for a field segment.</p>
+                    );
+                  case 'history':
+                    return snapshot ? (
+                      <FieldHistory
+                        snapshot={snapshot}
+                        site={site}
+                        limit={displayLimit}
+                      />
+                    ) : (
+                      <p>Wait for a field segment.</p>
+                    );
+                  case 'update':
+                    return snapshot ? (
+                      <FieldStepInspection snapshot={snapshot} />
+                    ) : (
+                      <p>No update yet.</p>
+                    );
+                }
+              }}
             />
-            {current && <FieldSpectrum segment={current} />}
-            {snapshot && (
-              <>
-                <FieldStepInspection snapshot={snapshot} />
-                <FieldInspection
-                  snapshot={snapshot}
-                  site={site}
-                  partner={pairSite}
-                />
-                <FieldHistory
-                  snapshot={snapshot}
-                  site={site}
-                  limit={displayLimit}
-                />
-              </>
-            )}
             <p className="plot-note">
               The dashed site-mean reference and covariance are exact for this
               finite Gaussian model. Sample estimates and recent plotted vectors

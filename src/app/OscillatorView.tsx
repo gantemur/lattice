@@ -1,3 +1,8 @@
+import { SiteHeader } from './SiteHeader';
+import { RunPauseControl } from './RunPauseControl';
+import { ToolDeck } from './ToolDeck';
+import type { ToolDefinition } from './ToolDeck';
+import { OscillatorHistory } from './OscillatorHistory';
 import { useState } from 'react';
 import type { FieldClient, FieldView } from '../engine/fieldClient';
 import { defaultOscillatorConfiguration } from '../engine/fieldRun';
@@ -23,6 +28,58 @@ type Curve = {
   points: [number, number][];
   dashed?: boolean;
 };
+type QmTool =
+  | 'path'
+  | 'correlator'
+  | 'gap'
+  | 'effective'
+  | 'transfer'
+  | 'reflection'
+  | 'history';
+const qmTools: ToolDefinition<QmTool>[] = [
+  {
+    id: 'path',
+    title: 'Current periodic path',
+    kind: 'Visualization',
+    description: 'One configuration along Euclidean time.',
+  },
+  {
+    id: 'correlator',
+    title: 'Euclidean two-point correlator',
+    kind: 'Plot',
+    description: 'Exact, continuum and full-segment sampled curves.',
+  },
+  {
+    id: 'gap',
+    title: 'Finite-spacing and continuum gaps',
+    kind: 'Analysis',
+    description: 'Analytic lattice and continuum energy gaps.',
+  },
+  {
+    id: 'effective',
+    title: 'Effective gap and correlator table',
+    kind: 'Analysis',
+    description: 'Provisional sampled estimator with exact references.',
+  },
+  {
+    id: 'transfer',
+    title: 'Transfer operator and quadrature',
+    kind: 'Analysis',
+    description: 'Lazy finite-grid spectrum and normalization.',
+  },
+  {
+    id: 'reflection',
+    title: 'Reflection positivity',
+    kind: 'Analysis',
+    description: 'Finite covariance Gram illustration.',
+  },
+  {
+    id: 'history',
+    title: 'Recent path-average history',
+    kind: 'Plot',
+    description: 'Retained path averages versus Monte Carlo updates.',
+  },
+];
 const colors = ['#574f9b', '#9d4363', '#587024', '#9b6917'];
 type OscillatorSegment = FieldSegmentSnapshot & {
   settings: OscillatorFieldSettings;
@@ -114,11 +171,9 @@ function oscillatorSettings(
 export function OscillatorView({
   view,
   client,
-  onBack,
 }: {
   view: FieldView;
   client: FieldClient | null;
-  onBack: () => void;
 }) {
   const [draft, setDraft] = useState<OscillatorConfiguration>(
     defaultOscillatorConfiguration,
@@ -241,32 +296,12 @@ export function OscillatorView({
 
   return (
     <>
-      <a className="skip-link" href="#field-laboratory">
-        Skip to field laboratory
+      <a className="skip-link" href="#qm-laboratory">
+        Skip to Lattice QM laboratory
       </a>
-      <header className="site-header">
-        <a className="brand" href="#small-systems">
-          <span className="brand-mark" aria-hidden="true">
-            ▦
-          </span>
-          <span>
-            Lattice <strong>Lab</strong>
-          </span>
-        </a>
-        <nav aria-label="Workspaces">
-          <a href="#small-systems">Small Systems</a>
-          <a href="#lattice-systems">Lattice Systems</a>
-          <a className="nav-active" aria-current="page" href="#fields-paths">
-            Fields &amp; Paths
-          </a>
-          <a href="#experiments">Experiments</a>
-        </nav>
-        <a className="source-link" href="https://github.com/gantemur/lattice">
-          Source ↗
-        </a>
-      </header>
-      <main id="field-laboratory" className="oscillator-workspace">
-        <section className="intro" id="fields-paths">
+      <SiteHeader active="qm" />
+      <main id="qm-laboratory" className="oscillator-workspace">
+        <section className="intro" id="lattice-qm">
           <div>
             <p className="eyebrow">A numerical playground / 03</p>
             <h1>
@@ -276,9 +311,6 @@ export function OscillatorView({
               A periodic path is a Gaussian field in Euclidean time. Compare
               independent and local sampling with exact finite-spacing physics.
             </p>
-            <button className="button" type="button" onClick={onBack}>
-              Gaussian fields mode
-            </button>
           </div>
           <span className="milestone">M4b · Euclidean quantum mechanics</span>
         </section>
@@ -304,26 +336,17 @@ export function OscillatorView({
                 </span>
               </div>
               <div className="field-run-buttons">
+                <RunPauseControl
+                  running={view.running}
+                  busy={view.busy}
+                  ready={!!current && !view.error}
+                  run={() => client?.start()}
+                  pause={() => client?.pause()}
+                />
                 <button
                   className="button"
                   type="button"
-                  disabled={busy || view.running}
-                  onClick={() => client?.start()}
-                >
-                  Run
-                </button>
-                <button
-                  className="button"
-                  type="button"
-                  disabled={!view.running}
-                  onClick={() => client?.pause()}
-                >
-                  Pause
-                </button>
-                <button
-                  className="button"
-                  type="button"
-                  disabled={busy || view.running}
+                  disabled={busy || view.running || !!view.error}
                   onClick={() => client?.step()}
                 >
                   Step
@@ -396,45 +419,72 @@ export function OscillatorView({
                 />
               </label>
             </div>
-            <ScientificChart
-              title="Current periodic path x(t)"
-              curves={pathCurve}
-              xMax={p.beta}
-              fixedY={limit}
-            />
-            <p className="plot-note">
-              Fixed vertical scale ±{limit}; {clipped} path value
-              {clipped === 1 ? '' : 's'} clipped. The closing point at t=β
-              repeats x₀ and is not sampled separately.
-            </p>
-            <ScientificChart
-              title="Euclidean two-point correlator C(t)"
-              curves={[
-                exactCurve,
-                continuumCurve,
-                ...historicalExactCurves,
-                ...sampledCurves,
-              ]}
-              xMax={
-                Math.max(
-                  p.beta,
-                  ...segments.map(
-                    (segment) => segment.settings.oscillator.beta,
-                  ),
-                ) / 2
-              }
-            />
-            <p className="plot-note">
-              Sampled curves are full-segment translation averages of xⱼxⱼ₊ₗ
-              without subtracting each path mean. Exact finite lattice,
-              continuum theory and each measurement segment are distinct.
-            </p>
-            <OscillatorTheory
-              p={p}
-              sampled={sampled}
-              shownLag={shownLag}
-              measurements={current?.measurements ?? 0}
-              samplerKind={current?.settings.sampler.kind ?? 'spectral'}
+            <ToolDeck
+              title="Lattice QM tools"
+              tools={qmTools}
+              defaults={['path', 'correlator']}
+              renderTool={(tool) => {
+                if (tool === 'path')
+                  return (
+                    <>
+                      <ScientificChart
+                        title="Current periodic path x(t)"
+                        curves={pathCurve}
+                        xMax={p.beta}
+                        fixedY={limit}
+                      />
+                      <p className="plot-note">
+                        Fixed vertical scale ±{limit}; {clipped} path value
+                        {clipped === 1 ? '' : 's'} clipped. The closing point at
+                        t=β repeats x₀ and is not sampled separately.
+                      </p>
+                    </>
+                  );
+                if (tool === 'correlator')
+                  return (
+                    <>
+                      <ScientificChart
+                        title="Euclidean two-point correlator C(t)"
+                        curves={[
+                          exactCurve,
+                          continuumCurve,
+                          ...historicalExactCurves,
+                          ...sampledCurves,
+                        ]}
+                        xMax={
+                          Math.max(
+                            p.beta,
+                            ...segments.map(
+                              (segment) => segment.settings.oscillator.beta,
+                            ),
+                          ) / 2
+                        }
+                      />
+                      <p className="plot-note">
+                        Sampled curves are full-segment translation averages of
+                        xⱼxⱼ₊ₗ without subtracting each path mean. Exact finite
+                        lattice, continuum theory and each measurement segment
+                        are distinct.
+                      </p>
+                    </>
+                  );
+                if (tool === 'history')
+                  return snapshot ? (
+                    <OscillatorHistory snapshot={snapshot} />
+                  ) : (
+                    <p>Wait for a path session.</p>
+                  );
+                return (
+                  <OscillatorTheory
+                    p={p}
+                    sampled={sampled}
+                    shownLag={shownLag}
+                    measurements={current?.measurements ?? 0}
+                    samplerKind={current?.settings.sampler.kind ?? 'spectral'}
+                    panel={tool}
+                  />
+                );
+              }}
             />
             <p className="plot-note">
               Seed {snapshot?.seed ?? seed}; segment {current?.id ?? '—'} began

@@ -1,14 +1,18 @@
 # Lattice Lab
 
-**Status:** M0–M3b2, the source-readability pass, M4a1 and M4a2 are merged. M4b harmonic oscillator paths are on a feature branch for review.
+**Status:** M0–M4b are merged. M4c0 workspace and teaching-tool refinement is on a feature branch for review.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
-## New in M4b (feature branch)
+## New in M4c0 (feature branch)
 
-Fields & Paths now offers a periodic Euclidean-time harmonic oscillator path with physical controls for N, β and ω. It reuses Gaussian spectral, heat-bath and Metropolis sampling while validating oscillator-derived coefficients separately. The path, full-segment translation-averaged two-point correlator, exact finite-lattice and continuum references, effective gap, kinetic-normalized partition function, finite-grid transfer example and reflection-positive covariance illustration distinguish Euclidean separation from Monte Carlo update count. See [oscillator mathematics](docs/math/euclidean-oscillator.md) and [M4b review](docs/M4B_REVIEW.md).
+Five mounted workspaces now have a shared navigation order: **Small Systems**, **Lattice Systems**, **Lattice QM**, **Lattice Fields**, and **Experiments**. The old `#fields-paths` link opens Lattice Fields; `#lattice-qm` opens the harmonic oscillator in its own numerical session. Tab changes retain separate workers, histories, selections and display settings, including a running worker. QM and Fields use one Run/Pause control and a bounded six-card tool deck. Each card can be changed, collapsed, expanded, moved or removed; phones offer single-detail and compact-overview views. Tool edits read existing snapshots and do not advance the simulation. The optional finite-grid transfer eigensolve runs only when its tool is open and caches validated parameters. See [M4c0 review](docs/M4C0_REVIEW.md).
+
+## M4b (merged)
+
+Lattice QM offers a periodic Euclidean-time harmonic oscillator path with physical controls for N, β and ω. It reuses Gaussian spectral, heat-bath and Metropolis sampling while validating oscillator-derived coefficients separately. The path, full-segment translation-averaged two-point correlator, exact finite-lattice and continuum references, effective gap, kinetic-normalized partition function, finite-grid transfer example and reflection-positive covariance illustration distinguish Euclidean separation from Monte Carlo update count. See [oscillator mathematics](docs/math/euclidean-oscillator.md) and [M4b review](docs/M4B_REVIEW.md).
 
 ## M4a2 (merged)
 
@@ -16,7 +20,7 @@ Fully periodic chains and rectangles now offer independent Fourier sampling and 
 
 ## M4a1 (merged)
 
-**Fields & Paths** explores massive real Gaussian fields on open or periodic 1D chains and 2D rectangles. Its action has positive quadratic coefficient `r`, nonnegative directional stiffnesses and a uniform source. Finite-volume Cholesky references supply the mean, covariance and log partition function for the supported at-most-64-site lattices. Independent whole-field draws, coordinate Gaussian heat bath and random-site Metropolis run in a separate seeded worker. A profile or fixed-scale heatmap, local conditional inspection, transition details and per-segment sampled/exact comparisons expose the mathematics without treating updates as physical time. Parameter changes isolate measurements while preserving compatible field state and RNG; geometry changes and Reset begin a new seeded session. Recent plotted field vectors are bounded, while online site/pair aggregates span each retained segment. See [Gaussian field mathematics](docs/math/gaussian-fields.md) and [M4a1 review](docs/M4A1_REVIEW.md) for equations, tests and limits.
+**Lattice Fields** explores massive real Gaussian fields on open or periodic 1D chains and 2D rectangles. Its action has positive quadratic coefficient `r`, nonnegative directional stiffnesses and a uniform source. Finite-volume Cholesky references supply the mean, covariance and log partition function for the supported at-most-64-site lattices. Independent whole-field draws, coordinate Gaussian heat bath and random-site Metropolis run in a separate seeded worker. A profile or fixed-scale heatmap, local conditional inspection, transition details and per-segment sampled/exact comparisons expose the mathematics without treating updates as physical time. Parameter changes isolate measurements while preserving compatible field state and RNG; geometry changes and Reset begin a new seeded session. Recent plotted field vectors are bounded, while online site/pair aggregates span each retained segment. See [Gaussian field mathematics](docs/math/gaussian-fields.md) and [M4a1 review](docs/M4A1_REVIEW.md) for equations, tests and limits.
 
 ## New in M3b2
 
