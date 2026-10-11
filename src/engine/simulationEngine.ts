@@ -67,7 +67,9 @@ function newSegment(
   return {
     id,
     isingMeasurements:
-      model.kind === 'ising' ? new IsingMeasurements(model) : undefined,
+      model.kind === 'ising'
+        ? new IsingMeasurements(model, sampler.kind === 'direct')
+        : undefined,
     model,
     sampler,
     startUpdate,

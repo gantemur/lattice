@@ -19,6 +19,19 @@ export type Axis = 'x' | 'y';
 export type SpatialPoint = { r: number; pairs: number; value: number };
 export const MAX_SPATIAL_LAG = 4;
 
+/** Global-mean centering is shown only when both axes are translation invariant. */
+export function spatialDisplayValue(
+  boundaries: { periodicX: boolean; periodicY: boolean },
+  raw: number,
+  meanM: number,
+) {
+  const connected = boundaries.periodicX && boundaries.periodicY;
+  return {
+    kind: connected ? ('connected' as const) : ('raw' as const),
+    value: connected ? raw - meanM * meanM : raw,
+  };
+}
+
 /** Ordered origin/displacement pairs; periodic directions wrap, open ones stop. */
 export function axialProducts(
   lattice: IndexedLattice,

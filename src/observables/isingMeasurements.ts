@@ -6,8 +6,16 @@ import { DiagnosticHistory } from './statisticalDiagnostics';
 export class IsingMeasurements {
   private counts: number[];
   private observables;
-  private diagnostics = new DiagnosticHistory(1);
-  constructor(private model: IsingModel) {
+  private diagnostics: DiagnosticHistory;
+  constructor(
+    private model: IsingModel,
+    direct: boolean,
+  ) {
+    this.diagnostics = new DiagnosticHistory(
+      direct
+        ? { kind: 'direct' }
+        : { kind: 'local', sites: model.parameters.domain.vertices.length },
+    );
     this.counts = Array(2 ** model.parameters.domain.vertices.length).fill(0);
     this.observables = Object.fromEntries(
       isingTargets(model).map((target) => [

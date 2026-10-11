@@ -7,6 +7,7 @@ import {
   axialProducts,
   bondProducts,
   equilibriumFluctuations,
+  spatialDisplayValue,
 } from './latticePhysics';
 
 const base: LatticeParameters = {
@@ -107,6 +108,76 @@ describe('lattice physical observables', () => {
       pairs: 2,
       value: -1,
     });
+  });
+
+  it('keeps cylinder correlations raw when row-dependent means make global centering spurious', () => {
+    const parameters = {
+      ...base,
+      lx: 2,
+      ly: 3,
+      periodicX: true,
+      periodicY: false,
+      jx: 0,
+      jy: 1.2,
+      field: 0.5,
+      temperature: 1,
+    };
+    const lattice = createIndexedLattice(parameters);
+    const weights: number[] = [];
+    const configurations: Int8Array[] = [];
+    for (let code = 0; code < 64; code++) {
+      const spins = Int8Array.from({ length: 6 }, (_, i) =>
+        code & (1 << i) ? 1 : -1,
+      );
+      let energy = 0;
+      for (let y = 0; y < 3; y++)
+        for (let x = 0; x < 2; x++) {
+          const i = x + 2 * y;
+          energy -= parameters.field * spins[i]!;
+          if (y < 2) energy -= parameters.jy * spins[i]! * spins[i + 2]!;
+        }
+      configurations.push(spins);
+      weights.push(Math.exp(-energy / parameters.temperature));
+    }
+    const Z = weights.reduce((a, b) => a + b, 0);
+    const siteMeans = Array.from(
+      { length: 6 },
+      (_, i) =>
+        configurations.reduce(
+          (sum, spins, code) => sum + weights[code]! * spins[i]!,
+          0,
+        ) / Z,
+    );
+    const meanM = siteMeans.reduce((a, b) => a + b, 0) / 6;
+    const raw =
+      configurations.reduce(
+        (sum, spins, code) =>
+          sum + weights[code]! * axialProducts(lattice, spins, 'x')[1]!.value,
+        0,
+      ) / Z;
+    const correctlyCentered =
+      raw -
+      [0, 1, 2].reduce(
+        (sum, y) => sum + siteMeans[2 * y]! * siteMeans[2 * y + 1]!,
+        0,
+      ) /
+        3;
+    expect(correctlyCentered).toBeCloseTo(0, 12);
+    expect(raw - meanM * meanM).toBeGreaterThan(1e-4);
+    expect(spatialDisplayValue(parameters, raw, meanM)).toEqual({
+      kind: 'raw',
+      value: raw,
+    });
+    expect(
+      spatialDisplayValue({ periodicX: false, periodicY: true }, raw, meanM)
+        .kind,
+    ).toBe('raw');
+    expect(
+      spatialDisplayValue({ periodicX: false, periodicY: false }, raw, meanM),
+    ).toEqual({ kind: 'raw', value: raw });
+    expect(
+      spatialDisplayValue({ periodicX: true, periodicY: true }, raw, meanM),
+    ).toEqual({ kind: 'connected', value: raw - meanM * meanM });
   });
 
   it('reports an unusable Binder denominator explicitly', () => {

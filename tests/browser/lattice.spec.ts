@@ -259,3 +259,44 @@ test('M3a autocorrelation plots and quench statistics remain segment-local and d
     ),
   ).toBe(true);
 });
+
+test('M3a sweep cadence and spatial labels respect mixed boundaries', async ({
+  page,
+}) => {
+  await open(page);
+  await page.getByLabel('Size preset').selectOption('2');
+  await page.getByLabel('Warm-up sweeps').fill('0');
+  await page.getByLabel('Measure every sweeps').fill('3');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  const diagnostics = page.getByTestId('lattice-diagnostics');
+  await diagnostics.locator('summary').first().click();
+  await expect(diagnostics.getByText('3 nominal sweep(s)')).toBeVisible();
+  await expect(
+    diagnostics.getByText('τ_int · retained measurements'),
+  ).toBeVisible();
+  await expect(diagnostics.getByTestId('exact-markov')).toContainText(
+    'retained measurements',
+  );
+  await page.getByLabel('Size preset').selectOption('4');
+  await page.getByLabel('Periodic y').uncheck();
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: 'Add plot' }).click();
+  await page.getByLabel('Plot 3 type').selectOption('spatial-x');
+  await expect(
+    page.getByRole('img', { name: /^Raw x-axis pair correlation/ }),
+  ).toBeVisible();
+  await page.getByLabel('Periodic y').check();
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: 'Add plot' }).click();
+  await page.getByLabel('Plot 3 type').selectOption('spatial-x');
+  await expect(
+    page.getByRole('img', { name: /^Connected x-axis pair correlation/ }),
+  ).toBeVisible();
+  await page.getByLabel('Periodic x').uncheck();
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await page.getByRole('button', { name: 'Add plot' }).click();
+  await page.getByLabel('Plot 3 type').selectOption('spatial-y');
+  await expect(
+    page.getByRole('img', { name: /^Raw y-axis pair correlation/ }),
+  ).toBeVisible();
+});

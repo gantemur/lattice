@@ -243,7 +243,7 @@ export function exactMarkovDiagnostics(
   );
   return {
     status: 'ok',
-    message: `Exact finite-state equilibrium result; observations every ${intervalUpdates} elementary update(s).`,
+    message: `Exact finite-state equilibrium result; observations every ${intervalUpdates} ${kernel.sampler === 'direct' ? 'whole-configuration draw(s)' : 'elementary site update(s)'}.`,
     gap,
     eigenvalues,
     acf,

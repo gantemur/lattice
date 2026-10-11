@@ -41,7 +41,10 @@ describe('M3a worker diagnostic provenance', () => {
     expect(a.segments[0]!.diagnostics).toEqual(b.segments[0]!.diagnostics);
     expect(a.segments[0]!.samples).toBe(499);
     expect(a.segments[0]!.measurements).toHaveLength(499);
-    expect(a.segments[0]!.diagnostics.m.strideSweeps).toBe(2);
+    expect(a.segments[0]!.diagnostics.m.cadence).toEqual({
+      kind: 'lattice',
+      sweepsPerObservation: 2,
+    });
   });
   it('separates temperature/sampler segments and bounds old diagnostic records', () => {
     const run = new LatticeRun(1, {
@@ -74,7 +77,10 @@ describe('M3a worker diagnostic provenance', () => {
     expect(after[0]!.diagnostics).toEqual(first.diagnostics);
     expect(after[1]!.samples).toBe(0);
     expect(after[1]!.diagnostics.m.used).toBe(0);
-    expect(after[1]!.diagnostics.m.strideSweeps).toBe(3);
+    expect(after[1]!.diagnostics.m.cadence).toEqual({
+      kind: 'lattice',
+      sweepsPerObservation: 3,
+    });
     run.advance(12);
     expect(run.snapshot().segments[1]!.samples).toBe(0);
     run.advance(4);

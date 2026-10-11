@@ -170,7 +170,10 @@ function newSegment(
     gy: emptyMoments(),
     spatialX: spatial('x'),
     spatialY: spatial('y'),
-    diagnostics: new DiagnosticHistory(settings.strideSweeps),
+    diagnostics: new DiagnosticHistory({
+      kind: 'lattice',
+      sweepsPerObservation: settings.strideSweeps,
+    }),
     mHistogram: createHistogram(-1.001, 1.001, 41),
     eHistogram: createHistogram(-eLimit, eLimit, 41),
     measurements: [] as Measurement[],

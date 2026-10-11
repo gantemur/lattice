@@ -32,6 +32,19 @@ function Readout({
   label: string;
   fullSamples: number;
 }) {
+  const cadence = diagnostic.cadence;
+  const observationUnit =
+    cadence.kind === 'direct'
+      ? 'independent draws'
+      : cadence.kind === 'local'
+        ? 'elementary updates'
+        : 'retained measurements';
+  const tauLabel =
+    cadence.kind === 'lattice'
+      ? 'τ_int · retained measurements'
+      : cadence.kind === 'local'
+        ? 'τ_int · observations = elementary updates'
+        : 'τ_int · observations = independent draws';
   return (
     <>
       <p data-testid="diagnostic-status">
@@ -52,18 +65,28 @@ function Readout({
           </dd>
         </div>
         <div>
-          <dt>Measurement stride</dt>
-          <dd>{diagnostic.strideSweeps} nominal sweep(s)</dd>
+          <dt>Measurement interval</dt>
+          <dd>
+            {cadence.kind === 'lattice'
+              ? `${cadence.sweepsPerObservation} nominal sweep(s)`
+              : cadence.kind === 'local'
+                ? '1 elementary site update'
+                : '1 whole-configuration draw'}
+          </dd>
         </div>
         <div>
-          <dt>τ_int · retained measurements</dt>
+          <dt>{tauLabel}</dt>
           <dd data-testid="diagnostic-tau">
             {formatNumber(diagnostic.tauMeasurements)}
           </dd>
         </div>
         <div>
           <dt>τ_int · nominal sweeps</dt>
-          <dd>{formatNumber(diagnostic.tauSweeps)}</dd>
+          <dd data-testid="diagnostic-tau-sweeps">
+            {cadence.kind === 'direct'
+              ? 'N/A for independent draws'
+              : formatNumber(diagnostic.tauSweeps)}
+          </dd>
         </div>
         <div>
           <dt>Recent-window ESS</dt>
@@ -121,9 +144,10 @@ function Readout({
           {exact.status === 'ok' ? (
             <p>
               Exact τ_int at this measurement cadence:{' '}
-              <strong>{formatNumber(exact.tauMeasurements)}</strong> retained
-              measurements · exact asymptotic variance{' '}
-              {formatNumber(exact.asymptoticVariance)} · elementary-update
+              <strong>{formatNumber(exact.tauMeasurements)}</strong>{' '}
+              {observationUnit} · exact asymptotic variance{' '}
+              {formatNumber(exact.asymptoticVariance)} ·{' '}
+              {cadence.kind === 'direct' ? 'per-draw' : 'elementary-update'}{' '}
               spectral gap {formatNumber(exact.gap)}. These stationary
               quantities are not evidence that this run has equilibrated.
             </p>
@@ -144,12 +168,14 @@ function Readout({
       )}
       <p className="plot-note">
         The empirical estimator uses γ(k) with the recent-window mean and
-        denominator n−k. It sums positive autocorrelation pairs up to the first
-        W≥5τ(W), capped at 128 lags and n/10. ESS=min(n,n/(2τ));
-        SE=√(2τ·sample-variance/n), using n−1 for sample variance. Drift, an
-        unresolved tail, zero variance or too few samples can make these
-        unavailable. Warm-up bias, finite volume and observed error against
-        exact theory are separate questions.
+        denominator n−k. It checks paired autocovariances γ(0)+γ(1), γ(2)+γ(3),
+        …, then seeks the first complete-pair window W≥5τ(W), capped at 128 lags
+        and n/10. A nonpositive pair before that window leaves τ, ESS and SE
+        unresolved unless at least five positive lags support a provisional W≥3τ
+        estimate. ESS=min(n,n/(2τ)); SE=√(2τ·sample-variance/n), using n−1 for
+        sample variance. Drift, an unresolved tail, zero variance or too few
+        samples can make these unavailable. Warm-up bias, finite volume and
+        observed error against exact theory are separate questions.
       </p>
     </>
   );

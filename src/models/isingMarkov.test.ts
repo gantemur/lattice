@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { graphPreset } from '../domain/graph';
 import { createRng } from '../algorithms/rng';
 import { isingTransition } from '../algorithms/isingTransition';
+import { analyzeSeries } from '../observables/statisticalDiagnostics';
 import { exactIsing, observableValue } from './ising';
 import type { IsingModel } from './ising';
 import {
@@ -233,5 +234,40 @@ describe('exact tiny-Ising transition matrices', () => {
       }
     }
     expect(numerator / denominator).toBeCloseTo(exact.acf[1]!, 1);
+  });
+  it('benchmarks the revised empirical window against exact four-spin autocorrelation', () => {
+    const exact = exactMarkovDiagnostics(
+      graphIsingKernel(graph, 'metropolis'),
+      graphObservableValues(graph, 'm'),
+    );
+    expect(exact.status).toBe('ok');
+    if (exact.status !== 'ok') return;
+    const empiricalTau: number[] = [];
+    const lagOne: number[] = [];
+    for (let seed = 101; seed <= 108; seed++) {
+      const rng = createRng(seed);
+      let state = Math.floor(rng.uniform() * 16);
+      const values = Array.from({ length: 8192 }, () => {
+        state = isingTransition(
+          graph,
+          { kind: 'metropolis', width: 1, warmup: 0 },
+          state,
+          rng,
+        ).result!;
+        return observableValue(graph, state, 'm');
+      });
+      const result = analyzeSeries(values, 'm', { kind: 'local', sites: 4 });
+      lagOne.push(result.acf[1]!.rho);
+      if (result.tauMeasurements !== null)
+        empiricalTau.push(result.tauMeasurements);
+    }
+    expect(lagOne.reduce((a, b) => a + b, 0) / lagOne.length).toBeCloseTo(
+      exact.acf[1]!,
+      1,
+    );
+    expect(empiricalTau.length).toBeGreaterThanOrEqual(6);
+    expect(
+      empiricalTau.reduce((a, b) => a + b, 0) / empiricalTau.length,
+    ).toBeCloseTo(exact.tauMeasurements, 0);
   });
 });

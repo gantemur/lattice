@@ -611,7 +611,7 @@ export function LatticePlots({ snapshot }: { snapshot: LatticeSnapshot }) {
                       : slot.plot.endsWith('blocking')
                         ? 'Nonoverlapping blocks; the remainder is omitted. Orange is the autocorrelation-window SE when supported.'
                         : slot.plot.startsWith('spatial')
-                          ? 'Current segment only. Periodic: G(r)−〈m〉²; open: raw G(r). Ordered positive-axis origin pairs, not all pairs.'
+                          ? 'Current segment only. Fully periodic: G(r)−〈m〉²; open or mixed boundaries: raw G(r). Ordered positive-axis origin pairs, not all pairs.'
                           : 'Counts include warm-up. Heat bath has no acceptance test.'}
             </p>
           </article>

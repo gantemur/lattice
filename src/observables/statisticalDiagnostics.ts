@@ -1,6 +1,10 @@
 export const DIAGNOSTIC_CAPACITY = 8192;
 export const MAX_ACF_LAG = 128;
 export type DiagnosticTarget = 'm' | 'absM' | 'e';
+export type DiagnosticCadence =
+  | { kind: 'lattice'; sweepsPerObservation: number }
+  | { kind: 'local'; sites: number }
+  | { kind: 'direct' };
 export type DiagnosticStatus =
   | 'insufficient'
   | 'constant'
@@ -18,7 +22,7 @@ export type DiagnosticSummary = {
   evicted: number;
   firstMeasurement: number;
   lastMeasurement: number;
-  strideSweeps: number;
+  cadence: DiagnosticCadence;
   mean: number | null;
   variance: number | null;
   tauMeasurements: number | null;
@@ -36,7 +40,7 @@ export type DiagnosticSummary = {
 export function analyzeSeries(
   values: readonly number[],
   target: DiagnosticTarget,
-  strideSweeps: number,
+  cadence: DiagnosticCadence,
   total = values.length,
 ): DiagnosticSummary {
   const n = values.length;
@@ -47,7 +51,7 @@ export function analyzeSeries(
     evicted: Math.max(0, total - n),
     firstMeasurement: n ? total - n + 1 : 0,
     lastMeasurement: total,
-    strideSweeps,
+    cadence,
     tauMeasurements: null,
     tauSweeps: null,
     ess: null,
@@ -94,14 +98,15 @@ export function analyzeSeries(
     rho.push(sum / ((n - lag) * gamma0));
   }
 
-  // Geyer's initial-positive pair cutoff, then the first self-consistent
-  // window W >= 5 τ(W). A still-positive tail at the hard lag limit is unresolved.
-  let positiveLimit = maximumLag;
-  let stoppedByNegativePair = false;
-  for (let k = 1; k + 1 <= maximumLag; k += 2)
-    if (rho[k]! + rho[k + 1]! <= 0) {
-      positiveLimit = k - 1;
-      stoppedByNegativePair = true;
+  // Geyer's pairs start at γ(0)+γ(1), then γ(2)+γ(3), etc. Since γ(0)>0,
+  // normalized rho pairs have the same signs. Ignore an unmatched final lag.
+  const lastPairedLag = 2 * Math.floor((maximumLag - 1) / 2) + 1;
+  let positiveLimit = lastPairedLag;
+  let firstNonpositivePair: number | null = null;
+  for (let pair = 0; 2 * pair + 1 <= lastPairedLag; pair++)
+    if (rho[2 * pair]! + rho[2 * pair + 1]! <= 0) {
+      positiveLimit = 2 * pair - 1;
+      firstNonpositivePair = pair;
       break;
     }
   let tau = 0.5;
@@ -110,12 +115,19 @@ export function analyzeSeries(
   for (let k = 1; k <= positiveLimit; k++) {
     tau += rho[k]!;
     window = k;
-    if (k >= 5 * Math.max(0.5, tau)) {
+    if (k % 2 === 1 && k >= 5 * Math.max(0.5, tau)) {
       selfConsistent = true;
       break;
     }
   }
-  const unresolved = !selfConsistent && !stoppedByNegativePair;
+  // A later positive-pair cutoff can support a provisional estimate. A cutoff
+  // before five lags or three estimated correlation times is unresolved.
+  const cutoffBeforeWindow = !selfConsistent && firstNonpositivePair !== null;
+  const provisionalCutoff =
+    cutoffBeforeWindow &&
+    positiveLimit >= 5 &&
+    positiveLimit >= 3 * Math.max(0.5, tau);
+  const unresolved = !selfConsistent && !provisionalCutoff;
   const cappedEss = tau < 0.5;
   const effectiveTau = Math.max(0.5, tau);
   const ess = Math.min(n, n / (2 * effectiveTau));
@@ -158,7 +170,7 @@ export function analyzeSeries(
     ? 'drift'
     : unresolved
       ? 'unresolved'
-      : sensitive
+      : sensitive || provisionalCutoff
         ? 'window-sensitive'
         : 'ok';
   const messages: Record<DiagnosticStatus, string> = {
@@ -168,19 +180,27 @@ export function analyzeSeries(
       'Correlation remains unresolved at the available lag/window; τ, ESS and SE are not quoted.',
     drift:
       'Recent halves have substantially different means; stationary uncertainty is not quoted.',
-    'window-sensitive':
-      'τ changes substantially with the summation window; treat it as provisional.',
+    'window-sensitive': provisionalCutoff
+      ? 'The positive-pair cutoff precedes W≥5τ; the finite-window estimate is provisional.'
+      : 'τ changes substantially with the summation window; treat it as provisional.',
     ok: cappedEss
       ? 'Negative empirical correlation would imply ESS above n; ESS is capped at n.'
       : 'Recent-window estimate; fixed warm-up does not establish equilibrium.',
   };
   const warnings = [
     ...(unresolved
-      ? ['Lag limit reached before a stable autocorrelation window.']
+      ? [
+          firstNonpositivePair === null
+            ? 'Lag limit reached before a self-consistent autocorrelation window.'
+            : `The first nonpositive γ(2k)+γ(2k+1) pair (k=${firstNonpositivePair}) arrived before a self-consistent window.`,
+        ]
       : []),
     ...(drift ? ['First- and second-half means differ substantially.'] : []),
     ...(sensitive
       ? ['The estimate changes substantially when W is halved.']
+      : []),
+    ...(provisionalCutoff
+      ? ['A nonpositive pair ended the sequence before the 5τ window.']
       : []),
     ...(cappedEss ? ['Noisy negative correlation was capped at ESS=n.'] : []),
   ];
@@ -194,9 +214,12 @@ export function analyzeSeries(
     tauMeasurements:
       status === 'unresolved' || status === 'drift' ? null : effectiveTau,
     tauSweeps:
-      status === 'unresolved' || status === 'drift'
+      status === 'unresolved' || status === 'drift' || cadence.kind === 'direct'
         ? null
-        : effectiveTau * strideSweeps,
+        : effectiveTau *
+          (cadence.kind === 'lattice'
+            ? cadence.sweepsPerObservation
+            : 1 / cadence.sites),
     ess: status === 'unresolved' || status === 'drift' ? null : ess,
     standardError:
       status === 'unresolved' || status === 'drift' ? null : standardError,
@@ -217,11 +240,11 @@ export class DiagnosticHistory {
   };
   private count = 0;
   private summaries: Record<DiagnosticTarget, DiagnosticSummary>;
-  constructor(private readonly strideSweeps: number) {
+  constructor(private readonly cadence: DiagnosticCadence) {
     this.summaries = {
-      m: analyzeSeries([], 'm', strideSweeps),
-      absM: analyzeSeries([], 'absM', strideSweeps),
-      e: analyzeSeries([], 'e', strideSweeps),
+      m: analyzeSeries([], 'm', cadence),
+      absM: analyzeSeries([], 'absM', cadence),
+      e: analyzeSeries([], 'e', cadence),
     };
   }
   record(m: number, absM: number, e: number) {
@@ -249,7 +272,7 @@ export class DiagnosticHistory {
       this.summaries[target] = analyzeSeries(
         this.ordered(target),
         target,
-        this.strideSweeps,
+        this.cadence,
         this.count,
       );
   }

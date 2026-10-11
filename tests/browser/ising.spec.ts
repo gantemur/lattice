@@ -127,6 +127,38 @@ test('M3a exact graph Markov benchmark compares with recent empirical autocorrel
     ),
   ).toBe(true);
 });
+
+test('M3a graph diagnostic units distinguish local updates, one-site sweeps and direct draws', async ({
+  page,
+}) => {
+  await start(page);
+  await sampler(page, 'metropolis');
+  const panel = page.getByTestId('small-ising-diagnostics');
+  await panel.locator('summary').first().click();
+  await expect(panel.getByText('1 elementary site update')).toBeVisible();
+  await expect(
+    panel.getByText('τ_int · observations = elementary updates'),
+  ).toBeVisible();
+  await sampler(page, 'direct');
+  await panel.locator('summary').first().click();
+  await expect(panel.getByText('1 whole-configuration draw')).toBeVisible();
+  await expect(panel.getByTestId('diagnostic-tau-sweeps')).toHaveText(
+    'N/A for independent draws',
+  );
+  await expect(panel.getByTestId('exact-markov')).toContainText(
+    'per-draw spectral gap',
+  );
+  await editor(page);
+  await page
+    .getByLabel('Geometry preset', { exact: true })
+    .selectOption('site');
+  await sampler(page, 'metropolis');
+  await panel.locator('summary').first().click();
+  await expect(panel.getByText('1 elementary site update')).toBeVisible();
+  await expect(
+    panel.getByText('τ_int · observations = elementary updates'),
+  ).toBeVisible();
+});
 test('graph parameter segments preserve configurations and axes; preset changes explicitly reset; zero weights preserve topology', async ({
   page,
 }) => {

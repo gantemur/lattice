@@ -1,5 +1,6 @@
 import type { DiagnosticSummary } from '../observables/statisticalDiagnostics';
 import type { LatticeSegmentSnapshot } from '../engine/latticeRun';
+import { spatialDisplayValue } from '../observables/latticePhysics';
 import { PlotFrame, tick } from './PlotFrame';
 
 export function AutocorrelationPlot({
@@ -170,10 +171,8 @@ export function SpatialPlot({
   axis: 'x' | 'y';
   maximum: number;
 }) {
-  const periodic =
-    axis === 'x'
-      ? segment.settings.parameters.periodicX
-      : segment.settings.parameters.periodicY;
+  const boundaries = segment.settings.parameters;
+  const connected = boundaries.periodicX && boundaries.periodicY;
   const entries = (axis === 'x' ? segment.spatialX : segment.spatialY).filter(
     (point) => point.r <= maximum,
   );
@@ -183,7 +182,7 @@ export function SpatialPlot({
     value:
       point.moments.mean === null
         ? null
-        : point.moments.mean - (periodic ? meanM * meanM : 0),
+        : spatialDisplayValue(boundaries, point.moments.mean, meanM).value,
   }));
   const available = points.filter(
     (point): point is { r: number; value: number } => point.value !== null,
@@ -193,7 +192,7 @@ export function SpatialPlot({
   const maxR = Math.max(1, entries.at(-1)?.r ?? 1);
   return (
     <PlotFrame
-      label={`${periodic ? 'Connected' : 'Raw'} ${axis}-axis pair correlation over ${segment.samples} retained measurements`}
+      label={`${connected ? 'Connected' : 'Raw'} ${axis}-axis pair correlation over ${segment.samples} retained measurements`}
       viewport={`0:${maxR}`}
     >
       {(f) => {
