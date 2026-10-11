@@ -62,6 +62,13 @@ function string(value: unknown, label: string, max = 512): string {
     throw new Error(`${label} must be text of at most ${max} characters.`);
   return value;
 }
+function isoTimestamp(value: unknown, label: string): string {
+  const timestamp = string(value, label, 64);
+  const millis = Date.parse(timestamp);
+  if (!Number.isFinite(millis) || new Date(millis).toISOString() !== timestamp)
+    throw new Error(`${label} must be a valid ISO UTC timestamp.`);
+  return timestamp;
+}
 function array(value: unknown, label: string, max: number): unknown[] {
   if (!Array.isArray(value) || value.length > max)
     throw new Error(`${label} must be an array of at most ${max} items.`);
@@ -386,10 +393,7 @@ export function validateScientific(value: unknown): ScientificDataset {
   integer(source.segmentId, 'Source segment ID', 1);
   integer(source.workerVersion, 'Worker version');
   integer(source.captureUpdate, 'Capture update');
-  if (
-    !Number.isFinite(Date.parse(string(source.capturedAt, 'Capture time', 64)))
-  )
-    throw new Error('Capture time is invalid.');
+  isoTimestamp(source.capturedAt, 'Capture time');
   string(source.sourceRevision, 'Source revision', 128);
   if (source.rngAlgorithm !== 'mulberry32-v1')
     throw new Error('Unsupported RNG convention.');
@@ -410,6 +414,13 @@ export function validateScientific(value: unknown): ScientificDataset {
     capture.seed !== source.seed
   )
     throw new Error('Source provenance disagrees with worker capture.');
+  if (
+    source.initialization !==
+    (capture.workspace === 'lattice'
+      ? capture.initialization
+      : capture.segment.initialization)
+  )
+    throw new Error('Source initialization disagrees with worker capture.');
   integer(capture.runId, 'Capture run ID', 1);
   integer(capture.version, 'Capture version');
   integer(capture.captureUpdate, 'Capture update');
@@ -534,6 +545,7 @@ export function importBundle(
     throw new Error('Not a Lattice Lab experiment bundle.');
   if (bundle.schemaVersion !== ARCHIVE_VERSION)
     throw new Error('Unsupported experiment schema version.');
+  isoTimestamp(bundle.exportedAt, 'Export time');
   const rows = array(bundle.records, 'Bundle records', MAX_ARCHIVE_RECORDS);
   const additions = rows.map((row) => {
     const record = object(row, 'Bundle record');

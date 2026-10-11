@@ -221,6 +221,53 @@ describe('M3b1 immutable experiment archive', () => {
       /16 MiB/,
     );
   });
+  it('rejects inconsistent initialization and invalid export times without changing existing records', () => {
+    const latticeEntry = createArchiveEntry(
+      lattice().capture(1),
+      'group-a',
+      'lattice',
+    );
+    const smallEntry = createArchiveEntry(
+      small('gaussian').capture(1),
+      'group-b',
+      'gaussian',
+    );
+    const existing = [smallEntry];
+    const originalScientific = smallEntry.scientific;
+    const valid = JSON.parse(exportBundle([latticeEntry, smallEntry]));
+    const changed = (mutate: (bundle: typeof valid) => void) => {
+      const bundle = structuredClone(valid);
+      mutate(bundle);
+      expect(() => importBundle(existing, JSON.stringify(bundle))).toThrow();
+      expect(existing).toHaveLength(1);
+      expect(existing[0]!.scientific).toBe(originalScientific);
+    };
+    changed((bundle) => {
+      bundle.records[0].scientific.source.initialization = 'plus';
+    });
+    changed((bundle) => {
+      bundle.records[0].scientific.capture.initialization = 'plus';
+    });
+    changed((bundle) => {
+      bundle.records[1].scientific.source.initialization = 'different';
+    });
+    changed((bundle) => {
+      bundle.records[1].scientific.capture.segment.initialization = 'different';
+    });
+    changed((bundle) => {
+      bundle.exportedAt = 'not a date';
+    });
+    changed((bundle) => {
+      bundle.exportedAt = '2026-02-30T00:00:00.000Z';
+    });
+    changed((bundle) => {
+      delete bundle.exportedAt;
+    });
+    changed((bundle) => {
+      bundle.records[1].scientific.source.capturedAt = 'yesterday';
+    });
+    expect(importBundle(existing, JSON.stringify(valid))).toHaveLength(3);
+  });
   it('caps record count and never compares dimensionless graph E with physical lattice e', () => {
     const graph = createArchiveEntry(small('ising').capture(1), 'g', 'graph');
     const box = createArchiveEntry(lattice().capture(1), 'l', 'box');

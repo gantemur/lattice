@@ -1,4 +1,5 @@
 import type { ArchiveEntry } from './archive';
+import type { SegmentSnapshot } from '../engine/protocol';
 
 const MEASUREMENT_COLUMNS = [
   'dataset_id',
@@ -23,6 +24,10 @@ const SUMMARY_COLUMNS = [
   'measurements',
   'raw_observations',
   'diagnostic_status',
+  'primary_observable_id',
+  'primary_observable_unit',
+  'primary_mean',
+  'primary_sample_variance_n_minus_1',
   'lx',
   'ly',
   'periodic_x',
@@ -34,14 +39,26 @@ const SUMMARY_COLUMNS = [
   'mean_m',
   'mean_abs_m',
   'mean_e_physical_per_site',
+  'sample_variance_e_physical_per_site_n_minus_1',
   'mean_E_dimensionless_action',
+  'sample_variance_E_dimensionless_action_n_minus_1',
+  'mean_S_dimensionless_action',
+  'sample_variance_S_dimensionless_action_n_minus_1',
   'susceptibility',
   'binder',
   'heat_capacity_per_site',
 ] as const;
 export function csvCell(value: unknown): string {
-  const text = value == null ? '' : String(value);
-  return /[",\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+  // Prefix text before RFC 4180 quoting: spreadsheet imports must not execute
+  // formula-like names or IDs, even when whitespace/control characters lead.
+  const original = value == null ? '' : String(value);
+  const text =
+    typeof value === 'string' && /^[\s\u0000-\u001f\u007f]*[=+\-@]/u.test(value)
+      ? `'${original}`
+      : original;
+  return /[",\u0000-\u001f\u007f]/.test(text)
+    ? `"${text.replaceAll('"', '""')}"`
+    : text;
 }
 function csv(rows: unknown[][]): string {
   return rows.map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n';
@@ -156,73 +173,113 @@ export function exportMeasurementsCsv(
 ): string {
   return csv([[...MEASUREMENT_COLUMNS], ...measurementRows(entries)]);
 }
+function smallPrimary(segment: SegmentSnapshot) {
+  const { model } = segment;
+  if (model.kind === 'gaussian')
+    return { id: 'x', unit: 'dimensionless', moments: segment.moments };
+  if (model.kind === 'spin')
+    return { id: 's', unit: 'spin', moments: segment.moments };
+  if (model.kind === 'binomial')
+    return { id: 'K', unit: 'count', moments: segment.moments };
+  if (model.kind === 'ising') {
+    const id = model.observable ?? 'M';
+    return {
+      id,
+      unit:
+        id === 'm' ? 'spin/site' : id === 'E' ? 'dimensionless action' : 'spin',
+      moments: segment.moments,
+    };
+  }
+  const id = model.observable ?? model.parameters.domain.vertices[0]!.id;
+  return {
+    id,
+    unit:
+      id === 'S'
+        ? 'dimensionless action'
+        : id.endsWith('²') || id.includes('·')
+          ? 'real scalar²'
+          : 'real scalar',
+    moments: segment.scalar?.targets[id]?.moments ?? segment.moments,
+  };
+}
 export function exportSummaryCsv(entries: readonly ArchiveEntry[]): string {
   const rows = entries.map(({ scientific, annotation }) => {
     const { capture, datasetId, source } = scientific;
+    const common = {
+      dataset_id: datasetId,
+      name: annotation.name,
+      workspace: capture.workspace,
+      model:
+        capture.workspace === 'lattice'
+          ? '2d-ising'
+          : capture.segment.model.kind,
+      segment_id: capture.segment.id,
+      seed: source.seed,
+    };
+    let specific: Record<string, unknown>;
     if (capture.workspace === 'lattice') {
       const s = capture.segment;
-      return [
-        datasetId,
-        annotation.name,
-        'lattice',
-        '2d-ising',
-        s.id,
-        source.seed,
-        s.settings.sampler,
-        s.samples,
-        capture.diagnosticRecord.count,
-        s.diagnostics.m.status,
-        s.settings.parameters.lx,
-        s.settings.parameters.ly,
-        s.settings.parameters.periodicX,
-        s.settings.parameters.periodicY,
-        s.settings.parameters.temperature,
-        s.settings.parameters.jx,
-        s.settings.parameters.jy,
-        s.settings.parameters.field,
-        s.m.mean,
-        s.absM.mean,
-        s.e.mean,
-        null,
-        s.fluctuations?.susceptibility ?? null,
-        s.fluctuations?.binder ?? null,
-        s.fluctuations?.specificHeat ?? null,
-      ];
+      specific = {
+        sampler: s.settings.sampler,
+        measurements: s.samples,
+        raw_observations: capture.diagnosticRecord.count,
+        diagnostic_status: s.diagnostics.m.status,
+        primary_observable_id: 'm',
+        primary_observable_unit: 'spin/site',
+        primary_mean: s.m.mean,
+        primary_sample_variance_n_minus_1: s.m.variance,
+        lx: s.settings.parameters.lx,
+        ly: s.settings.parameters.ly,
+        periodic_x: s.settings.parameters.periodicX,
+        periodic_y: s.settings.parameters.periodicY,
+        temperature: s.settings.parameters.temperature,
+        jx: s.settings.parameters.jx,
+        jy: s.settings.parameters.jy,
+        field: s.settings.parameters.field,
+        mean_m: s.m.mean,
+        mean_abs_m: s.absM.mean,
+        mean_e_physical_per_site: s.e.mean,
+        sample_variance_e_physical_per_site_n_minus_1: s.e.variance,
+        susceptibility: s.fluctuations?.susceptibility,
+        binder: s.fluctuations?.binder,
+        heat_capacity_per_site: s.fluctuations?.specificHeat,
+      };
+    } else {
+      const s = capture.segment;
+      const primary = smallPrimary(s);
+      const graph = s.model.kind === 'ising' ? s.ising : null;
+      const scalar = s.model.kind === 'scalar' ? s.scalar : null;
+      const sites =
+        s.model.kind === 'ising'
+          ? s.model.parameters.domain.vertices.length
+          : 1;
+      const trajectory = scalar?.trajectory ?? s.trajectory;
+      specific = {
+        sampler: s.sampler.kind,
+        measurements: s.moments.count,
+        raw_observations:
+          capture.diagnosticRecord?.count ??
+          trajectory.filter((transition) => !transition.warmup).length,
+        diagnostic_status: graph?.diagnostics.m.status,
+        primary_observable_id: primary.id,
+        primary_observable_unit: primary.unit,
+        primary_mean: primary.moments.mean,
+        primary_sample_variance_n_minus_1: primary.moments.variance,
+        mean_m: graph?.observables.m?.moments.mean,
+        mean_abs_m:
+          graph?.observables.absM?.moments.mean == null
+            ? null
+            : graph.observables.absM.moments.mean / sites,
+        mean_E_dimensionless_action: graph?.observables.E?.moments.mean,
+        sample_variance_E_dimensionless_action_n_minus_1:
+          graph?.observables.E?.moments.variance,
+        mean_S_dimensionless_action: scalar?.targets.S?.moments.mean,
+        sample_variance_S_dimensionless_action_n_minus_1:
+          scalar?.targets.S?.moments.variance,
+      };
     }
-    const s = capture.segment;
-    return [
-      datasetId,
-      annotation.name,
-      'small',
-      s.model.kind,
-      s.id,
-      source.seed,
-      s.sampler.kind,
-      s.moments.count,
-      capture.diagnosticRecord?.count ??
-        Math.min(
-          s.moments.count,
-          s.model.kind === 'scalar'
-            ? (s.scalar?.trajectory.length ?? 0)
-            : s.trajectory.length,
-        ),
-      s.ising?.diagnostics.m.status ?? '',
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      null,
-      s.ising?.observables.m?.moments.mean ?? null,
-      s.ising?.observables.absM?.moments.mean ?? null,
-      null,
-      s.ising?.observables.E?.moments.mean ?? null,
-      null,
-      null,
-      null,
-    ];
+    const record: Record<string, unknown> = { ...common, ...specific };
+    return SUMMARY_COLUMNS.map((column) => record[column] ?? null);
   });
   return csv([[...SUMMARY_COLUMNS], ...rows]);
 }
