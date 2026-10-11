@@ -166,6 +166,8 @@ The plotting refinement on the same branch gives scalar trajectories 100/500/100
 
 The new Lattice Systems workspace supports 2–64 sites per side, independent open/periodic x/y boundaries, signed anisotropic bonds, field and temperature. An indexed typed-spin runner preserves distinct periodic bonds, updates H/M incrementally, runs lazy Metropolis or heat bath in bounded worker batches and records measurements on segment-local sweep boundaries. Canvas configuration, selected 5×5 detail, actual worker transition inspection, separate parameter segments, dynamic plots and 2×2 exact/theoretical references are implemented. Run/Pause/Step and phone layout are validated against the production build; numerical and measured performance evidence is in [M2 review](M2_REVIEW.md). This record does not mark deployment or merge complete.
 
+Pre-merge correction: the 2×2 exact panel now enumerates directly in physical M2 units for every supported temperature/coupling/field combination and mixed boundaries, avoiding M1a's narrower dimensionless editing limits. Step distinguishes hypothetical flip, Metropolis proposed-move and actual transition energy/action changes. The Tc example sets the isotropic zero-field draft explicitly. Regression and production browser evidence is recorded in [M2 review](M2_REVIEW.md); the branch remains unmerged.
+
 Current M2 limits: side length one is excluded; nearest-neighbor bond-product averages and long-range correlations are deferred; no physical-phone throughput measurement or MCMC error bars are claimed. Experiment prompts are concise in-app notes, not saved experiments. The M2 acceptance gate remains subject to PR review and any documented final validation issues.
 
 ### M1a refinement — local inspection and convergence clarity

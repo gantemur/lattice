@@ -19,6 +19,10 @@ export type LatticeTrace = {
   newSpin: number;
   terms: LocalTerm[];
   field: number;
+  /** Hypothetical cost of flipping the selected spin, regardless of outcome. */
+  flipDeltaH: number;
+  flipDeltaS: number;
+  /** Actual change of the completed transition; zero for unchanged states. */
   deltaH: number;
   deltaS: number;
   siteUniform: number;
@@ -41,14 +45,14 @@ export function latticeTransition(
     site = Math.floor(siteUniform * lattice.size);
   const oldSpin = spins[site]!;
   const field = localField(lattice, p, spins, site);
-  const deltaH = flipEnergy(lattice, p, spins, site),
-    deltaS = deltaH / p.temperature;
+  const flipDeltaH = flipEnergy(lattice, p, spins, site),
+    flipDeltaS = flipDeltaH / p.temperature;
   const terms = inspect ? localTerms(lattice, p, spins, site) : [];
   if (sampler === 'metropolis') {
     const proposalUniform = rng.uniform(),
       flip = proposalUniform >= 0.5;
     const proposedSpin = flip ? -oldSpin : oldSpin;
-    const probability = flip ? Math.exp(Math.min(0, -deltaS)) : 1;
+    const probability = flip ? Math.exp(Math.min(0, -flipDeltaS)) : 1;
     const decisionUniform = rng.uniform();
     const accepted = decisionUniform < probability;
     const newSpin = flip && accepted ? -oldSpin : oldSpin;
@@ -63,8 +67,10 @@ export function latticeTransition(
       newSpin,
       terms,
       field,
-      deltaH: flip ? deltaH : 0,
-      deltaS: flip ? deltaS : 0,
+      flipDeltaH,
+      flipDeltaS,
+      deltaH: newSpin !== oldSpin ? flipDeltaH : 0,
+      deltaS: newSpin !== oldSpin ? flipDeltaS : 0,
       siteUniform,
       proposalUniform,
       decisionUniform,
@@ -86,8 +92,10 @@ export function latticeTransition(
     newSpin,
     terms,
     field,
-    deltaH,
-    deltaS,
+    flipDeltaH,
+    flipDeltaS,
+    deltaH: newSpin !== oldSpin ? flipDeltaH : 0,
+    deltaS: newSpin !== oldSpin ? flipDeltaS : 0,
     siteUniform,
     decisionUniform,
     probability,

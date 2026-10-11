@@ -7,9 +7,7 @@ import type {
   LatticeSnapshot,
 } from '../engine/latticeRun';
 import { criticalTemperature } from '../models/latticeIsing';
-import { graphPreset } from '../domain/graph';
-import { exactIsing, spinAt } from '../models/ising';
-import type { IsingModel } from '../models/ising';
+import { exactLatticeTwoByTwo } from '../models/latticeExact';
 import { LatticePlots } from '../plotting/LatticePlots';
 import { segmentColor } from '../plotting/viewport';
 import { formatNumber } from '../plotting/PlotFrame';
@@ -224,73 +222,16 @@ function CanvasLattice({
 
 function exactTwoByTwo(snapshot: LatticeSnapshot) {
   const p = snapshot.configuration.parameters;
-  if (p.lx !== 2 || p.ly !== 2 || p.periodicX !== p.periodicY) return null;
-  const domain = graphPreset(p.periodicX ? 'torus' : 'square');
-  const beta = 1 / p.temperature;
-  const model: IsingModel = {
-    kind: 'ising',
-    parameters: {
-      domain,
-      couplings: Object.fromEntries(
-        domain.edges.map((e) => [e.id, beta * (e.axis === 0 ? p.jx : p.jy)]),
-      ),
-      fields: Object.fromEntries(
-        domain.vertices.map((v) => [v.id, beta * p.field]),
-      ),
-    },
-  };
-  const reference = exactIsing(model),
-    n = 4;
-  const m = reference.probabilities.reduce(
-    (sum, probability, code) =>
-      sum +
-      (probability *
-        Array.from({ length: n }, (_, i) => spinAt(code, i)).reduce(
-          (a, b) => a + b,
-          0,
-        )) /
-        n,
-    0,
-  );
-  const absM = reference.probabilities.reduce(
-    (sum, probability, code) =>
-      sum +
-      probability *
-        Math.abs(
-          Array.from({ length: n }, (_, i) => spinAt(code, i)).reduce(
-            (a, b) => a + b,
-            0,
-          ) / n,
-        ),
-    0,
-  );
-  const e = reference.probabilities.reduce(
-    (sum, probability, code) =>
-      sum + (probability * reference.actions[code]! * p.temperature) / n,
-    0,
-  );
-  const e2 = reference.probabilities.reduce(
-    (sum, probability, code) =>
-      sum + probability * ((reference.actions[code]! * p.temperature) / n) ** 2,
-    0,
-  );
-  const distribution = new Map<number, number>();
-  reference.probabilities.forEach((probability, code) => {
-    const value =
-      Array.from({ length: n }, (_, i) => spinAt(code, i)).reduce(
-        (a, b) => a + b,
-        0,
-      ) / n;
-    distribution.set(value, (distribution.get(value) ?? 0) + probability);
-  });
+  if (p.lx !== 2 || p.ly !== 2) return null;
+  const reference = exactLatticeTwoByTwo(p);
   return {
     logZ: reference.logPartition,
-    m,
-    absM,
-    e,
-    e2,
-    distribution: [...distribution].sort((a, b) => a[0] - b[0]),
-    bonds: domain.edges.length,
+    m: reference.meanM,
+    absM: reference.meanAbsM,
+    e: reference.meanE,
+    e2: reference.secondE,
+    distribution: reference.magnetizationDistribution,
+    bonds: reference.bondCount,
   };
 }
 
@@ -539,19 +480,26 @@ export function LatticeSystems() {
                     type="button"
                     onClick={() => updateP({ temperature: 4 })}
                   >
-                    High T · 4
+                    T = 4
                   </button>
                   <button
                     type="button"
-                    onClick={() => updateP({ temperature: 2.269185 })}
+                    onClick={() =>
+                      updateP({
+                        temperature: 2.269185314213022,
+                        jx: 1,
+                        jy: 1,
+                        field: 0,
+                      })
+                    }
                   >
-                    Near Tc
+                    Tc example · J=1, h=0
                   </button>
                   <button
                     type="button"
                     onClick={() => updateP({ temperature: 1.5 })}
                   >
-                    Low T · 1.5
+                    T = 1.5
                   </button>
                 </div>
                 <div className="lattice-form-pair">
@@ -837,7 +785,34 @@ export function LatticeSystems() {
                         <dd>{formatNumber(snapshot.lastTrace.field)}</dd>
                       </div>
                       <div>
-                        <dt>ΔH / ΔS</dt>
+                        <dt>If selected spin flipped ΔH / ΔS</dt>
+                        <dd>
+                          {formatNumber(snapshot.lastTrace.flipDeltaH)} /{' '}
+                          {formatNumber(snapshot.lastTrace.flipDeltaS)}
+                        </dd>
+                      </div>
+                      {snapshot.configuration.sampler === 'metropolis' && (
+                        <div>
+                          <dt>Proposed move ΔH / ΔS</dt>
+                          <dd>
+                            {formatNumber(
+                              snapshot.lastTrace.proposedSpin !==
+                                snapshot.lastTrace.oldSpin
+                                ? snapshot.lastTrace.flipDeltaH
+                                : 0,
+                            )}{' '}
+                            /{' '}
+                            {formatNumber(
+                              snapshot.lastTrace.proposedSpin !==
+                                snapshot.lastTrace.oldSpin
+                                ? snapshot.lastTrace.flipDeltaS
+                                : 0,
+                            )}
+                          </dd>
+                        </div>
+                      )}
+                      <div>
+                        <dt>Actual transition ΔH / ΔS</dt>
                         <dd>
                           {formatNumber(snapshot.lastTrace.deltaH)} /{' '}
                           {formatNumber(snapshot.lastTrace.deltaS)}
@@ -957,8 +932,8 @@ export function LatticeSystems() {
               </table>
               {exact && (
                 <p data-testid="lattice-exact">
-                  2×2 exact enumeration (M1a, all 16 states; {exact.bonds}{' '}
-                  distinct bonds): log Z={formatNumber(exact.logZ)}, 〈m〉=
+                  2×2 exact enumeration (all 16 states; {exact.bonds} distinct
+                  bonds): log Z={formatNumber(exact.logZ)}, 〈m〉=
                   {formatNumber(exact.m)}, 〈|m|〉={formatNumber(exact.absM)},
                   〈e〉={formatNumber(exact.e)}, 〈e²〉={formatNumber(exact.e2)}
                   . Exact P(m):{' '}

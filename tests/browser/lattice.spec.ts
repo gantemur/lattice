@@ -29,6 +29,59 @@ test('2×2 exact reference, true step trace, quench segments and Reset', async (
   await expect(page.getByTestId('lattice-updates')).toHaveText('0');
 });
 
+test('valid low-temperature 2×2 reference renders through Step and Run without a React error', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await open(page);
+  await page.getByLabel('Size preset').selectOption('2');
+  await page.getByLabel('Temperature T').fill('0.05');
+  await page.getByLabel('Horizontal Jx').fill('10');
+  await page.getByLabel('Vertical Jy').fill('10');
+  await page.getByLabel('Field h').fill('10');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  const reference = page.getByTestId('lattice-exact');
+  await expect(reference).toBeVisible();
+  await expect(reference).toContainText('8 distinct bonds');
+  await expect(reference).not.toContainText('Infinity');
+  await expect(reference).not.toContainText('NaN');
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await expect(page.getByTestId('lattice-updates')).toHaveText('1');
+  await expect(page.getByTestId('lattice-trace')).toContainText('Update 1');
+  await expect(page.getByText('Actual transition ΔH / ΔS')).toBeVisible();
+  await page.getByRole('button', { name: '▷ Run' }).click();
+  await expect
+    .poll(async () =>
+      Number(await page.getByTestId('lattice-updates').textContent()),
+    )
+    .toBeGreaterThan(100);
+  await page.getByRole('button', { name: 'Ⅱ Pause' }).click();
+  await expect(reference).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('Tc example sets the isotropic zero-field draft, then Apply starts a segment', async ({
+  page,
+}) => {
+  await open(page);
+  await page.getByLabel('Horizontal Jx').fill('-3');
+  await page.getByLabel('Vertical Jy').fill('2');
+  await page.getByLabel('Field h').fill('1');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await expect(page.getByTestId('lattice-segment')).toHaveText('Segment 2');
+  await page.getByRole('button', { name: 'Tc example · J=1, h=0' }).click();
+  await expect(page.getByLabel('Horizontal Jx')).toHaveValue('1');
+  await expect(page.getByLabel('Vertical Jy')).toHaveValue('1');
+  await expect(page.getByLabel('Field h')).toHaveValue('0');
+  await expect(page.getByLabel('Temperature T')).toHaveValue(
+    '2.269185314213022',
+  );
+  await expect(page.getByTestId('lattice-segment')).toHaveText('Segment 2');
+  await page.getByRole('button', { name: 'Apply settings' }).click();
+  await expect(page.getByTestId('lattice-segment')).toHaveText('Segment 3');
+});
+
 test('16, 32 and 64 grids sample in a worker and plots remain display-only', async ({
   page,
 }) => {
