@@ -1,6 +1,10 @@
 import { createFieldLattice } from '../domain/fieldLattice';
 import type { FieldLattice } from '../domain/fieldLattice';
-import { fieldPrecision, validateGaussianField } from './gaussianField';
+import {
+  fieldMeasure,
+  fieldPrecision,
+  validateGaussianField,
+} from './gaussianField';
 import type { GaussianFieldParameters } from './gaussianField';
 
 /**
@@ -70,6 +74,8 @@ export function exactGaussianField(
   lattice: FieldLattice = createFieldLattice(p.shape),
 ): GaussianFieldReference {
   validateGaussianField(p);
+  if (fieldMeasure(p) !== 'ordinary')
+    throw new Error('Dense Cholesky requires an ordinary massive measure.');
   if (lattice.size > MAX_DENSE_FIELD_SITES)
     throw new Error(
       `Dense reference is limited to ${MAX_DENSE_FIELD_SITES} sites.`,

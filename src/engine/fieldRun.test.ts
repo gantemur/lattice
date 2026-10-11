@@ -1,6 +1,8 @@
 import { expect, it } from 'vitest';
 import { FieldEngine, FieldRun } from './fieldRun';
 import type { FieldConfiguration } from './fieldRun';
+import { createFourierBasis, forwardRealFourier } from '../models/fieldFourier';
+import { sampledModePower } from '../observables/fieldSpectrum';
 
 const local: FieldConfiguration = {
   parameters: {
@@ -109,4 +111,96 @@ it('rejects bad settings and stale worker commands without mutating the active r
   const current = engine.handle({ type: 'advance', runId: 1, count: 1 });
   if (current.type !== 'snapshot') throw new Error('Expected snapshot.');
   expect(current.snapshot.updates).toBe(1);
+});
+
+it('spectral Step and unequal batches replay with bounded segment measurements', () => {
+  const configuration: FieldConfiguration = {
+    parameters: { ...local.parameters, measure: 'mean-zero', r: 0, source: 0 },
+    sampler: { kind: 'spectral' },
+    warmupSweeps: 0,
+    strideSweeps: 1,
+    seed: 417,
+  };
+  const batched = new FieldRun(1, configuration);
+  const stepped = new FieldRun(1, configuration);
+  batched.advance(300);
+  for (let i = 0; i < 300; i++) {
+    stepped.advance(1);
+    stepped.snapshot();
+  }
+  expect(batched.snapshot()).toEqual(stepped.snapshot());
+  const segment = batched.snapshot().segments[0]!;
+  expect(segment.reference.method).toBe('spectral');
+  expect(segment.measurements).toBe(300);
+  expect(segment.recent).toHaveLength(256);
+  expect(segment.discardedMeasurements).toBe(44);
+  expect(
+    batched.snapshot().field!.reduce((sum, value) => sum + value, 0),
+  ).toBeCloseTo(0, 12);
+});
+
+it('backend rejects support changes without changing the field or RNG session', () => {
+  const run = new FieldRun(1, {
+    ...local,
+    sampler: { kind: 'direct' },
+    warmupSweeps: 0,
+    strideSweeps: 1,
+  });
+  const same = new FieldRun(1, {
+    ...local,
+    sampler: { kind: 'direct' },
+    warmupSweeps: 0,
+    strideSweeps: 1,
+  });
+  run.advance(2);
+  same.advance(2);
+  expect(() =>
+    run.changeSettings({
+      ...local,
+      parameters: { ...local.parameters, measure: 'mean-zero', r: 0 },
+      sampler: { kind: 'spectral' },
+      warmupSweeps: 0,
+      strideSweeps: 1,
+    }),
+  ).toThrow(/seeded Reset/);
+  run.advance(3);
+  same.advance(3);
+  expect(run.snapshot()).toEqual(same.snapshot());
+  const fresh = new FieldRun(2, {
+    ...local,
+    parameters: { ...local.parameters, measure: 'mean-zero', r: 0 },
+    sampler: { kind: 'spectral' },
+    warmupSweeps: 0,
+    strideSweeps: 1,
+  });
+  expect(fresh.snapshot().segments[0]!.measurements).toBe(0);
+});
+
+it('full-segment spectral power survives recent-vector eviction', () => {
+  const configuration: FieldConfiguration = {
+    parameters: { ...local.parameters, measure: 'mean-zero', r: 0, source: 0 },
+    sampler: { kind: 'spectral' },
+    warmupSweeps: 0,
+    strideSweeps: 1,
+    seed: 7,
+  };
+  const run = new FieldRun(1, configuration);
+  const basis = createFourierBasis(configuration.parameters.shape);
+  let directPower = 0;
+  for (let sample = 0; sample < 300; sample++) {
+    run.advance(1);
+    const transformed = forwardRealFourier(run.snapshot().field!, basis)[1]!;
+    directPower += (transformed.re ** 2 + transformed.im ** 2) / basis.size;
+  }
+  const segment = run.snapshot().segments[0]!;
+  expect(segment.discardedMeasurements).toBe(44);
+  expect(
+    sampledModePower(
+      basis,
+      1,
+      segment.pairProducts,
+      segment.sites.map((site) => site.mean!),
+      segment.reference.mean,
+    ),
+  ).toBeCloseTo(directPower / 300, 10);
 });

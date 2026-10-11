@@ -32,4 +32,4 @@ The ordinary measure fixes this normalization; no grid-spacing or Fourier-mode f
 2. Increase `κx` in the open two-site example. Predict whether the difference-field variance rises or falls; check the computed covariance while keeping `r` fixed.
 3. Choose a signed four-site field and propose one changed site. Recompute every on-site and incident bond contribution by hand, then compare with `fieldLocalDifference` and its test.
 
-Massless `r=0` fields require an explicit zero-mode convention and are deferred to M4a2. Fourier sampling, interacting `φ⁴`, oscillator paths and HMC are also outside this milestone. The [source guide](../SOURCE_GUIDE.md) maps this calculation onward to the worker and browser displays.
+The M4a2 extension gives massless `r=0` fields an explicit [mean-zero Fourier convention](gaussian-fourier.md). Interacting `φ⁴`, oscillator paths and HMC remain later work. The [source guide](../SOURCE_GUIDE.md) maps both calculations onward to the worker and browser displays.

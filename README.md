@@ -1,12 +1,16 @@
 # Lattice Lab
 
-**Status:** M0–M3b2 and the source-readability pass (PR #11) are merged. M4a1 massive Gaussian lattice fields are on a feature branch for review.
+**Status:** M0–M3b2, the source-readability pass and M4a1 are merged. M4a2 Fourier Gaussian fields are on a feature branch for review.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
-## New in M4a1 (feature branch)
+## New in M4a2 (feature branch)
+
+Fully periodic chains and rectangles now offer independent Fourier sampling and exact spectral covariance, eigenvalues, log partition and sampled full-segment mode power. The massless option uses `r=j=0`, positive stiffness in every active direction, and the induced Euclidean measure on `Σφ=0`; its constant Fourier mode is removed. Changing measure support starts a new seeded session. Open and mixed-boundary massive models retain the dense reference. See [Fourier field mathematics](docs/math/gaussian-fourier.md) and [M4a2 review](docs/M4A2_REVIEW.md).
+
+## M4a1 (merged)
 
 **Fields & Paths** explores massive real Gaussian fields on open or periodic 1D chains and 2D rectangles. Its action has positive quadratic coefficient `r`, nonnegative directional stiffnesses and a uniform source. Finite-volume Cholesky references supply the mean, covariance and log partition function for the supported at-most-64-site lattices. Independent whole-field draws, coordinate Gaussian heat bath and random-site Metropolis run in a separate seeded worker. A profile or fixed-scale heatmap, local conditional inspection, transition details and per-segment sampled/exact comparisons expose the mathematics without treating updates as physical time. Parameter changes isolate measurements while preserving compatible field state and RNG; geometry changes and Reset begin a new seeded session. Recent plotted field vectors are bounded, while online site/pair aggregates span each retained segment. See [Gaussian field mathematics](docs/math/gaussian-fields.md) and [M4a1 review](docs/M4A1_REVIEW.md) for equations, tests and limits.
 

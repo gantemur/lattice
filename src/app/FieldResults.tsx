@@ -1,5 +1,9 @@
 import { createFieldLattice } from '../domain/fieldLattice';
-import { fieldConditional, fieldLocalTerms } from '../models/gaussianField';
+import {
+  fieldConditional,
+  fieldLocalTerms,
+  fieldMeasure,
+} from '../models/gaussianField';
 import type { FieldSnapshot } from '../engine/fieldRun';
 import { formatNumber } from '../plotting/PlotFrame';
 
@@ -16,7 +20,9 @@ export function FieldInspection({
   const p = segment.settings.parameters;
   const lattice = createFieldLattice(p.shape);
   const field = snapshot.field;
-  const conditional = field ? fieldConditional(lattice, p, field, site) : null;
+  const constrained = fieldMeasure(p) === 'mean-zero';
+  const conditional =
+    field && !constrained ? fieldConditional(lattice, p, field, site) : null;
   const terms = field ? fieldLocalTerms(lattice, p, field, site) : null;
   const reference = segment.reference;
   const siteMean = segment.sites[site]?.mean ?? null;
@@ -46,16 +52,26 @@ export function FieldInspection({
       <p>
         Current φ<sub>{site}</sub>:{' '}
         <strong>{formatNumber(field?.[site] ?? null)}</strong>. On-site action{' '}
-        <strong>{formatNumber(terms?.onsite ?? null)}</strong>, on-site gradient{' '}
+        <strong>{formatNumber(terms?.onsite ?? null)}</strong>,{' '}
+        {constrained ? 'ambient on-site gradient' : 'on-site gradient'}{' '}
         <strong>{formatNumber(terms?.onsiteGradient ?? null)}</strong>.
       </p>
-      <p>
-        Exact conditional at fixed neighboring values: mean{' '}
-        <strong>{formatNumber(conditional?.mean ?? null)}</strong>, variance{' '}
-        <strong>{formatNumber(conditional?.variance ?? null)}</strong>. This is
-        not the equilibrium marginal variance{' '}
-        <strong>{formatNumber(reference.covariance[site]![site]!)}</strong>.
-      </p>
+      {constrained ? (
+        <p>
+          The field lies on Σφ=0. Fixing all other sites determines this site
+          exactly; the ordinary fixed-neighbor conditional is not a conditional
+          of the constrained measure. The listed action terms and gradients are
+          ambient quantities.
+        </p>
+      ) : (
+        <p>
+          Exact conditional at fixed neighboring values: mean{' '}
+          <strong>{formatNumber(conditional?.mean ?? null)}</strong>, variance{' '}
+          <strong>{formatNumber(conditional?.variance ?? null)}</strong>. This
+          is not the equilibrium marginal variance{' '}
+          <strong>{formatNumber(reference.covariance[site]![site]!)}</strong>.
+        </p>
+      )}
       <div className="field-terms">
         {terms?.incident.map((term) => (
           <span key={term.bondId}>
@@ -101,8 +117,11 @@ export function FieldInspection({
       <p className="plot-note">
         Sampled pair values use all retained post-warm-up measurements in this
         segment. The covariance is the centered 1/N plug-in estimate and is
-        shown only after two measurements. No independent-sample error bar is
-        assigned to a correlated local chain.
+        shown only after two measurements.{' '}
+        {segment.settings.sampler.kind === 'direct' ||
+        segment.settings.sampler.kind === 'spectral'
+          ? 'Independent whole-field draws have a known finite-volume reference; this table does not attach a pair-covariance error bar.'
+          : 'No independent-sample error bar is assigned to a correlated local chain.'}
       </p>
     </section>
   );
@@ -115,9 +134,10 @@ export function FieldStepInspection({ snapshot }: { snapshot: FieldSnapshot }) {
       <h2>Latest algorithmic update</h2>
       {!trace ? (
         <p>No update yet. The initial configuration is not a measurement.</p>
-      ) : trace.kind === 'direct' ? (
+      ) : trace.kind === 'direct' || trace.kind === 'spectral' ? (
         <p>
-          Update {trace.update}: independent whole-field Gaussian draw.
+          Update {trace.update}: independent whole-field{' '}
+          {trace.kind === 'spectral' ? 'spectral' : 'Gaussian'} draw.
           Acceptance: N/A. This update is not physical time.
         </p>
       ) : (

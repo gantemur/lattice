@@ -230,6 +230,16 @@ One direct whole-field draw uses two seeded Box–Muller uniforms per component 
 
 The 1D profile and 2D heatmap use a visible user-controlled symmetric display range. Values outside it are clipped with a count and explicit disclosure; applying physical parameters does not silently recolor the same value. Site and pair selection, scale edits and history browsing are display-only. Exact conditional means are labeled as fixed-neighbor laws, separate from equilibrium marginal covariance. The pair table juxtaposes exact finite-volume and segment-specific sampled estimates without treating a finite chain trajectory as independent observations.
 
+## Accepted M4a2 conventions — 2026-10-11
+
+### D-038 — Explicit measure support and reference selection
+
+An omitted field-measure discriminator means the M4a1 ordinary massive Gaussian, preserving prior configurations and dense sampling behavior. The separate mean-zero measure sets `r=j=0`, requires full periodicity and strictly positive active stiffness, and uses induced Euclidean measure on `Σφ=0`. Its covariance is `Q⁺`; its log partition has `N−1` Gaussian dimensions, not the delta-function normalization. Only spectral independent sampling preserves this support in M4a2. Switching between ordinary and constrained support starts a new seeded session in both UI and engine; same-support changes continue as isolated segments. Dense Cholesky never receives a singular constrained precision.
+
+### D-039 — Finite DFT and bounded spectrum inspection
+
+Periodic modes use row-major indices and a forward DFT without scale, inverse with `1/N`. Real white noise, generated with the existing uncached Box–Muller rule, supplies conjugate-paired coefficients; filtering by `1/√λ` preserves a real field. The massless constant coefficient is removed and residual mean projected away. A spectral draw uses `2N` uniforms, no warm-up or acceptance test. Open and mixed massive fields retain the dense reference because a periodic DFT does not diagonalize their precision. Spectrum views derive selected full-segment power from existing pair aggregates, avoiding another sample history or RNG use. The zero mode is marked removed rather than shown as infinite.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

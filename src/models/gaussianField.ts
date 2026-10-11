@@ -2,12 +2,15 @@ import { createFieldLattice } from '../domain/fieldLattice';
 import type { FieldLattice, FieldShape } from '../domain/fieldLattice';
 
 /**
- * Massive field with dimensionless action
+ * Gaussian field with dimensionless ambient action
  * S(phi)=r/2 Σ_i phi_i² + 1/2 Σ_b κ_b(phi_tail−phi_head)² − j Σ_i phi_i.
- * The reference measure is ordinary ∏_i dphi_i, with no extra β factor.
+ * The ordinary model uses ∏_i dphi_i. The mean-zero model instead uses the
+ * induced Euclidean measure on Σ_i phi_i=0; it cannot use local updates.
  * r is a quadratic precision coefficient, not an oscillator particle mass.
  */
 export type GaussianFieldParameters = {
+  /** Omitted means ordinary, preserving saved M4a1 configurations. */
+  measure?: 'ordinary' | 'mean-zero';
   shape: FieldShape;
   r: number;
   kappaX: number;
@@ -15,10 +18,21 @@ export type GaussianFieldParameters = {
   source: number;
 };
 
+export function fieldMeasure(p: GaussianFieldParameters) {
+  if (p.measure === undefined || p.measure === 'ordinary') return 'ordinary';
+  if (p.measure === 'mean-zero') return 'mean-zero';
+  throw new Error('Unknown Gaussian field measure.');
+}
+
 export function validateGaussianField(p: GaussianFieldParameters): void {
   createFieldLattice(p.shape);
-  if (!Number.isFinite(p.r) || p.r < 0.05 || p.r > 20)
-    throw new Error('Quadratic coefficient r must be from 0.05 to 20.');
+  const measure = fieldMeasure(p);
+  if (measure === 'ordinary') {
+    if (!Number.isFinite(p.r) || p.r < 0.05 || p.r > 20)
+      throw new Error('Ordinary Gaussian r must be from 0.05 to 20.');
+  } else if (p.r !== 0) {
+    throw new Error('Mean-zero massless Gaussian requires r=0.');
+  }
   for (const [name, value] of [
     ['κx', p.kappaX],
     ['κy', p.kappaY],
@@ -27,6 +41,20 @@ export function validateGaussianField(p: GaussianFieldParameters): void {
       throw new Error(`${name} must be from 0 to 10.`);
   if (!Number.isFinite(p.source) || Math.abs(p.source) > 10)
     throw new Error('Uniform source j must be from −10 to 10.');
+  if (measure === 'mean-zero') {
+    if (p.source !== 0)
+      throw new Error('Mean-zero massless Gaussian requires source j=0.');
+    if (
+      (p.shape.kind === 'chain' && !p.shape.periodic) ||
+      (p.shape.kind === 'rectangle' &&
+        (!p.shape.periodicX || !p.shape.periodicY))
+    )
+      throw new Error('Mean-zero massless Gaussian requires full periodicity.');
+    if (p.kappaX <= 0 || (p.shape.kind === 'rectangle' && p.kappaY <= 0))
+      throw new Error(
+        'Mean-zero massless Gaussian requires positive stiffness in every active direction.',
+      );
+  }
 }
 
 export function validateFieldValues(
@@ -132,6 +160,10 @@ export function fieldConditional(
   phi: readonly number[],
   site: number,
 ) {
+  if (fieldMeasure(p) === 'mean-zero')
+    throw new Error(
+      'A fixed-neighbor Gaussian conditional is not defined on the mean-zero constraint.',
+    );
   validateFieldValues(lattice, phi);
   if (!Number.isInteger(site) || site < 0 || site >= lattice.size)
     throw new Error('Invalid field site.');
