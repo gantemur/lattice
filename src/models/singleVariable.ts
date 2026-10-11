@@ -16,6 +16,13 @@ import {
 } from './gaussian';
 import type { GaussianParameters } from './gaussian';
 
+/**
+ * Scalar-state Small Systems models share the dimensionless weight exp(−S).
+ * The binomial count K represents n Bernoulli variables; its action includes
+ * −log C(n,K), without which the count distribution would be wrong. Vector
+ * scalar fields and graph Ising delegate their specialized mathematics.
+ */
+
 export type Model =
   | IsingModel
   | ScalarModel
@@ -81,6 +88,7 @@ export function validateModel(model: Model): void {
   }
 }
 const logFactorials = [0];
+// log C(n,k) avoids overflowing factorials in the supported n≤100 range.
 for (let n = 1; n <= 100; n++)
   logFactorials.push(logFactorials[n - 1]! + Math.log(n));
 export function logChoose(n: number, k: number): number {
@@ -137,6 +145,8 @@ export function actionDifference(
     throw new Error('Transition state is outside model support.');
   if (model.kind === 'scalar') throw new Error('Use vector local difference.');
   if (model.kind === 'gaussian') {
+    // Factor the two actions before subtraction to avoid cancellation when
+    // a small Metropolis displacement is made far from the origin.
     const { a, h } = model.parameters;
     return (proposed - current) * ((a * (proposed + current)) / 2 - h);
   }

@@ -2,6 +2,14 @@ import { graphPreset, validateDomain } from '../domain/graph';
 import type { Domain, GraphPreset } from '../domain/graph';
 import type { Rng } from '../algorithms/rng';
 
+/**
+ * Real-vector model with dimensionless action
+ * S(x)=Σ_i(a_i x_i²/2+λ_i x_i⁴/4−h_i x_i)+Σ_e κ_e(x_tail−x_head)²/2.
+ * Graph edges are separate gradient terms. Gaussian (λ=0) cases have an
+ * analytic multivariate reference; independent quartic sites use controlled
+ * one-dimensional quadrature, not a coupled-field exact claim.
+ */
+
 export type ScalarModel = {
   kind: 'scalar';
   parameters: {
@@ -156,6 +164,8 @@ export function localDifference(
   i: number,
   proposed: number,
 ) {
+  // Only the proposed site's on-site term and incident non-self gradient
+  // terms change. Keep one contribution per edge ID, including parallels.
   const { domain, kappa } = model.parameters,
     id = domain.vertices[i]!.id,
     old = x[i]!;
@@ -197,6 +207,8 @@ export function conditionalPotential(
   );
 }
 export function precision(model: ScalarModel): number[][] {
+  // For λ=0, S=xᵀQx/2−hᵀx. A non-self edge adds κ to both diagonals
+  // and −κ to its two off-diagonal entries; a self-edge contributes zero.
   const { domain, a, kappa } = model.parameters,
     n = domain.vertices.length;
   const Q = Array.from({ length: n }, (_, i) =>
@@ -217,6 +229,8 @@ export function precision(model: ScalarModel): number[][] {
   return Q;
 }
 export function cholesky(Q: number[][]): number[][] {
+  // Q=LLᵀ requires positive-definite precision; the diagonal check is a
+  // numerical guard against singular/unstable Gaussian references.
   const n = Q.length,
     L = Array.from({ length: n }, () => Array<number>(n).fill(0));
   for (let i = 0; i < n; i++)
@@ -278,6 +292,8 @@ function calculateGaussianScalar(model: ScalarModel) {
     n = L.length,
     h = model.parameters.domain.vertices.map((v) => model.parameters.h[v.id]!);
   const mean = solveUpperFromLower(L, solveLower(L, h));
+  // Solve Qμ=h and one Qv=e_j system per covariance column. log det(Q)/2
+  // is the sum of log diagonal entries of L, so no determinant is formed.
   const covariance = Array.from({ length: n }, (_, j) =>
     solveUpperFromLower(
       L,
@@ -317,6 +333,8 @@ export function gaussianConditional(
   return { mean, variance: 1 / Q[i]![i]! };
 }
 export function directGaussianScalar(model: ScalarModel, rng: Rng): RealVector {
+  // z~N(0,I), then Lᵀ(x−μ)=z gives covariance Q⁻¹. One uncached
+  // Box–Muller pair per component fixes the seeded uniform consumption.
   const { L, mean } = gaussianScalar(model),
     z = mean.map(
       () =>
@@ -486,6 +504,8 @@ export function quarticReference(a: number, lambda: number, h: number) {
   return result;
 }
 function calculateQuarticReference(a: number, lambda: number, h: number) {
+  // A single-site reference only. Coupled quartic marginals are deliberately
+  // left without a numerical "exact" curve in scalarReference above.
   if (lambda === 0) {
     if (!(a > 0)) throw new Error('Non-normalizable Gaussian limit.');
     const mean = h / a,
@@ -548,6 +568,8 @@ function calculateQuarticReference(a: number, lambda: number, h: number) {
   if (R >= 512)
     throw new Error('Quadrature tail tolerance unavailable for this model.');
   const integrate = (power: number) => {
+    // Adaptive Simpson integration of x^power exp(offset−V(x)); split at
+    // stationary points so narrow wells do not hide between coarse nodes.
     const f = (x: number) => x ** power * Math.exp(offset - V(x));
     const simp = (
       l: number,

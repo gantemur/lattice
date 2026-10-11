@@ -25,6 +25,8 @@ export function spatialDisplayValue(
   raw: number,
   meanM: number,
 ) {
+  // On an open/mixed lattice site means can vary by position. Subtracting
+  // global <m>² there would not generally yield a connected covariance.
   const connected = boundaries.periodicX && boundaries.periodicY;
   return {
     kind: connected ? ('connected' as const) : ('raw' as const),
@@ -73,6 +75,8 @@ export function equilibriumFluctuations(
   varianceM: number,
   varianceE: number,
 ) {
+  // Finite-volume equilibrium identities: χ=N Var(m)/T and
+  // cV=N Var(e)/T², with e=H/N. Binder uses <m⁴>/<m²>².
   const variance = (value: number) => {
     if (!Number.isFinite(value) || value < -1e-12)
       throw new Error('Invalid equilibrium fluctuation variance.');

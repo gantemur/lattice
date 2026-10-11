@@ -31,7 +31,12 @@ export type LatticeTrace = {
   probability: number;
   outcome: 'accepted' | 'rejected' | 'self' | 'changed' | 'unchanged';
 };
-/** Mutates one spin at most; returns the actual worker transition. */
+/**
+ * One random-site 2D Ising update in physical H units, mutating at most one
+ * spin. Metropolis consumes three uniforms (site, lazy proposal, decision);
+ * heat bath consumes two (site, resampling). A nominal sweep is N calls, not
+ * physical time. Nonfinal batches skip inspection terms without changing RNG.
+ */
 export function latticeTransition(
   lattice: IndexedLattice,
   p: LatticeParameters,

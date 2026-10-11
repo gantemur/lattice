@@ -10,6 +10,10 @@ import {
 import { sampleGaussian } from './gaussianSampler';
 import type { Rng } from './rng';
 
+/** Shared one-variable sampler contract; vector and graph Ising updates use
+ * their specialized kernels. Settings validation precedes worker execution,
+ * and every returned transition describes an actual algorithmic update. */
+
 export type Sampler =
   | { kind: 'direct' }
   | { kind: 'heat-bath'; warmup?: number }

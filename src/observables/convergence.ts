@@ -7,6 +7,7 @@ export class ConvergenceHistory {
   private latest: Checkpoint | null = null;
 
   record(count: number, mean: number): void {
+    // Checkpoints depend on measurement count, never on rendering cadence.
     this.latest = { count, mean };
     if (count === this.next) {
       this.points.push(this.latest);

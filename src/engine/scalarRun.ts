@@ -161,6 +161,8 @@ function transition(
   const model = s.model,
     n = model.parameters.domain.vertices.length;
   if (s.sampler.kind === 'direct') {
+    // Independent Gaussian draws use a fresh vector. Local samplers below
+    // preserve all coordinates except the selected site.
     const { L, mean } = gaussianScalar(model),
       z = mean.map(() => gaussianDraw(rng)),
       noise = Array<number>(n).fill(0);
@@ -237,6 +239,8 @@ function transition(
   };
 }
 export class ScalarRun {
+  // The full vector and RNG live here; each segment retains its own target
+  // measurements while trajectory/scatter display histories remain bounded.
   private readonly rng: Rng;
   private readonly seed: number;
   private segments: Segment[];
@@ -277,6 +281,8 @@ export class ScalarRun {
       JSON.stringify([this.current.model.parameters, this.current.sampler])
     )
       return;
+    // Continue from the current vector where one exists; only the first
+    // switch from direct draws to local updates needs a starting vector.
     if (this.state === null && settings.sampler.kind !== 'direct')
       this.state = settings.model.parameters.domain.vertices.map(() => 0);
     this.segments.push(
@@ -299,6 +305,7 @@ export class ScalarRun {
       this.state = t.result.slice();
       this.updates++;
       s.updates++;
+      // The post-warm-up loop records every target from the same vector draw.
       const warmup = s.updates <= s.warmupTarget;
       if (t.kind === 'metropolis') s[t.accepted ? 'accepted' : 'rejected']++;
       if (warmup) {

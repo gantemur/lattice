@@ -9,6 +9,8 @@ import type { DiagnosticRecord } from '../observables/statisticalDiagnostics';
 
 export const MAX_SEGMENTS = 8;
 export type RunConfiguration = Settings & Readonly<{ seed: number }>;
+// Snapshots feed live plots; their trajectory/checkpoint arrays are bounded.
+// Full-segment moments remain valid even after older plot points are evicted.
 export type SegmentSnapshot = Settings & {
   ising?: IsingMeasurementSnapshot;
   scalar?: ScalarSegmentSnapshot;
@@ -44,6 +46,8 @@ export type Snapshot = {
   droppedSegments: number;
 };
 export type SmallCapture = {
+  // A read-only, versioned worker reply for the archive. Historical segments
+  // cannot claim the run's current configuration as their own final state.
   workspace: 'small';
   runId: number;
   version: number;

@@ -13,6 +13,8 @@ export function recordMoment(moments: Moments, value: number): void {
 }
 
 export function summarizeMoments({ count, mean, m2 }: Moments) {
+  // m2 is Σ(x−mean)². The reported sample variance uses n−1; equilibrium
+  // fluctuation formulas elsewhere use the population moment m2/n instead.
   return {
     count,
     mean: count ? mean : null,

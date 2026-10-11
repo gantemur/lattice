@@ -10,7 +10,11 @@ import {
   equilibriumFluctuations,
 } from '../observables/latticePhysics';
 
-/** Exact 16-state reference in physical M2 units, independent of M1a UI limits. */
+/**
+ * Exact 16-state finite-volume reference in physical M2 units. It sums the
+ * indexed lattice's actual bonds, so open/mixed/periodic boundaries agree
+ * with the sampler; it does not use M1a's narrower dimensionless UI limits.
+ */
 export function exactLatticeTwoByTwo(p: LatticeParameters) {
   validateLatticeParameters(p);
   if (p.lx !== 2 || p.ly !== 2)

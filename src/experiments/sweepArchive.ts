@@ -82,6 +82,8 @@ export function validateSweepManifest(
   value: unknown,
   entries: readonly ArchiveEntry[],
 ): SweepManifest {
+  // Cross-check each point against the immutable plan and saved capture IDs;
+  // cancellation may leave a suffix of incomplete points, never a gap.
   const m = object(value, 'Sweep manifest');
   if (m.manifestVersion !== SWEEP_MANIFEST_VERSION)
     throw new Error('Unsupported sweep manifest version.');

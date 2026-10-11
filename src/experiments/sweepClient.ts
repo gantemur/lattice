@@ -48,6 +48,8 @@ export class SweepClient {
     this.post({ type, sweepId: this.sweepId });
   }
   acknowledge(pointIndex: number) {
+    // The point identity travels back to the worker; command order alone is
+    // insufficient when retries or stale UI events are possible.
     if (!this.active) throw new Error('No active sweep.');
     this.post({ type: 'ack', sweepId: this.sweepId, pointIndex });
   }

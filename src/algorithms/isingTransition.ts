@@ -16,6 +16,12 @@ export type IsingTrace = ReturnType<typeof neighborhood> & {
   newSpin: number;
   proposedSpin: number;
 };
+/**
+ * One graph-Ising algorithmic update. Direct sampling uses one draw from the
+ * enumerated Gibbs law. A local heat-bath update consumes site/resampling
+ * uniforms; lazy Metropolis consumes site/proposal/decision uniforms even
+ * for a stay or a downhill move. Plotting never calls this function.
+ */
 export function isingTransition(
   model: IsingModel,
   sampler: Sampler,

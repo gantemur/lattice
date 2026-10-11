@@ -274,6 +274,8 @@ export function LatticeSystems({
 }) {
   const { view, client } = useLattice();
   const snapshot = view.snapshot;
+  // Form edits are local until Apply/Reset; the worker snapshot is authoritative
+  // for the active Gibbs measure and all sampled measurements.
   const [draft, setDraft] = useState<LatticeConfiguration>(
     defaultLatticeConfiguration,
   );

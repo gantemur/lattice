@@ -1,6 +1,12 @@
 import { createIndexedLattice } from '../domain/indexedLattice';
 import type { IndexedLattice, LatticeShape } from '../domain/indexedLattice';
 
+/**
+ * Physical M2 Ising energy H=−Jx Σ_x s_i s_j−Jy Σ_y s_i s_j−h Σ_i s_i.
+ * Sampling uses S=H/T with k_B=1; unlike small graph Ising, J and h have
+ * physical-energy units. Bond sums retain periodic parallel multiplicity.
+ */
+
 export type LatticeParameters = LatticeShape & {
   jx: number;
   jy: number;
@@ -82,6 +88,9 @@ export function localField(
   spins: Int8Array,
   site: number,
 ): number {
+  // Incidence slots count each bond touching this site, including both
+  // periodic length-two parallels. The model supports side lengths ≥2, so
+  // there are no self-links in this indexed representation.
   let sum = p.field;
   for (let slot = 0; slot < lattice.degree[site]!; slot++) {
     const offset = 4 * site + slot;
@@ -97,6 +106,7 @@ export function flipEnergy(
   spins: Int8Array,
   site: number,
 ): number {
+  // H(flipped)−H(current)=2 s_i(h+Σ_incident J_axis s_neighbor).
   return 2 * spins[site]! * localField(lattice, p, spins, site);
 }
 export function plusProbability(betaField: number): number {
@@ -105,6 +115,8 @@ export function plusProbability(betaField: number): number {
     : Math.exp(2 * betaField) / (1 + Math.exp(2 * betaField));
 }
 export function criticalTemperature(p: LatticeParameters): number | null {
+  // Infinite-volume, zero-field ferromagnetic theory only:
+  // sinh(2Jx/Tc) sinh(2Jy/Tc)=1. No finite box has this singularity.
   if (p.field !== 0 || p.jx <= 0 || p.jy <= 0 || p.ly < 2 || p.lx < 2)
     return null;
   let low = 0.00001,

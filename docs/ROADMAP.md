@@ -2,7 +2,7 @@
 
 **Version:** 0.10, 2026-10-11
 
-**Status:** M0–M3b1 merged. M3b2 sweeps are implemented on a feature branch for review; later milestones remain planned.
+**Status:** M0–M3b2 merged. A source-readability pass precedes M4; later milestones remain planned.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -17,13 +17,13 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | Milestone | User-visible result | Scientific baseline | Status |
 |---|---|---|---|
 | **M0: deployable foundation** | Responsive app shell, one 0D Gaussian with density/convergence and segment comparisons | Exact moments, seeded sample, static Pages deploy | Completed and deployed |
-| **M0.5: Comparative Sampling Laboratory** | Gaussian, single-spin and binomial models; direct/Markov sampling, trajectories and transition inspection | Exact distributions, transition-matrix balance, warm-up exclusion and seeded replay | Implemented; feature-branch validation complete |
-| **M1a: Interactive graph Ising** | Dynamic zero-to-six plots, preset graph parameter editor, local transition inspection | Full 1–4-spin enumeration; transfer matrix, periodic multiplicity, balance and sampling checks | Implemented; local validation complete |
+| **M0.5: Comparative Sampling Laboratory** | Gaussian, single-spin and binomial models; direct/Markov sampling, trajectories and transition inspection | Exact distributions, transition-matrix balance, warm-up exclusion and seeded replay | Merged |
+| **M1a: Interactive graph Ising** | Dynamic zero-to-six plots, preset graph parameter editor, local transition inspection | Full 1–4-spin enumeration; transfer matrix, periodic multiplicity, balance and sampling checks | Merged |
 | **M1b: Continuous small systems** | Real graph fields, quartic wells, local conditionals and sampled marginals | Exact 1–4-variable Gaussian, controlled 1D quadrature, local-action tests | Merged |
 | **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Merged in PR #7 |
 | **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
-| **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Feature branch under review |
-| **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Feature branch |
+| **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
+| **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
 | **M4: Continuous lattice fields** | 1D/2D Gaussian and φ⁴, Euclidean lattice QM, HMC | Fourier covariance, oscillator correlators, HMC invariants | Planned |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
@@ -267,7 +267,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M3b1 are merged. The current feature branch implements **M3b2 only**. Keep later roadmap stages as context, not implied scope. Prefer segment-level provenance and validated bounded data to a universal plotting or experiment framework.
+M0–M3b2 are merged. The pre-M4 readability pass changes documentation and explanatory source comments only. Keep later roadmap stages as context, not implied scope. Prefer segment-level provenance and validated bounded data to a universal plotting or experiment framework.
 
 ## Definition of done for the initial public usable release
 

@@ -1,5 +1,11 @@
 import { graphPreset, validateDomain } from '../domain/graph';
 import type { Domain, GraphPreset } from '../domain/graph';
+/**
+ * Tiny graph Ising uses S=−Σ_e K_e s_tail s_head−Σ_i b_i s_i, with β already
+ * absorbed into K and b. Every edge ID contributes, including parallel bonds;
+ * a self-link adds a constant to S but no single-spin flip cost. At most four
+ * spins permit complete finite-state enumeration.
+ */
 export type IsingModel = {
   kind: 'ising';
   parameters: {
@@ -89,6 +95,8 @@ export function bondInspection(
   };
 }
 export function neighborhood(model: IsingModel, state: number, index: number) {
+  // A self-link's s_i²=1 term is constant under a flip, so it is omitted from
+  // the conditional local field while remaining in the full action.
   const { domain, couplings, fields } = model.parameters,
     id = domain.vertices[index]!.id;
   const contributions = domain.edges
@@ -130,6 +138,7 @@ export function conditionalPlus(
   index: number,
 ): number {
   const z = 2 * neighborhood(model, state, index).localField;
+  // P(s_i=+1 | others)=logistic(2 localField); branch avoids overflow.
   return z >= 0 ? 1 / (1 + Math.exp(-z)) : Math.exp(z) / (1 + Math.exp(z));
 }
 export function isingTargets(model: IsingModel): string[] {
@@ -160,6 +169,7 @@ export function observableValue(
 }
 export type ExactIsing = ReturnType<typeof enumerate>;
 function enumerate(model: IsingModel) {
+  // Shift by the minimum action before exponentiating: log Z = log Σw−offset.
   const size = 2 ** model.parameters.domain.vertices.length;
   const actions = Array.from({ length: size }, (_, state) =>
     isingAction(model, state),

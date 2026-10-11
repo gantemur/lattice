@@ -97,6 +97,8 @@ export class SimulationClient {
         'Wait for the read-only capture before applying parameters.',
       );
     this.cancelTimer();
+    // If a batch is in flight, send the change after its reply; the worker
+    // sees a clean segment boundary without altering that batch's RNG draws.
     this.pendingSettings = structuredClone(settings);
     if (!this.view.busy) this.sendSettings();
   }

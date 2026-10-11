@@ -111,6 +111,7 @@ export function descriptors(entry: ArchiveEntry): ObservableDescriptor[] {
 export function commonDescriptors(
   entries: readonly ArchiveEntry[],
 ): ObservableDescriptor[] {
+  // A shared ID without the same unit is not a comparable scientific axis.
   if (!entries.length) return [];
   return descriptors(entries[0]!).filter((descriptor) =>
     entries.every((entry) =>

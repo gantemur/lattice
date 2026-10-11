@@ -82,6 +82,8 @@ export class LatticeClient {
         'Wait for the read-only capture before applying parameters.',
       );
     this.cancel();
+    // Defer until any posted batch completes so one batch has one parameter
+    // set, regardless of when the user edits the form.
     this.pending = structuredClone(settings);
     if (!this.view.busy) this.sendChange();
   }

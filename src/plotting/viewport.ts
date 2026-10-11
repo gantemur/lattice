@@ -9,6 +9,7 @@ export type PlotViewport = {
   nMax: number;
 };
 export function fitSegments(segments: SegmentSnapshot[]): PlotViewport {
+  // Explicit Fit All computes a fresh range from the visible segment data.
   let xMin = Infinity,
     xMax = -Infinity,
     densityMax = 0;
@@ -85,6 +86,8 @@ export function expandViewport(
   previous: PlotViewport,
   needed: PlotViewport,
 ): PlotViewport {
+  // Normal parameter exploration can expand axes but never automatically
+  // shrink/recenter them, making successive distributions comparable.
   const expand = (a: Range, b: Range) => ({
     min: Math.min(a.min, b.min),
     max: Math.max(a.max, b.max),
