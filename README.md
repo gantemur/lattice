@@ -1,12 +1,16 @@
 # Lattice Lab
 
-**Status:** M0–M3b2, the source-readability pass and M4a1 are merged. M4a2 Fourier Gaussian fields are on a feature branch for review.
+**Status:** M0–M3b2, the source-readability pass, M4a1 and M4a2 are merged. M4b harmonic oscillator paths are on a feature branch for review.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
-## New in M4a2 (feature branch)
+## New in M4b (feature branch)
+
+Fields & Paths now offers a periodic Euclidean-time harmonic oscillator path with physical controls for N, β and ω. It reuses Gaussian spectral, heat-bath and Metropolis sampling while validating oscillator-derived coefficients separately. The path, full-segment translation-averaged two-point correlator, exact finite-lattice and continuum references, effective gap, kinetic-normalized partition function, finite-grid transfer example and reflection-positive covariance illustration distinguish Euclidean separation from Monte Carlo update count. See [oscillator mathematics](docs/math/euclidean-oscillator.md) and [M4b review](docs/M4B_REVIEW.md).
+
+## M4a2 (merged)
 
 Fully periodic chains and rectangles now offer independent Fourier sampling and exact spectral covariance, eigenvalues, log partition and sampled full-segment mode power. The massless option uses `r=j=0`, positive stiffness in every active direction, and the induced Euclidean measure on `Σφ=0`; its constant Fourier mode is removed. Changing measure support starts a new seeded session. Open and mixed-boundary massive models retain the dense reference. See [Fourier field mathematics](docs/math/gaussian-fourier.md) and [M4a2 review](docs/M4A2_REVIEW.md).
 

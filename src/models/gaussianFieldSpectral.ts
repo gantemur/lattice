@@ -19,6 +19,15 @@ export function spectralGaussianField(
   p: GaussianFieldParameters,
 ): SpectralFieldReference {
   validateGaussianField(p);
+  return spectralQuadraticField(p);
+}
+
+/** Core periodic quadratic reference. Callers must validate their model first:
+ * M4a field coefficients use validateGaussianField; oscillator coefficients
+ * instead come from its separately bounded physical (N,β,ω) parameters. */
+export function spectralQuadraticField(
+  p: GaussianFieldParameters,
+): SpectralFieldReference {
   const basis = createFourierBasis(p.shape);
   const eigenvalues = fieldEigenvalues(p, basis);
   const measure = fieldMeasure(p);

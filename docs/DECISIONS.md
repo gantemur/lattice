@@ -242,6 +242,17 @@ Periodic modes use row-major indices and a forward DFT without scale, inverse wi
 
 ## Open decisions
 
+## Accepted M4b conventions — 2026-10-11
+
+### D-040 — Physical oscillator adapter on the existing Gaussian worker
+
+The harmonic path is a separate typed model within Fields & Paths, with ℏ=kB=m=1, `a=β/N`, ordinary periodic measure and `r=aω²`, `κ=1/a`, `j=0`. Its physical bounds are `N=4–64`, `β=2–16`, `ω=0.25–4`; M4a's standalone field UI coefficient bounds remain unchanged. A validated oscillator adapter reuses the field action, spectral reference and original transition kernels. The positive constant mode is retained. Switching models or changing N starts a seeded session; changing β, ω or sampler at fixed N preserves the path and RNG but isolates all measurements in a new segment. No archive schema change accompanies M4b.
+
+### D-041 — Time, normalization and bounded correlator evidence
+
+Euclidean coordinate time `t=ℓa` is never a Monte Carlo update or physical real time. Full-segment pair-product aggregates, not the 256 most recent path vectors, give the uncentered translation average `N⁻¹Σ_j〈x_j x_(j+ℓ)〉`. Exact symmetry makes the equilibrium mean zero, but individual paths are never de-meaned. Show the exact lattice correlator/gap alongside continuum thermal theory and a sampled cosh effective gap only when its arcosh is real; do not attach unsupported uncertainty. The raw product-Lebesgue Gaussian integral differs from the quantum trace by `(2πa)^(-N/2)`. The symmetric Trotter transfer kernel, its analytic finite-spacing spectrum, a bounded positive-weight coordinate quadrature and small reflection Gram matrices are distinct teaching calculations. Operator positivity follows from the factorization; numerical Gram checks only illustrate reflection positivity and are not a proof of the full OS axioms. The path scale is fixed and clipping disclosed. Interacting oscillators, HMC and persistence remain later decisions.
+
+
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.
 - Exact supported performance target for a low-end phone, to be measured rather than guessed.
 - Whether advanced graph editing supports explicit addition/removal of oriented faces in the initial release (presets will include faces).

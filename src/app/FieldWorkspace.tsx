@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { FieldClient } from '../engine/fieldClient';
 import type { FieldView, FieldWorkerPort } from '../engine/fieldClient';
-import { defaultFieldConfiguration } from '../engine/fieldRun';
+import {
+  defaultFieldConfiguration,
+  defaultOscillatorConfiguration,
+} from '../engine/fieldRun';
 import type { FieldConfiguration, FieldSettings } from '../engine/fieldRun';
 import { createFieldLattice } from '../domain/fieldLattice';
 import { formatNumber } from '../plotting/PlotFrame';
@@ -12,6 +15,7 @@ import { FieldInspection, FieldStepInspection } from './FieldResults';
 import { FieldVisual } from './FieldVisual';
 import { FieldSpectrum } from './FieldSpectrum';
 import { fieldMeasure } from '../models/gaussianField';
+import { OscillatorView } from './OscillatorView';
 
 function useField() {
   const [view, setView] = useState<FieldView>({
@@ -41,6 +45,7 @@ function useField() {
 
 export function FieldWorkspace() {
   const { view, client } = useField();
+  const [mode, setMode] = useState<'gaussian' | 'oscillator'>('gaussian');
   const snapshot = view.snapshot;
   const current = snapshot?.segments.at(-1);
   const [draft, setDraft] = useState<FieldConfiguration>(
@@ -117,6 +122,18 @@ export function FieldWorkspace() {
     knownSiteVariance !== null
       ? Math.sqrt(knownSiteVariance / samples)
       : null;
+  if (mode === 'oscillator')
+    return (
+      <OscillatorView
+        view={view}
+        client={client.current}
+        onBack={() => {
+          client.current?.initialize(defaultFieldConfiguration);
+          setDraft(defaultFieldConfiguration);
+          setMode('gaussian');
+        }}
+      />
+    );
   return (
     <>
       <a className="skip-link" href="#field-laboratory">
@@ -155,6 +172,16 @@ export function FieldWorkspace() {
               field. Compare exact finite-volume covariance and Fourier modes
               with independent draws or local updates.
             </p>
+            <button
+              className="button"
+              type="button"
+              onClick={() => {
+                client.current?.initialize(defaultOscillatorConfiguration);
+                setMode('oscillator');
+              }}
+            >
+              Euclidean QM — Harmonic Oscillator
+            </button>
           </div>
           <span className="milestone">M4a2 · Fourier Gaussian fields</span>
         </section>
