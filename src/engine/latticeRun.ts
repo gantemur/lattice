@@ -420,9 +420,12 @@ export class LatticeRun {
         : null,
     };
   }
-  capture(segmentId: number): LatticeCapture {
+  capture(segmentId: number, finalAnalysis = false): LatticeCapture {
     const internal = this.segments.find((s) => s.id === segmentId);
     if (!internal) throw new Error('Segment is no longer available.');
+    const segment = segmentSnapshot(internal);
+    if (finalAnalysis)
+      segment.diagnostics = internal.diagnostics.analyzeCurrent();
     return {
       workspace: 'lattice',
       runId: this.runId,
@@ -430,7 +433,7 @@ export class LatticeRun {
       seed: this.initial.seed,
       initialization: this.initial.initialization,
       captureUpdate: this.updates,
-      segment: segmentSnapshot(internal),
+      segment,
       diagnosticRecord: internal.diagnostics.capture(),
       currentState:
         segmentId === this.current.id

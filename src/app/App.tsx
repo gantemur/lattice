@@ -12,6 +12,7 @@ import { observableValue, spins } from '../models/ising';
 import type { IsingModel } from '../models/ising';
 import { useEffect, useRef, useState } from 'react';
 import { Experiments } from './Experiments';
+import type { SavedSweep } from '../experiments/sweepArchive';
 import type { Capture, ArchiveEntry } from '../experiments/archive';
 import { addArchiveEntries, createArchiveEntry } from '../experiments/archive';
 import { standardGaussianPreset } from '../engine/preset';
@@ -39,6 +40,7 @@ import { StepInspector } from './StepInspector';
 
 export function App() {
   const [archive, setArchive] = useState<ArchiveEntry[]>([]);
+  const [sweeps, setSweeps] = useState<SavedSweep[]>([]);
   const archiveRef = useRef<ArchiveEntry[]>([]);
   const sessionId = useRef(crypto.randomUUID());
   const [workspace, setWorkspace] = useState(() =>
@@ -99,7 +101,12 @@ export function App() {
         />
       </div>
       <div className="workspace-surface" hidden={workspace !== 'experiments'}>
-        <Experiments entries={archive} update={updateArchive} />
+        <Experiments
+          entries={archive}
+          update={updateArchive}
+          sweeps={sweeps}
+          updateSweeps={setSweeps}
+        />
       </div>
     </>
   );

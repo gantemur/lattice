@@ -2,7 +2,7 @@
 
 **Version:** 0.10, 2026-10-11
 
-**Status:** M0–M3a merged. M3b1 saved experiments are implemented on a feature branch; M3b2 sweeps and later milestones remain planned.
+**Status:** M0–M3b1 merged. M3b2 sweeps are implemented on a feature branch for review; later milestones remain planned.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -23,7 +23,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M2: 2D Ising** | Lattice configuration view, Run/Pause/Step, basic plots | Exact tiny-box checks, tested local update engines | Merged in PR #7 |
 | **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Feature branch under review |
-| **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Planned |
+| **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Feature branch |
 | **M4: Continuous lattice fields** | 1D/2D Gaussian and φ⁴, Euclidean lattice QM, HMC | Fourier covariance, oscillator correlators, HMC invariants | Planned |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
@@ -198,9 +198,11 @@ M3b1 adds a third mounted Experiments workspace. Paused/idle, version-checked wo
 
 **M3b1 validation record — 2026-10-11:** `npm run check` passes formatting, typecheck, 248 unit tests in 30 files, production build and 117 browser tests across desktop Chromium, 360px Chromium phone and emulated iPhone WebKit. Resource limits, local capture size/latency, screenshots and remaining limitations are recorded in [M3b1 review](M3B1_REVIEW.md). The feature branch is not merged or deployed.
 
-### M3b2 — Parameter sweeps and experiment comparison (planned)
+### M3b2 — Parameter sweeps and experiment comparison (feature branch)
 
-The next slice will use the M3b1 archive schema for independently seeded bounded 2D Ising sweep points, a dedicated worker, editable sweep presets, a parameter-axis comparison plot and complete permitted point records. It will not silently turn saved data into a warm-start trajectory.
+The M3b2 slice extends the merged M3b1 archive with independently seeded bounded 2D Ising sweep points, a dedicated worker, editable sweep presets, a parameter-axis comparison plot and complete permitted point records. Each point is a fresh run, never an inherited-temperature trajectory. A version-2 portable manifest references the original point records; version-1 imports remain valid. Completed results survive Cancel, whereas partial point data are marked discarded. See [M3b2 review](M3B2_REVIEW.md) for limits and validation.
+
+**M3b2 feature-branch validation — 2026-10-11:** The pre-merge worker-protocol correction makes repeated controls safe and completed-point ACKs identity-specific, with single terminal replies and retry-safe archival. `npm run check` passes formatting, typecheck, 274 unit tests, production build and 130 browser tests across desktop Chromium, 360px Chromium phone and iPhone WebKit (two desktop-only benchmark instances intentionally skip on phone/WebKit). Screenshots, resource observation and remaining limits are in [M3b2 review](M3B2_REVIEW.md). Merge and Pages deployment remain separate review steps.
 
 **Deliverables**
 
@@ -265,7 +267,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M3a are merged. The current feature branch implements **M3b1 only**, stopping before sweep execution in M3b2. Keep later roadmap stages as context, not implied scope. Prefer segment-level provenance and validated bounded data to a universal plotting or experiment framework.
+M0–M3b1 are merged. The current feature branch implements **M3b2 only**. Keep later roadmap stages as context, not implied scope. Prefer segment-level provenance and validated bounded data to a universal plotting or experiment framework.
 
 ## Definition of done for the initial public usable release
 
