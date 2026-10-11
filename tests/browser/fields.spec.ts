@@ -88,3 +88,84 @@ test('parameter Apply isolates measurements while retaining comparison records',
   await expect(page.getByText(/segment 1: 1 measurements/)).toBeVisible();
   await expect(page.getByText(/segment 2: 1 measurements/)).toBeVisible();
 });
+
+test('periodic spectral fields and constrained support reset are usable on desktop and phone', async ({
+  page,
+}) => {
+  await page.goto('#fields-paths');
+  await page
+    .getByRole('button', { name: 'Draft massive periodic example' })
+    .click();
+  await expect(page.getByLabel('Field mass coefficient r')).toHaveValue('1');
+  await page.getByRole('button', { name: 'Apply parameters' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Finite-volume Fourier spectrum' }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await expect(page.getByTestId('field-samples')).toHaveText('1');
+  const before = await page
+    .getByText('Current φ', { exact: false })
+    .first()
+    .textContent();
+  await page.getByRole('button', { name: /Select momentum kx 1/ }).click();
+  await page.getByLabel('Inspect field site').fill('2');
+  await page.getByLabel('Inspect field site').fill('0');
+  expect(
+    await page.getByText('Current φ', { exact: false }).first().textContent(),
+  ).toBe(before);
+  await page
+    .getByRole('button', { name: 'Draft massless mean-zero example' })
+    .click();
+  await expect(page.getByLabel('Field source')).toBeDisabled();
+  await expect(page.getByLabel('Field mass coefficient r')).toHaveValue('0');
+  await page.getByRole('button', { name: 'Apply parameters' }).click();
+  await expect(page.getByTestId('field-samples')).toHaveText('0');
+  await expect(
+    page.getByText(/Fixing all other sites determines this site/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', { name: /removed zero mode/ }),
+  ).toBeVisible();
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await expect(page.getByTestId('field-samples')).toHaveText('1');
+  await page.getByRole('button', { name: 'Run', exact: true }).click();
+  await expect
+    .poll(async () =>
+      Number(await page.getByTestId('field-samples').textContent()),
+    )
+    .toBeGreaterThan(1);
+  await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 2,
+    ),
+  ).toBe(true);
+});
+
+test('2D constrained periodic field exposes momentum grid and accepts numeric mode selection', async ({
+  page,
+}) => {
+  await page.goto('#fields-paths');
+  await page.getByLabel('Field dimension').selectOption('rectangle');
+  await page.getByLabel('Field width').fill('2');
+  await page.getByLabel('Field height').fill('2');
+  await page.getByLabel('Field measure').selectOption('mean-zero');
+  await page.getByRole('button', { name: 'Apply parameters' }).click();
+  await expect(
+    page.getByRole('heading', { name: 'Field heatmap' }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('button', {
+      name: /Select momentum kx 0, ky 0, removed zero mode/,
+    }),
+  ).toBeVisible();
+  await page.getByLabel('Fourier momentum index').fill('3');
+  await expect(page.getByText(/Selected k=\(1,1\)/)).toBeVisible();
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await expect(page.getByTestId('field-samples')).toHaveText('1');
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 2,
+    ),
+  ).toBe(true);
+});

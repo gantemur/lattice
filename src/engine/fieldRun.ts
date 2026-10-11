@@ -9,10 +9,15 @@ import type {
 } from '../algorithms/gaussianFieldSampler';
 import { createFieldLattice } from '../domain/fieldLattice';
 import type { FieldLattice } from '../domain/fieldLattice';
-import { fieldAction, validateGaussianField } from '../models/gaussianField';
+import {
+  fieldAction,
+  fieldMeasure,
+  validateGaussianField,
+} from '../models/gaussianField';
 import type { GaussianFieldParameters } from '../models/gaussianField';
 import { exactGaussianField } from '../models/gaussianFieldReference';
-import type { GaussianFieldReference } from '../models/gaussianFieldReference';
+import { spectralGaussianField } from '../models/gaussianFieldSpectral';
+import { isFullyPeriodic } from '../models/fieldFourier';
 import {
   emptyMoments,
   recordMoment,
@@ -62,7 +67,14 @@ export type FieldSegmentSnapshot = {
   pairProducts: number[][];
   recent: FieldMeasurement[];
   discardedMeasurements: number;
-  reference: Omit<GaussianFieldReference, 'cholesky'>;
+  reference: {
+    method: 'dense' | 'spectral';
+    measure: 'ordinary' | 'mean-zero';
+    mean: number[];
+    covariance: number[][];
+    logPartition: number;
+    eigenvalues?: number[];
+  };
 };
 export type FieldSnapshot = {
   runId: number;
@@ -90,6 +102,14 @@ export function validateFieldSettings(settings: FieldSettings) {
   validateGaussianField(settings.parameters);
   const size = createFieldLattice(settings.parameters.shape).size;
   validateFieldSampler(settings.sampler, size);
+  const measure = fieldMeasure(settings.parameters);
+  if (measure === 'mean-zero' && settings.sampler.kind !== 'spectral')
+    throw new Error('Mean-zero fields require spectral independent sampling.');
+  if (
+    settings.sampler.kind === 'spectral' &&
+    !isFullyPeriodic(settings.parameters.shape)
+  )
+    throw new Error('Spectral sampling requires full periodicity.');
   if (
     !Number.isInteger(settings.warmupSweeps) ||
     settings.warmupSweeps < 0 ||
@@ -103,7 +123,8 @@ export function validateFieldSettings(settings: FieldSettings) {
   )
     throw new Error('Measurement stride must be 1–100 nominal sweeps.');
   if (
-    settings.sampler.kind === 'direct' &&
+    (settings.sampler.kind === 'direct' ||
+      settings.sampler.kind === 'spectral') &&
     (settings.warmupSweeps !== 0 || settings.strideSweeps !== 1)
   )
     throw new Error('Independent draws use zero warm-up and unit draw stride.');
@@ -130,7 +151,10 @@ function newSegment(
     pairSums: Array.from({ length: size }, () => Array<number>(size).fill(0)),
     recent: [] as FieldMeasurement[],
     discardedMeasurements: 0,
-    reference: exactGaussianField(copied.parameters),
+    reference:
+      copied.sampler.kind === 'spectral'
+        ? spectralGaussianField(copied.parameters)
+        : exactGaussianField(copied.parameters),
   };
 }
 type Segment = ReturnType<typeof newSegment>;
@@ -157,7 +181,8 @@ export class FieldRun {
     this.lattice = createFieldLattice(configuration.parameters.shape);
     // Direct starts without a draw. Local chains start at zero, not a sample.
     this.field =
-      configuration.sampler.kind === 'direct'
+      configuration.sampler.kind === 'direct' ||
+      configuration.sampler.kind === 'spectral'
         ? null
         : Array<number>(this.lattice.size).fill(0);
     this.segments = [newSegment(1, configuration, 0, this.lattice.size)];
@@ -173,9 +198,18 @@ export class FieldRun {
       JSON.stringify(this.current.settings.parameters.shape)
     )
       throw new Error('Field geometry changes require Reset.');
+    if (
+      fieldMeasure(settings.parameters) !==
+      fieldMeasure(this.current.settings.parameters)
+    )
+      throw new Error('Changing field measure requires a seeded Reset.');
     if (JSON.stringify(settings) === JSON.stringify(this.current.settings))
       return;
-    if (this.field === null && settings.sampler.kind !== 'direct')
+    if (
+      this.field === null &&
+      settings.sampler.kind !== 'direct' &&
+      settings.sampler.kind !== 'spectral'
+    )
       this.field = Array<number>(this.lattice.size).fill(0);
     // Preserve the configuration and RNG but never pool different measures.
     this.segments.push(
@@ -203,9 +237,13 @@ export class FieldRun {
     const settings = segment.settings;
     const size = this.lattice.size;
     const warmupTarget =
-      settings.sampler.kind === 'direct' ? 0 : settings.warmupSweeps * size;
+      settings.sampler.kind === 'direct' || settings.sampler.kind === 'spectral'
+        ? 0
+        : settings.warmupSweeps * size;
     const stride =
-      settings.sampler.kind === 'direct' ? 1 : settings.strideSweeps * size;
+      settings.sampler.kind === 'direct' || settings.sampler.kind === 'spectral'
+        ? 1
+        : settings.strideSweeps * size;
     for (let n = 0; n < count; n++) {
       const result = fieldTransition(
         this.lattice,
@@ -295,9 +333,17 @@ export class FieldRun {
           })),
           discardedMeasurements: segment.discardedMeasurements,
           reference: {
+            method:
+              'method' in segment.reference
+                ? ('spectral' as const)
+                : ('dense' as const),
+            measure: fieldMeasure(segment.settings.parameters),
             mean: segment.reference.mean.slice(),
             covariance: segment.reference.covariance.map((row) => row.slice()),
             logPartition: segment.reference.logPartition,
+            ...('method' in segment.reference
+              ? { eigenvalues: segment.reference.eigenvalues.slice() }
+              : {}),
           },
         };
       }),

@@ -6,9 +6,13 @@ import {
 } from '../models/gaussianField';
 import type { GaussianFieldParameters } from '../models/gaussianField';
 import type { GaussianFieldReference } from '../models/gaussianFieldReference';
+import type { SpectralFieldReference } from '../models/gaussianFieldSpectral';
+import { drawSpectralField } from './spectralFieldSampler';
+import { standardNormal } from './normalDraw';
 
 export type FieldSampler =
   | { kind: 'direct' }
+  | { kind: 'spectral' }
   | { kind: 'heat-bath' }
   | { kind: 'metropolis'; width: number };
 export type FieldTrace = {
@@ -25,7 +29,7 @@ export type FieldTrace = {
 };
 
 export function validateFieldSampler(sampler: FieldSampler, size: number) {
-  if (sampler.kind === 'direct') {
+  if (sampler.kind === 'direct' || sampler.kind === 'spectral') {
     if (size > 64)
       throw new Error('Direct dense sampling is limited to 64 sites.');
   } else if (sampler.kind === 'metropolis') {
@@ -37,17 +41,6 @@ export function validateFieldSampler(sampler: FieldSampler, size: number) {
       throw new Error('Metropolis proposal width must be from 0.01 to 10.');
   } else if (sampler.kind !== 'heat-bath')
     throw new Error('Unknown field sampler.');
-}
-
-function standardNormal(rng: Rng) {
-  // An uncached Box–Muller cosine draw always consumes exactly two midpoint
-  // uniforms. Keeping this order stable makes Step and batches replayable.
-  const radiusUniform = rng.uniform();
-  const angleUniform = rng.uniform();
-  return (
-    Math.sqrt(-2 * Math.log(radiusUniform)) *
-    Math.cos(2 * Math.PI * angleUniform)
-  );
 }
 
 export function drawGaussianField(reference: GaussianFieldReference, rng: Rng) {
@@ -71,15 +64,34 @@ export function fieldTransition(
   sampler: FieldSampler,
   current: readonly number[],
   rng: Rng,
-  reference: GaussianFieldReference | null,
+  reference: GaussianFieldReference | SpectralFieldReference | null,
 ): { field: number[]; trace: FieldTrace } {
   if (sampler.kind === 'direct') {
-    if (!reference)
-      throw new Error('Direct sampler requires a dense reference.');
+    if (!reference || 'method' in reference)
+      throw new Error('Cholesky direct sampler requires a dense reference.');
     return {
       field: drawGaussianField(reference, rng),
       trace: {
         kind: 'direct',
+        site: null,
+        before: null,
+        proposed: null,
+        after: null,
+        deltaAction: null,
+        acceptanceProbability: null,
+        decisionUniform: null,
+        accepted: null,
+        outcome: 'draw',
+      },
+    };
+  }
+  if (sampler.kind === 'spectral') {
+    if (!reference || !('method' in reference))
+      throw new Error('Spectral sampler requires a Fourier reference.');
+    return {
+      field: drawSpectralField(reference, rng),
+      trace: {
+        kind: 'spectral',
         site: null,
         before: null,
         proposed: null,

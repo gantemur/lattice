@@ -2,7 +2,7 @@
 
 **Version:** 0.10, 2026-10-11
 
-**Status:** M0–M3b2 and the pre-M4 readability pass merged. M4a1 massive Gaussian fields are implemented on a feature branch; M4a2 and later remain planned.
+**Status:** M0–M3b2, the pre-M4 readability pass and M4a1 are merged. M4a2 Fourier Gaussian fields are implemented on a feature branch; later models remain planned.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -24,7 +24,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
-| **M4: Continuous lattice fields** | M4a1 massive 1D/2D Gaussian foundation, followed by Fourier/massless, φ⁴, Euclidean QM and HMC | Tiny-matrix covariance, then later Fourier/oscillator/HMC invariants | M4a1 feature branch; later work planned |
+| **M4: Continuous lattice fields** | M4a1 massive 1D/2D Gaussian foundation, followed by Fourier/massless, φ⁴, Euclidean QM and HMC | Tiny-matrix covariance, then later Fourier/oscillator/HMC invariants | M4a1 merged; M4a2 feature branch |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
@@ -222,8 +222,8 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 
 **Subdeliverables**
 
-1. **M4a1 Gaussian fields, 1D/2D (feature branch).** Positive-`r` bond-Laplacian action, open/periodic boundaries, dense Cholesky mean/covariance/log Z through 64 sites, direct/heat-bath/Metropolis worker sampling, fixed-scale profile/heatmap and local/pair inspection. Full-segment moments and bounded histories have independent tiny-matrix and seeded tests. The [M4a1 review](M4A1_REVIEW.md) records remaining limits.
-2. **M4a2 Gaussian spectral and massless work (planned).** Fourier covariance/sampling and charts, with an explicit zero-mode convention before any massless periodic case.
+1. **M4a1 Gaussian fields, 1D/2D (merged).** Positive-`r` bond-Laplacian action, open/periodic boundaries, dense Cholesky mean/covariance/log Z through 64 sites, direct/heat-bath/Metropolis worker sampling, fixed-scale profile/heatmap and local/pair inspection. Full-segment moments and bounded histories have independent tiny-matrix and seeded tests. The [M4a1 review](M4A1_REVIEW.md) records remaining limits.
+2. **M4a2 Gaussian spectral and massless work (feature branch).** Finite DFT, periodic spectral reference and independent draws, mode-power inspection, and induced-measure mean-zero massless GFF; see [review](M4A2_REVIEW.md). Open/mixed massive fields remain dense.
 3. **Euclidean QM paths.** Harmonic oscillator and double well with periodic Euclidean time; path displays, two-point Euclidean correlator, effective gap and finite-spacing examples; exact oscillator benchmark first.
 4. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
 5. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
@@ -268,7 +268,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M3b2 and the readability pass are merged. The current feature branch implements **M4a1 only**. Keep later roadmap stages as context, not implied scope. Prefer the readable dense Gaussian reference and bounded worker record to speculative spectral or archive infrastructure.
+M0–M3b2, the readability pass and M4a1 are merged. The current feature branch implements **M4a2 only**. Keep oscillator, φ⁴, HMC, gauge and archive stages as future scope.
 
 ## Definition of done for the initial public usable release
 

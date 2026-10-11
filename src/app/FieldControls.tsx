@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { FieldConfiguration } from '../engine/fieldRun';
+import { fieldMeasure } from '../models/gaussianField';
 
 export function FieldControls({
   draft,
@@ -15,7 +16,9 @@ export function FieldControls({
   onApply: () => void;
 }) {
   const p = draft.parameters;
-  const local = draft.sampler.kind !== 'direct';
+  const constrained = fieldMeasure(p) === 'mean-zero';
+  const local =
+    draft.sampler.kind !== 'direct' && draft.sampler.kind !== 'spectral';
   const updateParameters = (patch: Partial<FieldConfiguration['parameters']>) =>
     setDraft((old) => ({
       ...old,
@@ -59,6 +62,110 @@ export function FieldControls({
           onApply();
         }}
       >
+        <div className="field-control-pair">
+          <button
+            type="button"
+            className="button"
+            onClick={() =>
+              setDraft((old) => ({
+                ...old,
+                parameters: {
+                  ...old.parameters,
+                  measure: 'ordinary',
+                  shape: { kind: 'chain', length: 8, periodic: true },
+                  r: 1,
+                  kappaX: 1,
+                  kappaY: 0,
+                  source: 0,
+                },
+                sampler: { kind: 'spectral' },
+                warmupSweeps: 0,
+                strideSweeps: 1,
+              }))
+            }
+          >
+            Draft massive periodic example
+          </button>
+          <button
+            type="button"
+            className="button"
+            onClick={() =>
+              setDraft((old) => ({
+                ...old,
+                parameters: {
+                  ...old.parameters,
+                  measure: 'mean-zero',
+                  shape: { kind: 'chain', length: 8, periodic: true },
+                  r: 0,
+                  kappaX: 1,
+                  kappaY: 0,
+                  source: 0,
+                },
+                sampler: { kind: 'spectral' },
+                warmupSweeps: 0,
+                strideSweeps: 1,
+              }))
+            }
+          >
+            Draft massless mean-zero example
+          </button>
+        </div>
+        <p className="plot-note">
+          Examples only edit this draft: chain of 8, periodic, κx=1, j=0,
+          spectral draws, no warm-up. The massive example sets r=1; mean-zero
+          sets r=0. Apply commits the selected settings.
+        </p>
+        <label>
+          Measure
+          <select
+            aria-label="Field measure"
+            value={fieldMeasure(p)}
+            onChange={(event) =>
+              setDraft((old) =>
+                event.target.value === 'mean-zero'
+                  ? {
+                      ...old,
+                      parameters: {
+                        ...old.parameters,
+                        measure: 'mean-zero',
+                        r: 0,
+                        source: 0,
+                        shape:
+                          old.parameters.shape.kind === 'chain'
+                            ? { ...old.parameters.shape, periodic: true }
+                            : {
+                                ...old.parameters.shape,
+                                periodicX: true,
+                                periodicY: true,
+                              },
+                        kappaX: Math.max(1, old.parameters.kappaX),
+                        kappaY:
+                          old.parameters.shape.kind === 'rectangle'
+                            ? Math.max(1, old.parameters.kappaY)
+                            : old.parameters.kappaY,
+                      },
+                      sampler: { kind: 'spectral' },
+                      warmupSweeps: 0,
+                      strideSweeps: 1,
+                    }
+                  : {
+                      ...old,
+                      parameters: {
+                        ...old.parameters,
+                        measure: 'ordinary',
+                        r: 1,
+                      },
+                      sampler: { kind: 'direct' },
+                      warmupSweeps: 0,
+                      strideSweeps: 1,
+                    },
+              )
+            }
+          >
+            <option value="ordinary">Ordinary massive</option>
+            <option value="mean-zero">Mean-zero massless</option>
+          </select>
+        </label>
         <label>
           Dimension
           <select
@@ -174,10 +281,11 @@ export function FieldControls({
             <input
               aria-label="Field mass coefficient r"
               type="number"
-              min="0.05"
+              min={constrained ? '0' : '0.05'}
               max="20"
               step="any"
               value={p.r}
+              disabled={constrained}
               onChange={(event) =>
                 updateParameters({ r: Number(event.target.value) })
               }
@@ -223,6 +331,7 @@ export function FieldControls({
             max="10"
             step="any"
             value={p.source}
+            disabled={constrained}
             onChange={(event) =>
               updateParameters({ source: Number(event.target.value) })
             }
@@ -242,15 +351,28 @@ export function FieldControls({
                     ? { kind: 'metropolis', width: 1 }
                     : kind === 'heat-bath'
                       ? { kind: 'heat-bath' }
-                      : { kind: 'direct' },
-                warmupSweeps: kind === 'direct' ? 0 : 20,
+                      : kind === 'spectral'
+                        ? { kind: 'spectral' }
+                        : { kind: 'direct' },
+                warmupSweeps: kind === 'direct' || kind === 'spectral' ? 0 : 20,
                 strideSweeps: 1,
               }));
             }}
           >
-            <option value="direct">Independent Gaussian draws</option>
-            <option value="heat-bath">Random-site Gaussian heat bath</option>
-            <option value="metropolis">Random-site Metropolis</option>
+            {!constrained && (
+              <option value="direct">
+                Independent Gaussian draws (Cholesky)
+              </option>
+            )}
+            <option value="spectral">
+              Independent spectral Gaussian draws
+            </option>
+            {!constrained && (
+              <option value="heat-bath">Random-site Gaussian heat bath</option>
+            )}
+            {!constrained && (
+              <option value="metropolis">Random-site Metropolis</option>
+            )}
           </select>
         </label>
         {draft.sampler.kind === 'metropolis' && (

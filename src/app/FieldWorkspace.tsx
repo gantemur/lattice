@@ -10,6 +10,8 @@ import { FieldControls } from './FieldControls';
 import { FieldHistory } from './FieldHistory';
 import { FieldInspection, FieldStepInspection } from './FieldResults';
 import { FieldVisual } from './FieldVisual';
+import { FieldSpectrum } from './FieldSpectrum';
+import { fieldMeasure } from '../models/gaussianField';
 
 function useField() {
   const [view, setView] = useState<FieldView>({
@@ -86,10 +88,12 @@ export function FieldWorkspace() {
     const newGeometry =
       JSON.stringify(settings.parameters.shape) !==
       JSON.stringify(applied.parameters.shape);
-    if (newGeometry)
+    const newSupport =
+      fieldMeasure(settings.parameters) !== fieldMeasure(applied.parameters);
+    if (newGeometry || newSupport)
       attempt(
         () => client.current?.initialize({ ...settings, seed: Number(seed) }),
-        'Geometry changed: a new seeded session began; the initial field is not a measurement.',
+        'Geometry or measure support changed: a new seeded session began; the initial field is not a measurement.',
       );
     else
       attempt(
@@ -107,7 +111,8 @@ export function FieldWorkspace() {
   const samples = current?.measurements ?? 0;
   const knownSiteVariance = current?.reference.covariance[site]?.[site] ?? null;
   const independentSE =
-    current?.settings.sampler.kind === 'direct' &&
+    (current?.settings.sampler.kind === 'direct' ||
+      current?.settings.sampler.kind === 'spectral') &&
     samples &&
     knownSiteVariance !== null
       ? Math.sqrt(knownSiteVariance / samples)
@@ -146,24 +151,25 @@ export function FieldWorkspace() {
               Fields on finite lattices. <span>Exact Gaussian structure.</span>
             </h1>
             <p className="intro-copy">
-              Explore a massive real field on an open or periodic chain or
-              rectangle. Compare independent draws and local updates with
-              finite-volume covariance.
+              Explore massive real fields and the periodic mean-zero massless
+              field. Compare exact finite-volume covariance and Fourier modes
+              with independent draws or local updates.
             </p>
           </div>
-          <span className="milestone">M4a1 · Gaussian fields</span>
+          <span className="milestone">M4a2 · Fourier Gaussian fields</span>
         </section>
         <div className="lab-layout field-layout">
           <aside className="sidebar" aria-label="Field settings">
             <section className="model-card">
-              <p className="eyebrow">Dimensionless massive Gaussian action</p>
+              <p className="eyebrow">Dimensionless Gaussian action</p>
               <DisplayMath>{String.raw`\begin{aligned}S(\phi)={}&\tfrac r2\sum_i\phi_i^2\\&+\tfrac12\sum_b\kappa_b(\phi_t-\phi_h)^2\\&-j\sum_i\phi_i\end{aligned}`}</DisplayMath>
               <p>
-                <InlineMath>{String.raw`r>0`}</InlineMath> removes the zero
-                mode. Open boundaries omit wrap bonds; they do not fix the edge
-                field to zero. Each periodic length-two axis has two distinct
-                bonds. The Gibbs weight is{' '}
-                <InlineMath>{String.raw`e^{-S}`}</InlineMath>.
+                Ordinary fields use r&gt;0 and product Lebesgue measure. The
+                massless periodic field sets r=j=0 and removes the constant mode
+                by Σφ=0 with induced Euclidean measure. Open boundaries omit
+                wrap bonds; they do not fix the edge field to zero. Each
+                periodic length-two axis has two distinct bonds. The Gibbs
+                weight is <InlineMath>{String.raw`e^{-S}`}</InlineMath>.
               </p>
             </section>
             <FieldControls
@@ -248,7 +254,8 @@ export function FieldWorkspace() {
               </div>
               <p className="run-notice">{formError || view.error || notice}</p>
               <p className="plot-note">
-                {applied.sampler.kind === 'direct'
+                {applied.sampler.kind === 'direct' ||
+                applied.sampler.kind === 'spectral'
                   ? 'One update draws a whole independent field; acceptance and nominal local sweeps are N/A.'
                   : `One nominal sweep is ${lattice.size} random-site updates with replacement. Warm-up and stride are segment-local; acceptance is ${applied.sampler.kind === 'metropolis' ? 'defined for Metropolis proposals' : 'N/A for heat bath'}.`}{' '}
                 Updates are not physical time. Run and Step share one worker
@@ -262,7 +269,7 @@ export function FieldWorkspace() {
                   Metropolis proposals.{' '}
                   {independentSE === null
                     ? 'No independent-sample SE is claimed for a local chain.'
-                    : `Exact-variance pointwise SE for the direct site mean: ${formatNumber(independentSE)}; it is not a simultaneous band.`}
+                    : `Exact-variance pointwise SE for the independent site mean: ${formatNumber(independentSE)}; it is not a simultaneous band.`}
                 </p>
               )}
             </section>
@@ -318,6 +325,7 @@ export function FieldWorkspace() {
               onSelect={setSelected}
               limit={displayLimit}
             />
+            {current && <FieldSpectrum segment={current} />}
             {snapshot && (
               <>
                 <FieldStepInspection snapshot={snapshot} />

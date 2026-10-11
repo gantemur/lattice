@@ -1971,6 +1971,41 @@ footer {
   outline: 3px solid #263b3a;
   outline-offset: -3px;
 }
+.field-spectrum-grid {
+  display: grid;
+  gap: 3px;
+  width: min(100%, 460px);
+  margin: 16px auto;
+}
+.field-spectrum-mode {
+  display: block;
+  margin-top: 12px;
+}
+.field-spectrum-mode input {
+  margin-top: 5px;
+}
+.field-spectrum-bars {
+  min-height: 130px;
+  align-items: end;
+  border-bottom: 1px solid #839991;
+}
+.field-spectrum-cell {
+  min-width: 0;
+  min-height: 32px;
+  padding: 2px;
+  border: 1px solid #9cb9af;
+  border-radius: 3px;
+  font-size: clamp(9px, 1.5vw, 13px);
+  color: #173b35;
+  cursor: pointer;
+}
+.field-spectrum-map .field-spectrum-cell {
+  aspect-ratio: 1;
+}
+.field-spectrum-cell[aria-pressed='true'] {
+  outline: 3px solid #263b3a;
+  outline-offset: -3px;
+}
 .field-scale {
   display: flex;
   align-items: center;
