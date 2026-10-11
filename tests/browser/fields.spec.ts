@@ -169,3 +169,27 @@ test('2D constrained periodic field exposes momentum grid and accepts numeric mo
     ),
   ).toBe(true);
 });
+
+test('8×8 mean-zero field with tiny positive stiffness steps without a reality error', async ({
+  page,
+}) => {
+  await page.goto('#fields-paths');
+  await page.getByLabel('Field dimension').selectOption('rectangle');
+  await page.getByLabel('Field width').fill('8');
+  await page.getByLabel('Field height').fill('8');
+  await page.getByLabel('Field measure').selectOption('mean-zero');
+  await page.getByLabel('Horizontal stiffness').fill('0.000000000001');
+  await page.getByLabel('Vertical stiffness').fill('0.000000000001');
+  await page.getByRole('button', { name: 'Apply parameters' }).click();
+  await expect(page.getByTestId('field-samples')).toHaveText('0');
+  await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await expect(page.getByTestId('field-samples')).toHaveText('1');
+  await expect(
+    page.getByText(/Spectral draw violated conjugate reality/),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth + 2,
+    ),
+  ).toBe(true);
+});
