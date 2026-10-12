@@ -2,7 +2,7 @@
 
 **Version:** 0.11, 2026-10-12
 
-**Status:** M0–M4c0 and the architecture audit are merged. Model-page Stages A–D3 are implemented for QM, Fields, Lattice Systems and Small Systems; custom simple-graph edge-presence editing remains Stage E.
+**Status:** M0–M4c0 and the architecture audit are merged. Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems, including bounded custom simple-graph edge-presence editing.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -233,7 +233,7 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 9. **Small Systems real scalar Stage D2 (implemented).** The existing scalar graph is the featured display with histogram and scatter/bare-potential defaults. Ten pre-existing scientific renderers live in the six-card gallery; per-assignment targets, histogram visibility, viewports and trajectory windows survive feature exchange. The sidebar owns geometry and draft coefficients; local and exact references are collapsible. Worker numerics, RNG, archives and configuration-only URLs are unchanged. See the [Stage D2 review](MODEL_PAGE_STAGE_D2_REVIEW.md).
 10. **Ising Local neighborhood teaching tool (implemented).** The canvas remains the default Lattice Systems feature, with m/e histories as default gallery cards. A separate selectable and featureable 5×5 view reads the same selected site and spin snapshot, with open-boundary marking and independent periodic wrapping. No worker, numerical, archive or plot renderer changed. See the [neighborhood review](ISING_NEIGHBORHOOD_REVIEW.md).
 11. **Named examples Stage D3 (implemented).** Group directly selectable elementary, small-Ising and scalar examples. Add dimer, three-site chain and triangle geometries without new Ising kernels; keep K4, open chain and true torus in advanced access. Example selection preserves same-topology segment rules, legacy scalar URLs and archive data. See the [D3 review](PEDAGOGICAL_CATALOG_D3_REVIEW.md).
-12. **Custom simple-graph editing Stage E (planned).** Edit physical edge presence separately from zero coupling on two-to-four-site simple graphs; retain stable IDs and keep periodic multigraph/cell-complex presets distinct. Do not infer faces from graph cycles.
+12. **Custom simple-graph editing Stage E (implemented).** Directly select a custom two-to-four-spin Ising graph and edit site count, each possible simple-pair presence, signed active coupling and site field in a draft sidebar form. Canonical `pair:v0:v1`-style IDs survive edge additions. Present K=0 bonds remain in the domain; absent pairs do not. Apply starts a seeded session for topology changes or an isolated parameter segment for K/b changes. The existing Ising exact/sampling/diagnostic kernels and archive schema are reused; periodic multigraph and cell-complex presets remain distinct. See the [Stage E review](CUSTOM_ISING_GRAPH_STAGE_E_REVIEW.md).
 13. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
 14. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
 
@@ -277,7 +277,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4c0, the readability pass and the architecture audit are merged. **Model-page Stages A–D3 are implemented for QM, Fields, Lattice Systems and Small Systems**. Keep Stage E custom edge-presence editing, interacting double-well paths, φ⁴, HMC, gauge and later archive stages as future scope.
+M0–M4c0, the readability pass and the architecture audit are merged. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. Keep interacting double-well paths, φ⁴, HMC, gauge and later archive stages as future scope.
 
 ## Definition of done for the initial public usable release
 

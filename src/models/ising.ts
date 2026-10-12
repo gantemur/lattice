@@ -1,4 +1,10 @@
-import { isingGraphPreset, validateDomain } from '../domain/graph';
+import {
+  CUSTOM_ISING_DOMAIN_ID,
+  customSimpleIsingDomain,
+  isingGraphPreset,
+  validateCustomSimpleIsingDomain,
+  validateDomain,
+} from '../domain/graph';
 import type { Domain, IsingGraphPreset } from '../domain/graph';
 /**
  * Tiny graph Ising uses S=−Σ_e K_e s_tail s_head−Σ_i b_i s_i, with β already
@@ -26,6 +32,29 @@ export function isingPreset(preset: IsingGraphPreset = 'ring'): IsingModel {
     },
   };
 }
+/** Materialize editor choices as scientific data: absent pairs have no K entry. */
+export function customIsingModel(
+  vertexCount: number,
+  enabledPairs: readonly string[],
+  couplings: Readonly<Record<string, number>> = {},
+  fields: Readonly<Record<string, number>> = {},
+): IsingModel {
+  const domain = customSimpleIsingDomain(vertexCount, enabledPairs);
+  const model: IsingModel = {
+    kind: 'ising',
+    parameters: {
+      domain,
+      couplings: Object.fromEntries(
+        domain.edges.map((edge) => [edge.id, couplings[edge.id] ?? 0.5]),
+      ),
+      fields: Object.fromEntries(
+        domain.vertices.map((vertex) => [vertex.id, fields[vertex.id] ?? 0]),
+      ),
+    },
+  };
+  validateIsing(model);
+  return model;
+}
 /** Integer bit configurations are internal only: bit i=1 is spin +1. */
 export function spinAt(state: number, index: number): number {
   return state & (1 << index) ? 1 : -1;
@@ -36,6 +65,20 @@ export function spins(model: IsingModel, state: number): number[] {
 export function validateIsing(model: IsingModel): void {
   const { domain, couplings, fields } = model.parameters;
   validateDomain(domain);
+  if (domain.id === CUSTOM_ISING_DOMAIN_ID) {
+    validateCustomSimpleIsingDomain(domain);
+    // A present K=0 bond is kept; an absent pair cannot leave a phantom K in
+    // worker settings or portable scientific captures.
+    if (
+      JSON.stringify(Object.keys(couplings).sort()) !==
+        JSON.stringify(domain.edges.map((edge) => edge.id).sort()) ||
+      JSON.stringify(Object.keys(fields).sort()) !==
+        JSON.stringify(domain.vertices.map((vertex) => vertex.id).sort())
+    )
+      throw new Error(
+        'Custom Ising parameters must match active sites and edges.',
+      );
+  }
   for (const [ids, values] of [
     [domain.edges.map((e) => e.id), couplings],
     [domain.vertices.map((v) => v.id), fields],

@@ -21,6 +21,75 @@ export type Domain = {
   faces: Face[];
   lattice?: { lengths: number[]; boundary: 'open' | 'periodic' };
 };
+export const CUSTOM_ISING_DOMAIN_ID = 'custom-simple-ising';
+
+/** Stable pair identities; a disabled pair has no edge record at all. */
+export function customPairIds(vertexCount: number): string[] {
+  if (![2, 3, 4].includes(vertexCount))
+    throw new Error('A custom Ising graph needs 2–4 sites.');
+  const pairs: string[] = [];
+  for (let tail = 0; tail < vertexCount; tail++)
+    for (let head = tail + 1; head < vertexCount; head++)
+      pairs.push(`pair:v${tail}:v${head}`);
+  return pairs;
+}
+
+/** Construct only the enabled simple edges, in canonical endpoint order. */
+export function customSimpleIsingDomain(
+  vertexCount: number,
+  enabledPairs: readonly string[],
+): Domain {
+  const available = customPairIds(vertexCount);
+  const enabled = new Set(enabledPairs);
+  if (
+    enabled.size !== enabledPairs.length ||
+    enabledPairs.some((id) => !available.includes(id))
+  )
+    throw new Error('Custom edges must be distinct available site pairs.');
+  return {
+    id: CUSTOM_ISING_DOMAIN_ID,
+    name: 'Custom Ising graph',
+    vertices: Array.from({ length: vertexCount }, (_, i) => ({ id: `v${i}` })),
+    edges: available
+      .filter((id) => enabled.has(id))
+      .map((id) => {
+        const [, tail, head] = id.split(':');
+        return { id, tail: tail!, head: head! };
+      }),
+    faces: [], // A cycle of pair interactions does not imply a plaquette.
+  };
+}
+
+/** Extra restrictions apply only to this custom ID, never to legacy multigraphs. */
+export function validateCustomSimpleIsingDomain(domain: Domain): void {
+  if (domain.id !== CUSTOM_ISING_DOMAIN_ID)
+    throw new Error('Expected a custom simple Ising domain.');
+  const canonical = customSimpleIsingDomain(
+    domain.vertices.length,
+    domain.edges.map((edge) => edge.id),
+  );
+  if (
+    domain.vertices.some(
+      (vertex, index) =>
+        vertex.id !== canonical.vertices[index]?.id ||
+        Object.keys(vertex).length !== 1,
+    ) ||
+    domain.edges.some((edge, index) => {
+      const expected = canonical.edges[index];
+      return (
+        edge.id !== expected?.id ||
+        edge.tail !== expected.tail ||
+        edge.head !== expected.head ||
+        Object.keys(edge).sort().join(',') !== 'head,id,tail'
+      );
+    }) ||
+    domain.faces.length !== 0 ||
+    domain.lattice !== undefined
+  )
+    throw new Error(
+      'Custom Ising graphs use canonical simple pairs without faces or lattice metadata.',
+    );
+}
 export const presetNames = {
   site: 'Single site',
   path: 'Open four-site chain',
@@ -168,7 +237,8 @@ export function drawingPositions(
   const points: [number, number][] =
     domain.vertices.length === 1
       ? [[180, 115]]
-      : domain.id === 'dimer'
+      : domain.id === 'dimer' ||
+          (domain.id === CUSTOM_ISING_DOMAIN_ID && domain.vertices.length === 2)
         ? [
             [85, 115],
             [275, 115],
@@ -179,7 +249,9 @@ export function drawingPositions(
               [180, 115],
               [300, 115],
             ]
-          : domain.id === 'triangle'
+          : domain.id === 'triangle' ||
+              (domain.id === CUSTOM_ISING_DOMAIN_ID &&
+                domain.vertices.length === 3)
             ? [
                 [180, 38],
                 [75, 185],

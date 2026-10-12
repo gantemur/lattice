@@ -1582,6 +1582,29 @@ footer {
 .graph-editor .graph-fields {
   grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
 }
+.custom-edge-list {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+.custom-edge-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 95px);
+  align-items: end;
+  gap: 10px;
+}
+.graph-editor .custom-edge-presence {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+}
+.graph-editor .custom-edge-presence input {
+  width: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  height: 20px;
+}
 .tool-body .graph-workspace {
   max-width: none;
 }

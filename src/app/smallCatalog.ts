@@ -1,10 +1,11 @@
-import { isingPreset } from '../models/ising';
+import { customIsingModel, isingPreset } from '../models/ising';
 import { scalarPreset } from '../models/scalarField';
 import { defaultModel } from '../models/singleVariable';
 import type { Model } from '../models/singleVariable';
 import type { Sampler } from '../algorithms/transitions';
 import type { IsingGraphPreset } from '../domain/graph';
 import type { ScalarPreset } from '../models/scalarField';
+import { customPairIds } from '../domain/graph';
 
 /** A recipe is presentation metadata. It never enters worker or archive data. */
 export const catalogGroups = [
@@ -74,6 +75,11 @@ export const catalogGroups = [
     label: 'Advanced examples',
     examples: [
       [
+        'ising-custom',
+        'Custom Ising graph (2–4 spins)',
+        'Choose each simple edge independently from its signed coupling.',
+      ],
+      [
         'scalar-baseline',
         'One-site Gaussian scalar',
         'A real-scalar view of one Gaussian variable.',
@@ -130,6 +136,16 @@ export function exampleConfiguration(id: ExampleId): {
 } {
   if (id === 'gaussian' || id === 'spin' || id === 'binomial')
     return { model: defaultModel(id), sampler: { kind: 'direct' } };
+  if (id === 'ising-custom')
+    return {
+      model: customIsingModel(
+        4,
+        customPairIds(4).filter((pair) =>
+          ['pair:v0:v1', 'pair:v1:v2', 'pair:v2:v3'].includes(pair),
+        ),
+      ),
+      sampler: { kind: 'direct' },
+    };
   if (Object.hasOwn(scalarRecipes, id)) {
     const preset = scalarRecipes[id as keyof typeof scalarRecipes];
     const quartic = preset.includes('well') || preset === 'four-quartic';

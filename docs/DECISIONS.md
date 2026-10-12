@@ -318,6 +318,14 @@ A mathematical family owns state space, Gibbs law and numerical capabilities; a 
 
 The visible initial catalog keeps the one-spin elementary model and open small Ising graphs, while the four-site open chain, K4 and periodic 2×2 torus remain reachable as advanced examples. The torus retains eight bond records and four oriented faces. Physical edge presence remains different from zero coupling; explicit simple-graph edge-presence editing is Stage E, not D3. Legacy graph/scalar presets, exact references and saved configurations remain valid.
 
+## Accepted custom Ising graph Stage E convention — 2026-10-12
+
+### D-052 — Edge presence is scientific topology; catalog and drafts are presentation
+
+The Advanced Small Systems catalog directly selects a custom `ising` model on two to four sites. Its scientific domain uses ID `custom-simple-ising`, canonical `v0`… sites and one pair-derived edge ID `pair:v<i>:v<j>` per enabled simple pair `i<j`. It has no self-links, parallel edges, faces or periodic metadata. The generic `Domain` and the named periodic torus retain their separate multigraph/cell-complex semantics and existing IDs. A present K=0 pair is an edge; an absent pair has no edge record or coupling. Only active pairs and site fields enter worker settings and portable captures. The teaching example ID and temporarily disabled draft values do not enter the archive or scalar URL schema.
+
+The sidebar editor alone owns unsubmitted site count, presence, K and b choices; worker snapshots and the featured graph show the last applied model. Applying a changed site count or present-pair set changes `topologyKey` and starts a seeded session, clearing incompatible history and selection. Applying only K or b on unchanged topology retains configuration and RNG while opening an isolated measurement segment, even when K crosses zero. Disabled draft K values survive toggling before Apply; after Apply, re-enabling an absent pair starts from the displayed default K=0.5. Exact enumeration, all three graph-Ising samplers, diagnostics, six-card teaching tools and experiment exports reuse their existing implementations. This bounded numeric editor is not an interactive graph drawing, a generic graph runtime or a gauge-model precursor.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

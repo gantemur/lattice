@@ -15,6 +15,7 @@ import {
   ExactIsingPanel,
 } from './GraphWorkspace';
 import { topologyKey } from '../domain/graph';
+import { CUSTOM_ISING_DOMAIN_ID } from '../domain/graph';
 import { observableValue, spins } from '../models/ising';
 import type { IsingModel } from '../models/ising';
 import { useEffect, useRef, useState } from 'react';
@@ -45,6 +46,7 @@ import {
   matchingExample,
 } from './smallCatalog';
 import type { ExampleId } from './smallCatalog';
+import { CustomIsingGraphEditor } from './CustomIsingGraphEditor';
 
 export function SmallSystemsApp({
   saveCaptures,
@@ -118,26 +120,28 @@ export function SmallSystemsApp({
   }
   function applyGraph(next: IsingModel) {
     if (model.kind !== 'ising') return;
+    const custom = next.parameters.domain.id === CUSTOM_ISING_DOMAIN_ID;
     if (
       topologyKey(next.parameters.domain) ===
       topologyKey(model.parameters.domain)
     ) {
       const match = matchingExample(next);
-      if (match) setChosenExample(match);
-      apply({ model: next, sampler });
+      attempt(() => {
+        client.current?.changeSettings({ model: next, sampler });
+        if (custom) setChosenExample('ising-custom');
+        else if (match) setChosenExample(match);
+      }, 'Applied graph parameters: configuration and RNG preserved; changed settings begin a separate measurement segment.');
     } else {
-      setChosenExample(null);
-      setSelectedSite('v0');
-      setSelectedEdge('');
-      attempt(
-        () =>
-          client.current?.initialize({
-            model: next,
-            sampler,
-            seed: seed.trim() ? Number(seed) : NaN,
-          }),
-        'Topology changed: new session, history cleared and selected seed restarted.',
-      );
+      attempt(() => {
+        client.current?.initialize({
+          model: next,
+          sampler,
+          seed: seed.trim() ? Number(seed) : NaN,
+        });
+        setChosenExample(custom ? 'ising-custom' : null);
+        setSelectedSite('v0');
+        setSelectedEdge('');
+      }, 'Topology changed: new session, history cleared and selected seed restarted.');
     }
   }
   function applyScalar(next: ScalarModel) {
@@ -353,14 +357,22 @@ export function SmallSystemsApp({
               apply={apply}
               disabled={!snapshot || !!view.error}
             />
-            {model.kind === 'ising' && (
-              <GraphParameterEditor
-                key={topologyKey(model.parameters.domain)}
-                model={model}
-                apply={applyGraph}
-                disabled={!snapshot || !!view.error}
-              />
-            )}
+            {model.kind === 'ising' &&
+              (model.parameters.domain.id === CUSTOM_ISING_DOMAIN_ID ? (
+                <CustomIsingGraphEditor
+                  key={topologyKey(model.parameters.domain)}
+                  model={model}
+                  apply={applyGraph}
+                  disabled={!snapshot || !!view.error}
+                />
+              ) : (
+                <GraphParameterEditor
+                  key={topologyKey(model.parameters.domain)}
+                  model={model}
+                  apply={applyGraph}
+                  disabled={!snapshot || !!view.error}
+                />
+              ))}
             {model.kind === 'scalar' && (
               <ScalarShare
                 configuration={configuration}

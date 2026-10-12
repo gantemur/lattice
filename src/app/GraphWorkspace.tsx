@@ -12,6 +12,7 @@ import {
   spins,
 } from '../models/ising';
 import {
+  CUSTOM_ISING_DOMAIN_ID,
   drawingPositions,
   isIsingGraphPreset,
   presetNames,
@@ -49,8 +50,9 @@ export function GraphVisualization({
           <h2>{domain.name}</h2>
         </div>
         <span className="parameter-chip">
-          {domain.vertices.length} sites · {domain.edges.length} bonds ·{' '}
-          {domain.faces.length} faces
+          {domain.vertices.length} sites · {domain.edges.length}{' '}
+          {domain.edges.length === 1 ? 'bond' : 'bonds'} · {domain.faces.length}{' '}
+          faces
         </span>
       </div>
       <svg
@@ -155,7 +157,10 @@ export function GraphVisualization({
                 }
                 className="edge-label"
               >
-                {e.id}: {model.parameters.couplings[e.id]}
+                {domain.id === CUSTOM_ISING_DOMAIN_ID
+                  ? `${e.tail}–${e.head}`
+                  : e.id}
+                : {model.parameters.couplings[e.id]}
                 {e.wraps ? ' ↻' : ''}
               </text>
             </g>
