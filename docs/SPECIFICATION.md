@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.14 (M4b harmonic oscillator paths, 2026-10-11)
+**Version:** 0.15 (M4c0 workspace architecture, 2026-10-11)
 
-**Status:** M0–M3b2, the pre-M4 readability pass, M4a1 and M4a2 are merged. M4b is implemented on a feature branch; interacting fields remain planned.
+**Status:** M0–M4b are merged. M4c0 is implemented on a feature branch; interacting fields remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -85,9 +85,11 @@ Core UI:
 
 Purpose: analysis of saved runs, reproducible parameter sweeps, side-by-side comparisons, finite-size diagnostics, and export/import. M3b1 provides mounted in-memory segment archives and portable records. M3b2 adds bounded independent 2D Ising sweeps, a dedicated worker, numeric parameter-axis comparison, and version-2 sweep manifests alongside the original point datasets. The Experiment workspace must show differing model and sampling metadata when comparing runs.
 
-### 2.4 Fields & Paths (M4a1–M4b)
+### 2.4 Lattice QM and Lattice Fields (M4c0)
 
-A fourth mounted workspace begins with massive Gaussian real fields, extends fully periodic cases to Fourier sampling and a mean-zero massless measure, and adds an explicit harmonic-oscillator path mode. It presents field profiles or heatmaps, exact finite-volume comparisons, and, in oscillator mode, a periodic Euclidean path, correlators and gap/transfer references. Interacting-field and HMC modes remain future work. Its worker state and RNG remain independent of the other mounted workspaces; display selection cannot sample.
+The five top-level workspaces are Small Systems, Lattice Systems, Lattice QM, Lattice Fields, and Experiments, in that order. `#lattice-qm` opens periodic Euclidean-time oscillator paths. The legacy `#fields-paths` route opens spatial Gaussian fields on 1D chains and 2D rectangles. Euclidean time and spatial domains are conceptual categories, not restrictions to one coordinate per site. QM and Fields have separate mounted FieldClient/worker sessions; navigation does not reset or implicitly pause either. Model or geometry changes retain their existing session and segment semantics.
+
+QM defaults to the current path and two-point correlator. Optional views show exact gap references, sampled effective gap and correlator table, finite-grid transfer analysis, reflection positivity, and bounded recent path-average history. Fields defaults to configuration profile/heatmap and selected-site/covariance inspection. Optional views show Fourier spectrum, retained history and latest update inspection. Nonperiodic Fourier analysis states why it is unavailable. Both decks hold at most six independently assigned visualization, plot or analysis cards. Add/change, collapse/open, expand/normal width, reorder and remove affect presentation only; phone layout offers single detail or compact overview. An empty deck explains how to add a tool. Optional transfer quadrature is computed lazily when opened and cached by physical parameters. No tool change alters RNG, measurement cadence or worker-side collection. The main Run/Pause button is unified while Step and Reset remain separate; Pause permits an already posted batch to finish.
 
 ### 2.5 Navigation contract
 
@@ -223,7 +225,7 @@ For row-major sites and modes `x+Lx y`, the forward DFT is `F(k)=Σx φ(x)exp(�
 
 Spectral draws transform N real Box–Muller white-noise values, divide paired Fourier coefficients by `√λ`, remove the constant coefficient for mean-zero fields, inverse-transform and remove roundoff residual mean. Each draw consumes exactly `2N` uniforms. Mode-power inspection displays `P(k)=E[|F(φ−μ)(k)|²]/N` from full-segment pair products and site means against exact `1/λ`, with the removed zero mode explicitly marked. It provides no confidence band or autocorrelation correction. The constrained selected-site panel omits the ordinary fixed-neighbor conditional: fixing every other site determines the selected coordinate. The profile/heatmap scale remains user-controlled. See [Fourier mathematics](math/gaussian-fourier.md) and [M4a2 review](M4A2_REVIEW.md).
 
-#### M4b periodic Euclidean harmonic oscillator (feature branch)
+#### M4b periodic Euclidean harmonic oscillator (merged)
 
 Use ℏ=kB=m=1, `H=p²/2+ω²x²/2`, integer `4≤N≤64`, `2≤β≤16`, `0.25≤ω≤4`, and `a=β/N`. The product-Lebesgue path action is `S=Σ_j[(x_{j+1}−x_j)²/(2a)+aω²x_j²/2]`, with `x_N=x_0` and no extra endpoint degree of freedom. Its periodic ordinary Gaussian map is `r=aω²`, `κ=1/a`, `j=0`, with positive constant mode. This physical model has its own validation; M4a1's UI bounds on `r,κ` remain in force for standalone Gaussian fields but do not constrain derived oscillator coefficients. Model switching and N changes begin seeded sessions; fixed-N β/ω/sampler changes retain the path and RNG in isolated measurement segments. No oscillator archive schema is added.
 

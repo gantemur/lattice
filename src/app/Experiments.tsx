@@ -1,3 +1,4 @@
+import { SiteHeader } from './SiteHeader';
 import { useRef, useState } from 'react';
 import type { ArchiveEntry } from '../experiments/archive';
 import {
@@ -352,27 +353,7 @@ export function Experiments({
       <a className="skip-link" href="#experiments-main">
         Skip to Experiments
       </a>
-      <header className="site-header">
-        <a className="brand" href="#small-systems">
-          <span className="brand-mark" aria-hidden="true">
-            ▦
-          </span>
-          <span>
-            Lattice <strong>Lab</strong>
-          </span>
-        </a>
-        <nav aria-label="Workspaces">
-          <a href="#small-systems">Small Systems</a>
-          <a href="#lattice-systems">Lattice Systems</a>
-          <a href="#fields-paths">Fields &amp; Paths</a>
-          <a className="nav-active" aria-current="page" href="#experiments">
-            Experiments
-          </a>
-        </nav>
-        <a className="source-link" href="https://github.com/gantemur/lattice">
-          Source ↗
-        </a>
-      </header>
+      <SiteHeader active="experiments" />
       <main id="experiments-main" className="experiments-workspace">
         <section className="intro" id="experiments">
           <div>

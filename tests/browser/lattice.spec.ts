@@ -122,7 +122,10 @@ test('phone lattice, settings and plot controls fit width; heat bath labels acce
   isMobile,
 }) => {
   await open(page);
-  await page.getByLabel('Sampler').selectOption('heat-bath');
+  await page
+    .getByRole('complementary', { name: 'Lattice settings' })
+    .getByLabel('Sampler')
+    .selectOption('heat-bath');
   await page.getByRole('button', { name: 'Apply settings' }).click();
   await page.getByRole('button', { name: 'Add plot' }).click();
   await page.getByLabel('Plot 3 type').selectOption('acceptance');
@@ -197,7 +200,10 @@ test('M3a exact and sampled 2×2 fluctuation observables and constant diagnostic
     page.getByRole('img', { name: /Autocorrelation of m/ }),
   ).toBeVisible();
   await expect(page.getByTestId('exact-markov')).toContainText('Exact τ_int');
-  await page.getByLabel('Sampler').selectOption('heat-bath');
+  await page
+    .getByRole('complementary', { name: 'Lattice settings' })
+    .getByLabel('Sampler')
+    .selectOption('heat-bath');
   await page.getByRole('button', { name: 'Apply settings' }).click();
   await expect(page.getByTestId('lattice-segment')).toHaveText('Segment 2');
   await expect(page.getByTestId('diagnostic-status')).toContainText(

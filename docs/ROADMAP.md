@@ -2,7 +2,7 @@
 
 **Version:** 0.10, 2026-10-11
 
-**Status:** M0–M3b2, the pre-M4 readability pass, M4a1 and M4a2 are merged. M4b harmonic oscillator paths are implemented on a feature branch; later models remain planned.
+**Status:** M0–M4b are merged. M4c0 workspace and tool refinement is implemented on a feature branch; later models remain planned.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -24,7 +24,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
-| **M4: Continuous lattice fields** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, then interacting fields and HMC | Tiny-matrix covariance, Fourier/oscillator invariants; HMC later | M4a1–M4a2 merged; M4b feature branch |
+| **M4: Continuous lattice fields** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, then interacting fields and HMC | Tiny-matrix covariance, Fourier/oscillator invariants; HMC later | M4a1–M4b merged; M4c0 feature branch |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
@@ -224,9 +224,10 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 
 1. **M4a1 Gaussian fields, 1D/2D (merged).** Positive-`r` bond-Laplacian action, open/periodic boundaries, dense Cholesky mean/covariance/log Z through 64 sites, direct/heat-bath/Metropolis worker sampling, fixed-scale profile/heatmap and local/pair inspection. Full-segment moments and bounded histories have independent tiny-matrix and seeded tests. The [M4a1 review](M4A1_REVIEW.md) records remaining limits.
 2. **M4a2 Gaussian spectral and massless work (merged).** Finite DFT, periodic spectral reference and independent draws, mode-power inspection, and induced-measure mean-zero massless GFF; see [review](M4A2_REVIEW.md). Open/mixed massive fields remain dense.
-3. **M4b harmonic Euclidean oscillator (feature branch).** Periodic N-site path, physical β/ω controls, independent Fourier and local Gaussian sampling, full-segment two-point correlator, finite-spacing and continuum gaps, kinetic-normalized transfer trace, bounded quadrature and reflection-covariance illustration. The [M4b review](M4B_REVIEW.md) records validation and limits. Double-well paths remain future work.
-4. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
-5. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
+3. **M4b harmonic Euclidean oscillator (merged).** Periodic N-site path, physical β/ω controls, independent Fourier and local Gaussian sampling, full-segment two-point correlator, finite-spacing and continuum gaps, kinetic-normalized transfer trace, bounded quadrature and reflection-covariance illustration. The [M4b review](M4B_REVIEW.md) records validation and limits. Double-well paths remain future work.
+4. **M4c0 workspace and teaching tools (feature branch).** Separate mounted QM and Fields sessions, five shared routes, unified Run/Pause, and configurable six-card galleries. Optional transfer quadrature is lazy; presentation changes preserve the numerical stream. See [review](M4C0_REVIEW.md).
+5. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
+6. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
 
 **Acceptance gate**
 
@@ -268,7 +269,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M3b2, the readability pass, M4a1 and M4a2 are merged. The current feature branch implements **M4b harmonic oscillator only**. Keep double-well paths, φ⁴, HMC, gauge and archive stages as future scope.
+M0–M4b and the readability pass are merged. The current feature branch implements **M4c0 workspace and configurable teaching tools only**. Keep double-well paths, φ⁴, HMC, gauge and archive stages as future scope.
 
 ## Definition of done for the initial public usable release
 

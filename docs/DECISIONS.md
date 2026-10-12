@@ -250,6 +250,16 @@ The harmonic path is a separate typed model within Fields & Paths, with ℏ=kB=m
 
 Euclidean coordinate time `t=ℓa` is never a Monte Carlo update or physical real time. Full-segment pair-product aggregates, not the 256 most recent path vectors, give the uncentered translation average `N⁻¹Σ_j〈x_j x_(j+ℓ)〉`. Exact symmetry makes the equilibrium mean zero, but individual paths are never de-meaned. Show the exact lattice correlator/gap alongside continuum thermal theory. Display a sampled cosh effective gap only after 64 retained paths in the current segment and when its arcosh is real; label it provisional and uncorrected, with no unsupported uncertainty. A 64-path count is not an equilibration or effective-sample-size guarantee. The raw product-Lebesgue Gaussian integral differs from the quantum trace by `(2πa)^(-N/2)`. The symmetric Trotter transfer kernel, its analytic finite-spacing spectrum, a bounded positive-weight coordinate quadrature and small reflection Gram matrices are distinct teaching calculations. Operator positivity follows from the factorization; numerical Gram checks only illustrate reflection positivity and are not a proof of the full OS axioms. Classify the fixed-grid quadrature against the analytic gap (>5% relative discrepancy) and leading eigenvalue bound, disclose numerical failure, and retain its approximate value even when under-resolved. The path scale is fixed and clipping disclosed. Interacting oscillators, HMC and persistence remain later decisions.
 
+## Accepted M4c0 conventions — 2026-10-11
+
+### D-042 — Separate mounted QM and Fields workspaces
+
+The five top-level destinations are Small Systems, Lattice Systems, Lattice QM, Lattice Fields and Experiments. `#lattice-qm` is explicit; `#fields-paths` remains a compatible link to Lattice Fields. QM and Fields use separate `FieldClient` and worker instances, although they reuse the same Gaussian mathematical modules. Their components remain mounted while hidden, so navigation preserves configurations, parameter segments, RNG streams and local view choices without pausing a run. Changing a model or geometry within a workspace keeps the existing M4a/M4b reset semantics. This separates Euclidean-time path teaching from spatial Gaussian fields without imposing a one-coordinate-per-site rule on future models.
+
+### D-043 — Bounded, display-only teaching tools
+
+QM and Fields each use one Run/Pause control and a local six-card tool deck. A tool is a named, model-specific visualization, plot or analysis, not a programmable plugin. Add/change, collapse/open, expand, reorder, remove, phone detail/overview and viewport choices operate only on React presentation state; worker measurements remain unconditional and unchanged. Optional finite-grid oscillator quadrature is computed only when an open transfer card renders and is cached by validated physical parameters. A hidden workspace retains its mounted worker, but unselected or collapsed expensive analysis does not run. A posted batch may finish after Pause. The older Small Systems and Lattice Systems plot galleries retain their working internals in this milestone.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

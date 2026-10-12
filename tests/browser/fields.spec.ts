@@ -1,4 +1,17 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
+
+async function fieldDetail(page: Page, key: number) {
+  const selector = page.getByLabel('Lattice Fields tools detail tool');
+  if (await selector.isVisible()) await selector.selectOption(String(key));
+}
+
+async function addFieldTool(page: Page, tool: string) {
+  await page
+    .getByLabel('Lattice Fields tools add tool type')
+    .selectOption(tool);
+  await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+}
 
 test('1D independent field Step, exact covariance and display-only seeded replay', async ({
   page,
@@ -7,8 +20,10 @@ test('1D independent field Step, exact covariance and display-only seeded replay
   await expect(
     page.getByRole('heading', { name: 'Field profile' }),
   ).toBeVisible();
+  await fieldDetail(page, 1);
   await expect(page.getByText('Exact finite volume')).toBeVisible();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await fieldDetail(page, 1);
   await expect(page.getByTestId('field-samples')).toHaveText('1');
   const first = await page
     .getByText('Current φ', { exact: false })
@@ -51,6 +66,7 @@ test('2D heatmap, local conditional and Metropolis segments work on phone and de
     page.getByRole('button', { name: /Select site x 0, y 0/ }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await addFieldTool(page, 'update');
   await expect(page.getByText('Coordinate heat bath resamples')).toBeVisible();
   await expect(page.getByTestId('field-updates')).toHaveText('1');
   await page.getByLabel('Field update method').selectOption('metropolis');
@@ -65,6 +81,7 @@ test('2D heatmap, local conditional and Metropolis segments work on phone and de
     )
     .toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  await fieldDetail(page, 1);
   await expect(page.getByText('Connected covariance')).toBeVisible();
   expect(
     await page.evaluate(
@@ -85,6 +102,7 @@ test('parameter Apply isolates measurements while retaining comparison records',
   await expect(page.getByTestId('field-samples')).toHaveText('0');
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('field-samples')).toHaveText('1');
+  await addFieldTool(page, 'history');
   await expect(page.getByText(/segment 1: 1 measurements/)).toBeVisible();
   await expect(page.getByText(/segment 2: 1 measurements/)).toBeVisible();
 });
@@ -98,16 +116,20 @@ test('periodic spectral fields and constrained support reset are usable on deskt
     .click();
   await expect(page.getByLabel('Field mass coefficient r')).toHaveValue('1');
   await page.getByRole('button', { name: 'Apply parameters' }).click();
+  await addFieldTool(page, 'spectrum');
   await expect(
     page.getByRole('heading', { name: 'Finite-volume Fourier spectrum' }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('field-samples')).toHaveText('1');
+  await fieldDetail(page, 1);
   const before = await page
     .getByText('Current φ', { exact: false })
     .first()
     .textContent();
+  await fieldDetail(page, 2);
   await page.getByRole('button', { name: /Select momentum kx 1/ }).click();
+  await fieldDetail(page, 1);
   await page.getByLabel('Inspect field site').fill('2');
   await page.getByLabel('Inspect field site').fill('0');
   expect(
@@ -123,6 +145,7 @@ test('periodic spectral fields and constrained support reset are usable on deskt
   await expect(
     page.getByText(/Fixing all other sites determines this site/),
   ).toBeVisible();
+  await fieldDetail(page, 2);
   await expect(
     page.getByRole('button', { name: /removed zero mode/ }),
   ).toBeVisible();
@@ -154,6 +177,7 @@ test('2D constrained periodic field exposes momentum grid and accepts numeric mo
   await expect(
     page.getByRole('heading', { name: 'Field heatmap' }),
   ).toBeVisible();
+  await addFieldTool(page, 'spectrum');
   await expect(
     page.getByRole('button', {
       name: /Select momentum kx 0, ky 0, removed zero mode/,

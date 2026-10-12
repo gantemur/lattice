@@ -53,7 +53,7 @@ test('production subpath loads workers and locally bundled accessible math', asy
   expect(assets.every((url) => url.includes('/lattice/assets/'))).toBe(true);
   await expect(
     page.getByRole('navigation', { name: 'Workspaces' }).getByRole('link'),
-  ).toHaveCount(4);
+  ).toHaveCount(5);
 });
 
 test('settings, display changes, and keyboard controls preserve seed replay', async ({
@@ -66,7 +66,10 @@ test('settings, display changes, and keyboard controls preserve seed replay', as
   const settings = page.getByText('Model & sampler settings', { exact: true });
   await settings.focus();
   await page.keyboard.press('Enter');
-  await page.getByText('Reset seed', { exact: true }).click();
+  await page
+    .getByRole('complementary', { name: 'Model and settings' })
+    .getByText('Reset seed', { exact: true })
+    .click();
   await expect(page.getByLabel('Seed on Reset')).toBeVisible();
   await settings.focus();
   await page.keyboard.press('Enter');

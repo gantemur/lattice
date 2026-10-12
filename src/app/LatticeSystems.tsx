@@ -1,3 +1,4 @@
+import { SiteHeader } from './SiteHeader';
 import { useEffect, useRef, useState } from 'react';
 import { LatticeClient } from '../engine/latticeClient';
 import type { LatticeView, LatticeWorkerPort } from '../engine/latticeClient';
@@ -382,29 +383,7 @@ export function LatticeSystems({
       <a className="skip-link" href="#lattice-laboratory">
         Skip to laboratory
       </a>
-      <header className="site-header">
-        <a className="brand" href="#small-systems">
-          <span className="brand-mark" aria-hidden="true">
-            ▦
-          </span>
-          <span>
-            Lattice <strong>Lab</strong>
-          </span>
-        </a>
-        <nav aria-label="Workspaces">
-          <a href="#small-systems">Small Systems</a>
-          <a className="nav-active" aria-current="page" href="#lattice-systems">
-            Lattice Systems
-          </a>
-          <a href="#fields-paths">Fields &amp; Paths</a>
-          <a href="#experiments">
-            Experiments{archiveCount ? ` (${archiveCount})` : ''}
-          </a>
-        </nav>
-        <a className="source-link" href="https://github.com/gantemur/lattice">
-          Source ↗
-        </a>
-      </header>
+      <SiteHeader active="lattice" archiveCount={archiveCount} />
       <main id="lattice-laboratory">
         <section className="intro" id="lattice-systems">
           <div>
