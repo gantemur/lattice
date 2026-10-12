@@ -7,6 +7,7 @@ import {
   initialToolLayout,
   MAX_GALLERY_TOOLS,
   moveGalleryTool,
+  nextGalleryTool,
   removeGalleryTool,
   replaceFeaturedTool,
 } from './toolAssignments';
@@ -26,6 +27,7 @@ export function ToolDeck<Id extends string>({
   tools,
   featuredDefault,
   defaults,
+  addPreference,
   renderTool,
   onRemove,
 }: {
@@ -33,6 +35,8 @@ export function ToolDeck<Id extends string>({
   tools: readonly ToolDefinition<Id>[];
   featuredDefault: Id;
   defaults: readonly Id[];
+  /** Currently useful defaults in model order; every tool remains selectable. */
+  addPreference?: readonly Id[];
   renderTool: (id: Id, assignmentKey: number) => ReactNode;
   onRemove?: (assignmentKey: number) => void;
 }) {
@@ -42,7 +46,6 @@ export function ToolDeck<Id extends string>({
   const [layout, setLayout] = useState(() =>
     initialToolLayout(featuredDefault, defaults),
   );
-  const [choice, setChoice] = useState<Id>(tools[0]!.id);
   const [overview, setOverview] = useState(false);
   const [detailKey, setDetailKey] = useState(defaults.length ? 1 : -1);
   const [phone, setPhone] = useState(() =>
@@ -111,33 +114,32 @@ export function ToolDeck<Id extends string>({
       </div>
 
       <div className="tool-deck-controls">
-        <h2>{title} · gallery</h2>
-        <label>
-          Add tool
-          <select
-            aria-label={`${title} add tool type`}
-            value={choice}
-            onChange={(event) => setChoice(event.target.value as Id)}
-          >
-            {tools.map((tool) => (
-              <option key={tool.id} value={tool.id}>
-                {tool.kind}: {tool.title}
-              </option>
-            ))}
-          </select>
-        </label>
+        <h2>Measurements &amp; diagnostics</h2>
         <button
           type="button"
-          className="button"
+          className="button tool-add"
           disabled={layout.gallery.length >= MAX_GALLERY_TOOLS}
           onClick={() => {
             const key = nextKey.current++;
-            setLayout((current) => addGalleryTool(current, key, choice));
+            setLayout((current) =>
+              addGalleryTool(
+                current,
+                key,
+                nextGalleryTool(
+                  current,
+                  tools.map((tool) => tool.id),
+                  addPreference,
+                ),
+              ),
+            );
             setDetailKey(key);
           }}
         >
           Add tool
         </button>
+        <span className="plot-note tool-count">
+          {layout.gallery.length}/6 tools
+        </span>
         <button
           type="button"
           className="button tool-overview-toggle"
@@ -161,23 +163,23 @@ export function ToolDeck<Id extends string>({
             ))}
           </select>
         </label>
-        <span className="plot-note">
-          {layout.gallery.length}/6 gallery tools
-        </span>
       </div>
       {layout.gallery.length === 0 ? (
         <p className="tool-empty">
-          No gallery tools are open. Choose a tool and Add tool.
+          No gallery tools are open. Add tool to inspect a measurement or
+          analysis.
         </p>
       ) : (
-        <div className="tool-grid">
+        <div
+          className={`tool-grid ${layout.gallery.filter((item) => !item.collapsed).length === 1 ? 'tool-grid-single' : ''}`}
+        >
           {layout.gallery.map((item, index) => {
             const definition = tools.find((tool) => tool.id === item.tool)!;
             const canFeature = definition.featureable !== false;
             return (
               <section
                 key={item.key}
-                className={`tool-card ${item.expanded ? 'tool-expanded' : ''} ${item.key === detail ? 'tool-detail' : ''}`}
+                className={`tool-card ${item.expanded ? 'tool-expanded' : ''} ${item.collapsed ? 'tool-collapsed' : ''} ${item.key === detail ? 'tool-detail' : ''}`}
                 aria-label={`${definition.title} tool`}
                 data-testid="teaching-tool"
                 data-assignment-key={item.key}
@@ -187,9 +189,28 @@ export function ToolDeck<Id extends string>({
                     <small>
                       {definition.kind} · {index + 1}
                     </small>
-                    <h3>{definition.title}</h3>
-                    <p>{definition.description}</p>
+                    <h3 className="tool-overview-title">{definition.title}</h3>
                   </div>
+                  <label className="tool-change">
+                    Tool type
+                    <select
+                      aria-label={`Tool ${index + 1} type`}
+                      value={item.tool}
+                      onChange={(event) =>
+                        setLayout((current) =>
+                          editTool(current, item.key, {
+                            tool: event.target.value as Id,
+                          }),
+                        )
+                      }
+                    >
+                      {tools.map((tool) => (
+                        <option key={tool.id} value={tool.id}>
+                          {tool.kind}: {tool.title}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
                   <button
                     type="button"
                     className="button tool-view-detail"
@@ -284,26 +305,6 @@ export function ToolDeck<Id extends string>({
                     </button>
                   </div>
                 </div>
-                <label className="tool-change">
-                  Tool type
-                  <select
-                    aria-label={`Tool ${index + 1} type`}
-                    value={item.tool}
-                    onChange={(event) =>
-                      setLayout((current) =>
-                        editTool(current, item.key, {
-                          tool: event.target.value as Id,
-                        }),
-                      )
-                    }
-                  >
-                    {tools.map((tool) => (
-                      <option key={tool.id} value={tool.id}>
-                        {tool.kind}: {tool.title}
-                      </option>
-                    ))}
-                  </select>
-                </label>
                 {/* An inactive phone detail is not an activated analysis. */}
                 {!item.collapsed &&
                   (!phone || (!overview && item.key === detail)) && (

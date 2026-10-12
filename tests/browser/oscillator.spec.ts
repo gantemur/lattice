@@ -8,8 +8,14 @@ async function qmDetail(page: Page, key: number) {
 }
 
 async function addQmTool(page: Page, tool: string) {
-  await page.getByLabel('Lattice QM tools add tool type').selectOption(tool);
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  const cards = page
+    .getByRole('region', { name: 'Lattice QM tools' })
+    .getByTestId('teaching-tool');
+  await cards
+    .last()
+    .getByLabel(`Tool ${await cards.count()} type`)
+    .selectOption(tool);
 }
 
 test('harmonic oscillator path, segment correlator and transfer view work on desktop and phone', async ({

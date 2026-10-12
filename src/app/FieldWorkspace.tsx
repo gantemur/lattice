@@ -60,8 +60,10 @@ export function FieldWorkspace() {
   );
   const [seed, setSeed] = useState(String(defaultFieldConfiguration.seed));
   const [selected, setSelected] = useState(0);
-  const [partner, setPartner] = useState(1);
-  const [displayLimit, setDisplayLimit] = useState(3);
+  const [partners, setPartners] = useState<Record<number, number>>({});
+  const [displayLimits, setDisplayLimits] = useState<Record<number, number>>(
+    {},
+  );
   // React remounts a tool when it moves between gallery and feature containers.
   // Momentum is presentation state tied to the assignment key, not the worker.
   const [spectrumModes, setSpectrumModes] = useState<Record<number, number>>(
@@ -74,8 +76,12 @@ export function FieldWorkspace() {
   const applied = current?.settings ?? defaultFieldConfiguration;
   const lattice = createFieldLattice(applied.parameters.shape);
   const site = Math.min(selected, lattice.size - 1);
-  const pairSite = Math.min(partner, lattice.size - 1);
   const busy = view.busy || !snapshot;
+  const periodic =
+    applied.parameters.shape.kind === 'chain'
+      ? applied.parameters.shape.periodic
+      : applied.parameters.shape.periodicX &&
+        applied.parameters.shape.periodicY;
 
   function boundedSite(value: string) {
     const parsed = Number(value);
@@ -161,12 +167,10 @@ export function FieldWorkspace() {
               <p className="eyebrow">Dimensionless Gaussian action</p>
               <DisplayMath>{String.raw`\begin{aligned}S(\phi)={}&\tfrac r2\sum_i\phi_i^2\\&+\tfrac12\sum_b\kappa_b(\phi_t-\phi_h)^2\\&-j\sum_i\phi_i\end{aligned}`}</DisplayMath>
               <p>
-                Ordinary fields use r&gt;0 and product Lebesgue measure. The
-                massless periodic field sets r=j=0 and removes the constant mode
-                by Σφ=0 with induced Euclidean measure. Open boundaries omit
-                wrap bonds; they do not fix the edge field to zero. Each
-                periodic length-two axis has two distinct bonds. The Gibbs
-                weight is <InlineMath>{String.raw`e^{-S}`}</InlineMath>.
+                Weight <InlineMath>{String.raw`e^{-S}`}</InlineMath>. Ordinary
+                massive fields use product Lebesgue measure; the periodic
+                massless variant removes the constant mode with Σφ=0. Open edges
+                omit wrap bonds rather than fixing field values.
               </p>
             </section>
             <FieldControls
@@ -249,94 +253,130 @@ export function FieldWorkspace() {
                 Updates are not physical time. Run and Step share one worker
                 kernel.
               </p>
-              {current && (
-                <p className="plot-note">
-                  Segment {current.id}: {current.warmupUpdates} warm-up updates;{' '}
-                  {current.measurements} retained measurements;{' '}
-                  {current.accepted} accepted, {current.rejected} rejected
-                  Metropolis proposals.{' '}
-                  {independentSE === null
-                    ? 'No independent-sample SE is claimed for a local chain.'
-                    : `Exact-variance pointwise SE for the independent site mean: ${formatNumber(independentSE)}; it is not a simultaneous band.`}
-                </p>
-              )}
             </section>
-            <div className="field-display-controls">
-              <label>
-                Inspect site
-                <input
-                  type="number"
-                  aria-label="Inspect field site"
-                  min="0"
-                  max={lattice.size - 1}
-                  step="1"
-                  value={site}
-                  onChange={(event) =>
-                    setSelected(boundedSite(event.target.value))
-                  }
-                />
-              </label>
-              <label>
-                Pair with site
-                <input
-                  type="number"
-                  aria-label="Pair field site"
-                  min="0"
-                  max={lattice.size - 1}
-                  step="1"
-                  value={pairSite}
-                  onChange={(event) =>
-                    setPartner(boundedSite(event.target.value))
-                  }
-                />
-              </label>
-              <label>
-                Fixed display range ±
-                <input
-                  type="number"
-                  aria-label="Field display limit"
-                  min="0.1"
-                  max="50"
-                  step="any"
-                  value={displayLimit}
-                  onChange={(event) => {
-                    const value = Number(event.target.value);
-                    if (value >= 0.1 && value <= 50) setDisplayLimit(value);
-                  }}
-                />
-              </label>
-            </div>
             <ToolDeck
               title="Lattice Fields tools"
               tools={fieldTools}
               featuredDefault="profile"
               defaults={['inspection']}
-              onRemove={(key) =>
+              addPreference={fieldTools
+                .filter((tool) => periodic || tool.id !== 'spectrum')
+                .map((tool) => tool.id)}
+              onRemove={(key) => {
                 setSpectrumModes((current) => {
                   const next = { ...current };
                   delete next[key];
                   return next;
-                })
-              }
+                });
+                setDisplayLimits((current) => {
+                  const next = { ...current };
+                  delete next[key];
+                  return next;
+                });
+                setPartners((current) => {
+                  const next = { ...current };
+                  delete next[key];
+                  return next;
+                });
+              }}
               renderTool={(tool, assignmentKey) => {
+                const limit = displayLimits[assignmentKey] ?? 3;
+                const pairSite = Math.min(
+                  partners[assignmentKey] ?? 1,
+                  lattice.size - 1,
+                );
                 switch (tool) {
                   case 'profile':
                     return (
-                      <FieldVisual
-                        shape={applied.parameters.shape}
-                        field={snapshot?.field ?? null}
-                        selected={site}
-                        onSelect={setSelected}
-                        limit={displayLimit}
-                      />
+                      <>
+                        <div className="tool-options">
+                          <label>
+                            Inspect site
+                            <input
+                              type="number"
+                              aria-label="Inspect field site"
+                              min="0"
+                              max={lattice.size - 1}
+                              step="1"
+                              value={site}
+                              onChange={(event) =>
+                                setSelected(boundedSite(event.target.value))
+                              }
+                            />
+                          </label>
+                          <label>
+                            Fixed display range ±
+                            <input
+                              type="number"
+                              aria-label="Field display limit"
+                              min="0.1"
+                              max="50"
+                              step="any"
+                              value={limit}
+                              onChange={(event) => {
+                                const value = Number(event.target.value);
+                                if (value >= 0.1 && value <= 50)
+                                  setDisplayLimits((current) => ({
+                                    ...current,
+                                    [assignmentKey]: value,
+                                  }));
+                              }}
+                            />
+                          </label>
+                        </div>
+                        <FieldVisual
+                          shape={applied.parameters.shape}
+                          field={snapshot?.field ?? null}
+                          selected={site}
+                          onSelect={setSelected}
+                          limit={limit}
+                        />
+                      </>
                     );
                   case 'inspection':
                     return snapshot ? (
-                      <FieldInspection
-                        snapshot={snapshot}
-                        site={site}
-                        partner={pairSite}
-                      />
+                      <>
+                        <div className="tool-options">
+                          <label>
+                            Inspect site
+                            <input
+                              type="number"
+                              aria-label="Inspect field site"
+                              min="0"
+                              max={lattice.size - 1}
+                              step="1"
+                              value={site}
+                              onChange={(event) =>
+                                setSelected(boundedSite(event.target.value))
+                              }
+                            />
+                          </label>
+                          <label>
+                            Pair with site
+                            <input
+                              type="number"
+                              aria-label="Pair field site"
+                              min="0"
+                              max={lattice.size - 1}
+                              step="1"
+                              value={pairSite}
+                              onChange={(event) =>
+                                setPartners((current) => ({
+                                  ...current,
+                                  [assignmentKey]: boundedSite(
+                                    event.target.value,
+                                  ),
+                                }))
+                              }
+                            />
+                          </label>
+                        </div>
+                        <FieldInspection
+                          snapshot={snapshot}
+                          site={site}
+                          partner={pairSite}
+                        />
+                      </>
                     ) : (
                       <p>Wait for the field worker to initialize.</p>
                     );
@@ -357,11 +397,48 @@ export function FieldWorkspace() {
                     );
                   case 'history':
                     return snapshot ? (
-                      <FieldHistory
-                        snapshot={snapshot}
-                        site={site}
-                        limit={displayLimit}
-                      />
+                      <>
+                        <div className="tool-options">
+                          <label>
+                            Inspect site
+                            <input
+                              type="number"
+                              aria-label="Inspect field site"
+                              min="0"
+                              max={lattice.size - 1}
+                              step="1"
+                              value={site}
+                              onChange={(event) =>
+                                setSelected(boundedSite(event.target.value))
+                              }
+                            />
+                          </label>
+                          <label>
+                            History display range ±
+                            <input
+                              type="number"
+                              aria-label="Field history display limit"
+                              min="0.1"
+                              max="50"
+                              step="any"
+                              value={limit}
+                              onChange={(event) => {
+                                const value = Number(event.target.value);
+                                if (value >= 0.1 && value <= 50)
+                                  setDisplayLimits((current) => ({
+                                    ...current,
+                                    [assignmentKey]: value,
+                                  }));
+                              }}
+                            />
+                          </label>
+                        </div>
+                        <FieldHistory
+                          snapshot={snapshot}
+                          site={site}
+                          limit={limit}
+                        />
+                      </>
                     ) : (
                       <p>Wait for a field segment.</p>
                     );
@@ -374,13 +451,80 @@ export function FieldWorkspace() {
                 }
               }}
             />
-            <p className="plot-note">
-              The dashed site-mean reference and covariance are exact for this
-              finite Gaussian model. Sample estimates and recent plotted vectors
-              belong to separate parameter segments. A fixed warm-up count does
-              not prove local-chain equilibrium. Experiments archive integration
-              arrives in M4e.
-            </p>
+            <details className="model-page-details">
+              <summary>Technical details &amp; measurement coverage</summary>
+              <div>
+                <p>
+                  Seed {snapshot?.seed ?? seed}; segment {current?.id ?? '—'}{' '}
+                  began at update {current?.startUpdate ?? 0}.{' '}
+                  {current?.warmupUpdates ?? 0} warm-up updates and{' '}
+                  {current?.measurements ?? 0} retained measurements;{' '}
+                  {current?.discardedMeasurements ?? 0} older display vectors
+                  evicted. Site and pair aggregates span the full retained
+                  segment; plotted vectors are bounded. Parameter changes never
+                  pool distinct target measures.
+                </p>
+                {current && (
+                  <p>
+                    {current.accepted} accepted and {current.rejected} rejected
+                    Metropolis proposals, including warm-up.{' '}
+                    {independentSE === null
+                      ? 'No independent-sample SE is claimed for a local chain.'
+                      : `Exact-variance pointwise SE for the independent site mean: ${formatNumber(independentSE)}; it is not a simultaneous band.`}
+                  </p>
+                )}
+                <p>
+                  The dashed site-mean reference and covariance are exact for
+                  this finite Gaussian system. A fixed warm-up period does not
+                  prove local-chain equilibration. Fields/QM archive integration
+                  remains future work.
+                </p>
+              </div>
+            </details>
+            <details className="model-page-details">
+              <summary>
+                Mathematics, exercises &amp; suggested experiments
+              </summary>
+              <div>
+                <p>
+                  The quadratic action has precision matrix Q. For an ordinary
+                  massive field, the exact finite-volume covariance is Q⁻¹; open
+                  boundaries omit wrap bonds and periodic boundaries retain each
+                  indexed bond. The constrained massless field removes the
+                  constant Fourier mode and uses a mean-zero measure, so its
+                  covariance is a constrained inverse rather than Q⁻¹ on the
+                  full space.
+                </p>
+                <p>
+                  Independent Gaussian or Fourier draws replace the whole field.
+                  Coordinate heat bath and Metropolis change one site per
+                  algorithmic update and produce correlated measurements. The
+                  spectrum compares sampled mode powers with exact finite-volume
+                  values; its zero mode is absent for the mean-zero field.
+                </p>
+                <ul>
+                  <li>
+                    Vary mass and stiffness; compare the field scale and
+                    covariance.
+                  </li>
+                  <li>
+                    Compare open and periodic boundaries, then inspect the
+                    removed zero mode.
+                  </li>
+                  <li>
+                    Compare local and independent sampling and sampled versus
+                    exact Fourier power.
+                  </li>
+                </ul>
+                <a href="https://github.com/gantemur/lattice/blob/main/docs/math/gaussian-fields.md">
+                  Gaussian-field mathematics ↗
+                </a>{' '}
+                ·{' '}
+                <a href="https://github.com/gantemur/lattice/blob/main/docs/math/gaussian-fourier.md">
+                  Fourier and mean-zero mathematics ↗
+                </a>
+              </div>
+            </details>
             {trace && (
               <span className="sr-only">Latest update {trace.update}</span>
             )}

@@ -46,6 +46,28 @@ export function addGalleryTool<Id extends string>(
   return { ...layout, gallery: [...layout.gallery, assignment(key, tool)] };
 }
 
+/** Add an unrepresented useful view before duplicating one already on screen.
+ * The caller supplies model order and may omit currently inapplicable views
+ * from suitable without removing them from the card's explicit selector. */
+export function nextGalleryTool<Id extends string>(
+  layout: ToolLayout<Id>,
+  ordered: readonly Id[],
+  suitable: readonly Id[] = ordered,
+): Id {
+  const represented = new Set([
+    layout.featured.tool,
+    ...layout.gallery.map((item) => item.tool),
+  ]);
+  const preferred = ordered.filter((id) => suitable.includes(id));
+  const fresh = preferred.find((id) => !represented.has(id));
+  if (fresh) return fresh;
+  // A second inspection/plot can have a different target or display choice.
+  const duplicate = preferred.find((id) => id !== layout.featured.tool);
+  const fallback = duplicate ?? preferred[0] ?? ordered[0];
+  if (!fallback) throw new Error('A tool deck needs at least one tool.');
+  return fallback;
+}
+
 export function removeGalleryTool<Id extends string>(
   layout: ToolLayout<Id>,
   key: number,

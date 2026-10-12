@@ -2,7 +2,7 @@
 
 **Version:** 0.10, 2026-10-11
 
-**Status:** M0–M4c0 and the architecture audit are merged. Featured-tool Stage A is implemented; later models remain planned.
+**Status:** M0–M4c0 and the architecture audit are merged. QM/Fields model-page Stages A–B are implemented; later models remain planned.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -24,7 +24,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
-| **M4: Continuous lattice fields** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stage A featured display, then interacting fields and HMC | Tiny-matrix covariance, Fourier/oscillator invariants; HMC later | M4a1–M4c0 merged; Stage A implemented |
+| **M4: Continuous lattice fields** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–B model pages, then interacting fields and HMC | Tiny-matrix covariance, Fourier/oscillator invariants; HMC later | M4a1–M4c0 merged; Stages A–B implemented |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
@@ -226,9 +226,10 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 2. **M4a2 Gaussian spectral and massless work (merged).** Finite DFT, periodic spectral reference and independent draws, mode-power inspection, and induced-measure mean-zero massless GFF; see [review](M4A2_REVIEW.md). Open/mixed massive fields remain dense.
 3. **M4b harmonic Euclidean oscillator (merged).** Periodic N-site path, physical β/ω controls, independent Fourier and local Gaussian sampling, full-segment two-point correlator, finite-spacing and continuum gaps, kinetic-normalized transfer trace, bounded quadrature and reflection-covariance illustration. The [M4b review](M4B_REVIEW.md) records validation and limits. Double-well paths remain future work.
 4. **M4c0 workspace and teaching tools (merged).** Separate mounted QM and Fields sessions, five shared routes, unified Run/Pause, and configurable six-card galleries. Optional transfer quadrature is lazy; presentation changes preserve the numerical stream. See [review](M4C0_REVIEW.md).
-5. **Featured-tool migration Stage A (implemented).** Pilot one full-width assignment plus up to six optional gallery tools in QM and Fields. Whole-assignment swaps retain keys and presentation choices; explicit replacement retains every gallery card. Existing numerical workers and archive data are unchanged. See the [architecture audit](MODEL_INTERFACE_AUDIT.md) and [Stage A review](FEATURED_STAGE_A_REVIEW.md). Sidebar standardization and other workspace adapters remain later stages.
-6. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
-7. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
+5. **Featured-tool migration Stage A (implemented).** Pilot one full-width assignment plus up to six optional gallery tools in QM and Fields. Whole-assignment swaps retain keys and presentation choices; explicit replacement retains every gallery card. Existing numerical workers and archive data are unchanged. See the [architecture audit](MODEL_INTERFACE_AUDIT.md) and [Stage A review](FEATURED_STAGE_A_REVIEW.md).
+6. **QM/Fields model-page Stage B (implemented).** The model formula and collapsible editable settings lead the sidebar; the main column has controls/readings, feature, compact zero-to-six-card diagnostics, collapsible technical coverage and short mathematics/exercises. Add creates a suitable card directly; one open desktop gallery card spans both columns. Tool-specific display controls stay with their tools, keyed across feature exchange. The [Stage B review](MODEL_PAGE_STAGE_B_REVIEW.md) records tests and screenshots. Small Systems, Lattice Systems and Experiments remain on their existing designs.
+7. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
+8. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
 
 **Acceptance gate**
 
@@ -270,7 +271,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4c0, the readability pass and the architecture audit are merged. **Featured-tool Stage A is implemented for QM and Fields only**. Keep Stage B, the named-example catalog, double-well paths, φ⁴, HMC, gauge and archive stages as future scope.
+M0–M4c0, the readability pass and the architecture audit are merged. **Model-page Stages A–B are implemented for QM and Fields only**. Keep the later Small Systems catalog/controls migration, double-well paths, φ⁴, HMC, gauge and archive stages as future scope.
 
 ## Definition of done for the initial public usable release
 

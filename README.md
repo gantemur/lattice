@@ -1,14 +1,14 @@
 # Lattice Lab
 
-**Status:** M0–M4c0 and the model-interface architecture audit are merged. Full-width featured-tool Stage A is implemented in Lattice QM and Lattice Fields.
+**Status:** M0–M4c0 and the model-interface architecture audit are merged. Stage A and Stage B of the model-page migration are implemented in Lattice QM and Lattice Fields.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
-## Featured tools (Stage A)
+## Lattice QM and Fields model pages (Stages A–B)
 
-Lattice QM and Lattice Fields now show one configurable, full-width featured display above up to six optional gallery cards. The default feature is the current Euclidean path or spatial field configuration, respectively; the default gallery card is the correlator or selected-site/covariance inspection. A gallery card's **Feature** action swaps the two assignments, while the featured selector explicitly replaces the current feature. Fourier momentum selection follows its assignment across a swap. Gallery collapse, expansion, reordering, desktop two-column layout and phone detail/overview remain available. These choices affect only presentation, not worker sampling or measurements. See the [Stage A review](docs/FEATURED_STAGE_A_REVIEW.md).
+Lattice QM and Lattice Fields show one configurable, full-width featured display above up to six optional gallery cards. The default feature is the current Euclidean path or spatial field configuration, respectively; the default gallery card is the correlator or selected-site/covariance inspection. **Add tool** immediately opens an unrepresented useful view when available; its own selector can change the view. A gallery card's **Feature** action swaps whole assignments, while the featured selector replaces only the featured tool. Tool-specific display controls follow their keyed assignments across exchanges. One open gallery card fills the desktop row; multiple cards use two columns. Phones retain single-detail and compact-overview modes. Technical details and short mathematics/exercises are collapsible below the gallery. These choices affect only presentation, not worker sampling or measurements. See the [Stage A review](docs/FEATURED_STAGE_A_REVIEW.md) and [Stage B review](docs/MODEL_PAGE_STAGE_B_REVIEW.md). Small Systems, Lattice Systems and Experiments retain their current page designs.
 
 ## M4c0 (merged)
 

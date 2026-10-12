@@ -7,10 +7,14 @@ async function fieldDetail(page: Page, key: number) {
 }
 
 async function addFieldTool(page: Page, tool: string) {
-  await page
-    .getByLabel('Lattice Fields tools add tool type')
-    .selectOption(tool);
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  const cards = page
+    .getByRole('region', { name: 'Lattice Fields tools' })
+    .getByTestId('teaching-tool');
+  await cards
+    .last()
+    .getByLabel(`Tool ${await cards.count()} type`)
+    .selectOption(tool);
 }
 
 test('1D independent field Step, exact covariance and display-only seeded replay', async ({
@@ -29,9 +33,15 @@ test('1D independent field Step, exact covariance and display-only seeded replay
     .getByText('Current φ', { exact: false })
     .first()
     .textContent();
-  await page.getByLabel('Inspect field site').fill('3');
+  await page
+    .getByTestId('featured-tool')
+    .getByLabel('Inspect field site')
+    .fill('3');
   await page.getByLabel('Field display limit').fill('2');
-  await page.getByLabel('Inspect field site').fill('0');
+  await page
+    .getByTestId('featured-tool')
+    .getByLabel('Inspect field site')
+    .fill('0');
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await expect(page.getByTestId('field-samples')).toHaveText('0');
   await page.getByRole('button', { name: 'Step', exact: true }).click();
@@ -73,7 +83,11 @@ test('2D heatmap, local conditional and Metropolis segments work on phone and de
   await page.getByLabel('Field proposal width').fill('0.015');
   await page.getByLabel('Field thermalization sweeps').fill('0');
   await page.getByRole('button', { name: 'Apply parameters' }).click();
-  await expect(page.getByText(/Segment 2:/)).toBeVisible();
+  await page
+    .locator('#field-laboratory')
+    .getByText('Technical details & measurement coverage')
+    .click();
+  await expect(page.getByText(/segment 2 began at update/)).toBeVisible();
   await page.getByRole('button', { name: 'Run', exact: true }).click();
   await expect
     .poll(async () =>
@@ -98,7 +112,11 @@ test('parameter Apply isolates measurements while retaining comparison records',
   await expect(page.getByTestId('field-samples')).toHaveText('1');
   await page.getByLabel('Field source').fill('1');
   await page.getByRole('button', { name: 'Apply parameters' }).click();
-  await expect(page.getByText(/Segment 2:/)).toBeVisible();
+  await page
+    .locator('#field-laboratory')
+    .getByText('Technical details & measurement coverage')
+    .click();
+  await expect(page.getByText(/segment 2 began at update/)).toBeVisible();
   await expect(page.getByTestId('field-samples')).toHaveText('0');
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('field-samples')).toHaveText('1');
@@ -130,8 +148,14 @@ test('periodic spectral fields and constrained support reset are usable on deskt
   await fieldDetail(page, 2);
   await page.getByRole('button', { name: /Select momentum kx 1/ }).click();
   await fieldDetail(page, 1);
-  await page.getByLabel('Inspect field site').fill('2');
-  await page.getByLabel('Inspect field site').fill('0');
+  await page
+    .getByTestId('featured-tool')
+    .getByLabel('Inspect field site')
+    .fill('2');
+  await page
+    .getByTestId('featured-tool')
+    .getByLabel('Inspect field site')
+    .fill('0');
   expect(
     await page.getByText('Current φ', { exact: false }).first().textContent(),
   ).toBe(before);
