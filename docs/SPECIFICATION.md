@@ -2,7 +2,7 @@
 
 **Version:** 0.16 (featured-tool Stage A, 2026-10-11)
 
-**Status:** M0–M4c0 and the architecture audit are merged. Featured-tool Stage A is implemented on a feature branch; interacting fields remain planned.
+**Status:** M0–M4c0 and the architecture audit are merged. Featured-tool Stage A is implemented; interacting fields remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
