@@ -2102,6 +2102,43 @@ footer {
   padding: 0;
   background: transparent;
 }
+.tool-body > .lattice-canvas-card,
+.tool-body > .lattice-plot-view {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+.lattice-history-controls {
+  gap: 8px 12px;
+  padding: 8px 0 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 14px;
+}
+.lattice-history-controls > span {
+  color: var(--muted);
+  font-weight: 600;
+}
+.lattice-history-controls input[type='number'] {
+  width: 95px;
+}
+.lattice-technical-details > div {
+  max-width: none;
+  color: var(--ink);
+}
+.lattice-technical-details .moments-panel {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  padding: 14px 0 4px;
+  background: transparent;
+}
+.lattice-technical-details .moments-table {
+  margin-top: 12px;
+}
+.lattice-teaching-notes > div {
+  max-width: 76ch;
+}
 .tool-body > .plot-note {
   margin: 10px 0 0;
 }

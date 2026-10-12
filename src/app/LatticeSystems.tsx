@@ -9,7 +9,7 @@ import type {
 } from '../engine/latticeRun';
 import { criticalTemperature } from '../models/latticeIsing';
 import { exactLatticeTwoByTwo } from '../models/latticeExact';
-import { LatticePlots } from '../plotting/LatticePlots';
+import { LatticeToolDeck } from './LatticeToolDeck';
 import { segmentColor } from '../plotting/viewport';
 import { formatNumber } from '../plotting/PlotFrame';
 import { InlineMath, DisplayMath } from '../ui/Math';
@@ -41,188 +41,6 @@ function useLattice() {
   }, []);
   return { view, client };
 }
-function CanvasLattice({
-  snapshot,
-  selected,
-  select,
-}: {
-  snapshot: LatticeSnapshot;
-  selected: number;
-  select: (site: number) => void;
-}) {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const { lx, ly, periodicX, periodicY } = snapshot.configuration.parameters;
-  useEffect(() => {
-    const element = canvas.current!,
-      context = element.getContext('2d')!;
-    const cell = Math.max(6, Math.floor(640 / Math.max(lx, ly)));
-    element.width = lx * cell;
-    element.height = ly * cell;
-    context.fillStyle = '#14625a';
-    context.fillRect(0, 0, element.width, element.height);
-    for (let i = 0; i < snapshot.spins.length; i++) {
-      context.fillStyle = snapshot.spins[i] === 1 ? '#14625a' : '#c87d44';
-      context.fillRect((i % lx) * cell, Math.floor(i / lx) * cell, cell, cell);
-    }
-    if (cell >= 12) {
-      context.strokeStyle = 'rgba(255,255,255,.17)';
-      context.lineWidth = 1;
-      for (let x = 1; x < lx; x++) {
-        context.beginPath();
-        context.moveTo(x * cell, 0);
-        context.lineTo(x * cell, element.height);
-        context.stroke();
-      }
-      for (let y = 1; y < ly; y++) {
-        context.beginPath();
-        context.moveTo(0, y * cell);
-        context.lineTo(element.width, y * cell);
-        context.stroke();
-      }
-    }
-    const mark = (site: number, color: string, width: number) => {
-      if (site < 0) return;
-      context.strokeStyle = color;
-      context.lineWidth = width;
-      context.strokeRect(
-        (site % lx) * cell + width / 2,
-        Math.floor(site / lx) * cell + width / 2,
-        cell - width,
-        cell - width,
-      );
-    };
-    mark(selected, '#152e2a', Math.max(2, cell / 7));
-    if (snapshot.lastTrace)
-      mark(snapshot.lastTrace.site, '#f5ce66', Math.max(2, cell / 9));
-  }, [snapshot, selected, lx, ly]);
-  const site = Math.min(snapshot.spins.length - 1, Math.max(0, selected));
-  return (
-    <section className="lattice-canvas-card" aria-label="Spin configuration">
-      <div className="section-heading">
-        <h2>Spin configuration</h2>
-        <span className="parameter-chip">
-          {lx}×{ly} · {snapshot.spins.length} sites
-        </span>
-      </div>
-      <canvas
-        ref={canvas}
-        data-testid="lattice-canvas"
-        aria-label={`${lx} by ${ly} Ising spin grid; select a site by pointer or use the site controls`}
-        onPointerDown={(event) => {
-          const rect = event.currentTarget.getBoundingClientRect();
-          const x = Math.min(
-            lx - 1,
-            Math.max(
-              0,
-              Math.floor(((event.clientX - rect.left) / rect.width) * lx),
-            ),
-          );
-          const y = Math.min(
-            ly - 1,
-            Math.max(
-              0,
-              Math.floor(((event.clientY - rect.top) / rect.height) * ly),
-            ),
-          );
-          select(x + lx * y);
-        }}
-      />
-      <div className="lattice-legend">
-        <span>
-          <i className="spin-plus" />
-          +1 spin
-        </span>
-        <span>
-          <i className="spin-minus" />
-          −1 spin
-        </span>
-        <span>
-          <i className="spin-latest" />
-          latest updated site
-        </span>
-      </div>
-      <p className="plot-note">
-        The flat image identifies opposite{' '}
-        {periodicX && periodicY
-          ? 'x and y'
-          : periodicX
-            ? 'x'
-            : periodicY
-              ? 'y'
-              : 'no'}{' '}
-        edges{periodicX || periodicY ? ' periodically' : ''}. Pixel position
-        selects lattice coordinates; selection does not change spins.
-      </p>
-      <div className="lattice-site-controls">
-        <label>
-          Inspect x{' '}
-          <input
-            aria-label="Inspect x"
-            type="number"
-            min="0"
-            max={lx - 1}
-            value={site % lx}
-            onChange={(e) =>
-              select(
-                Math.min(lx - 1, Math.max(0, Number(e.target.value))) +
-                  lx * Math.floor(site / lx),
-              )
-            }
-          />
-        </label>
-        <label>
-          y{' '}
-          <input
-            aria-label="Inspect y"
-            type="number"
-            min="0"
-            max={ly - 1}
-            value={Math.floor(site / lx)}
-            onChange={(e) =>
-              select(
-                (site % lx) +
-                  lx * Math.min(ly - 1, Math.max(0, Number(e.target.value))),
-              )
-            }
-          />
-        </label>
-        <span>
-          Spin <strong>{snapshot.spins[site] === 1 ? '+1' : '−1'}</strong>
-        </span>
-      </div>
-      <div className="lattice-detail" aria-label="Selected site neighborhood">
-        {Array.from({ length: 25 }, (_, i) => {
-          const dx = (i % 5) - 2,
-            dy = Math.floor(i / 5) - 2,
-            x = (site % lx) + dx,
-            y = Math.floor(site / lx) + dy;
-          const inBounds =
-            (periodicX || (x >= 0 && x < lx)) &&
-            (periodicY || (y >= 0 && y < ly));
-          const at = ((x + lx) % lx) + lx * ((y + ly) % ly);
-          return (
-            <span
-              key={i}
-              className={`${inBounds ? (snapshot.spins[at] === 1 ? 'plus' : 'minus') : 'outside'} ${i === 12 ? 'center' : ''}`}
-              title={
-                inBounds
-                  ? `(${(x + lx) % lx},${(y + ly) % ly}) ${snapshot.spins[at]}`
-                  : 'Outside open boundary'
-              }
-            >
-              {inBounds ? (snapshot.spins[at] === 1 ? '+' : '−') : ''}
-            </span>
-          );
-        })}
-      </div>
-      <small>
-        5×5 detail centered on ({site % lx}, {Math.floor(site / lx)}); periodic
-        directions wrap.
-      </small>
-    </section>
-  );
-}
-
 function exactTwoByTwo(snapshot: LatticeSnapshot) {
   const p = snapshot.configuration.parameters;
   if (p.lx !== 2 || p.ly !== 2) return null;
@@ -900,191 +718,228 @@ export function LatticeSystems({
               </details>
             </section>
             {snapshot && (
-              <CanvasLattice
+              <LatticeToolDeck
+                key={snapshot.runId}
                 snapshot={snapshot}
                 selected={selected}
                 select={setSelected}
               />
             )}
-            <section className="segment-history">
-              <div className="section-heading">
-                <h2>Parameter segments</h2>
-                <span className="parameter-chip">
-                  latest 8 · {snapshot?.droppedSegments ?? 0} removed
-                </span>
-              </div>
-              {snapshot?.segments.map((s) => (
-                <div
-                  className="lattice-segment-row"
-                  key={s.id}
-                  style={{ borderLeftColor: segmentColor(s.id) }}
-                >
-                  <strong>
-                    S{s.id}
-                    {s.id === snapshot.activeSegmentId ? ' · current' : ''}
-                  </strong>
-                  <span>
-                    T={formatNumber(s.settings.parameters.temperature)}, Jx=
-                    {formatNumber(s.settings.parameters.jx)}, Jy=
-                    {formatNumber(s.settings.parameters.jy)}, h=
-                    {formatNumber(s.settings.parameters.field)} ·{' '}
-                    {s.settings.sampler} · N={s.samples}
-                  </span>
-                  <span>
-                    mean m={formatNumber(s.m.mean)}, |m|=
-                    {formatNumber(s.absM.mean)}, e={formatNumber(s.e.mean)}
-                  </span>
-                </div>
-              ))}
-              <p className="plot-note">
-                Segments never pool measurements from different target
-                distributions. Each retains full online moments and histograms,
-                up to 1,000 recent measurements and logarithmic mean
-                checkpoints. Older measurements and then older segments are
-                evicted. Warm-up is a count, not evidence of mixing.
-              </p>
-            </section>
-            {snapshot && <LatticePlots snapshot={snapshot} />}
-            <section className="moments-panel">
-              <div className="section-heading">
-                <h2>Finite measurements & references</h2>
-              </div>
-              <table className="moments-table">
-                <thead>
-                  <tr>
-                    <th>Observable</th>
-                    <th>Sample mean</th>
-                    <th>Sample variance</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {current &&
-                    (
-                      [
-                        ['m', current.m],
-                        ['|m|', current.absM],
-                        ['e=H/N', current.e],
-                        ['m²', current.m2],
-                        ['e²', current.e2],
-                      ] as const
-                    ).map(([name, stats]) => (
-                      <tr key={name}>
-                        <th>{name}</th>
-                        <td>{formatNumber(stats.mean)}</td>
-                        <td>{formatNumber(stats.variance)}</td>
+            <details className="model-page-details lattice-technical-details">
+              <summary>
+                Technical details, exact references &amp; diagnostics
+              </summary>
+              <div>
+                <section className="segment-history">
+                  <div className="section-heading">
+                    <h2>Parameter segments</h2>
+                    <span className="parameter-chip">
+                      latest 8 · {snapshot?.droppedSegments ?? 0} removed
+                    </span>
+                  </div>
+                  {snapshot?.segments.map((s) => (
+                    <div
+                      className="lattice-segment-row"
+                      key={s.id}
+                      style={{ borderLeftColor: segmentColor(s.id) }}
+                    >
+                      <strong>
+                        S{s.id}
+                        {s.id === snapshot.activeSegmentId ? ' · current' : ''}
+                      </strong>
+                      <span>
+                        T={formatNumber(s.settings.parameters.temperature)}, Jx=
+                        {formatNumber(s.settings.parameters.jx)}, Jy=
+                        {formatNumber(s.settings.parameters.jy)}, h=
+                        {formatNumber(s.settings.parameters.field)} ·{' '}
+                        {s.settings.sampler} · N={s.samples}
+                      </span>
+                      <span>
+                        mean m={formatNumber(s.m.mean)}, |m|=
+                        {formatNumber(s.absM.mean)}, e={formatNumber(s.e.mean)}
+                      </span>
+                    </div>
+                  ))}
+                  <p className="plot-note">
+                    Segments never pool measurements from different target
+                    distributions. Each retains full online moments and
+                    histograms, up to 1,000 recent measurements and logarithmic
+                    mean checkpoints. Older measurements and then older segments
+                    are evicted. Warm-up is a count, not evidence of mixing.
+                  </p>
+                </section>
+                <section className="moments-panel">
+                  <div className="section-heading">
+                    <h2>Finite measurements & references</h2>
+                  </div>
+                  <table className="moments-table">
+                    <thead>
+                      <tr>
+                        <th>Observable</th>
+                        <th>Sample mean</th>
+                        <th>Sample variance</th>
                       </tr>
-                    ))}
-                </tbody>
-              </table>
-              <table
-                className="moments-table"
-                data-testid="lattice-equilibrium-observables"
-              >
-                <caption>
-                  Equilibrium fluctuation and bond observables · current segment
-                </caption>
-                <thead>
-                  <tr>
-                    <th>Observable</th>
-                    <th>Sampled estimate</th>
-                    <th>Exact 2×2</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <th>χ = N(〈m²〉−〈m〉²)/T</th>
-                    <td>
-                      {formatNumber(
-                        current?.fluctuations?.susceptibility ?? null,
-                      )}
-                    </td>
-                    <td>{formatNumber(exact?.chi ?? null)}</td>
-                  </tr>
-                  <tr>
-                    <th>U₄ = 1−〈m⁴〉/(3〈m²〉²)</th>
-                    <td>
-                      {formatNumber(current?.fluctuations?.binder ?? null)}
-                    </td>
-                    <td>{formatNumber(exact?.binder ?? null)}</td>
-                  </tr>
-                  <tr>
-                    <th>cᵥ = N(〈e²〉−〈e〉²)/T²</th>
-                    <td>
-                      {formatNumber(
-                        current?.fluctuations?.specificHeat ?? null,
-                      )}
-                    </td>
-                    <td>{formatNumber(exact?.specificHeat ?? null)}</td>
-                  </tr>
-                  <tr>
-                    <th>Gₓ(1) · x bonds</th>
-                    <td>{formatNumber(current?.gx.mean ?? null)}</td>
-                    <td>{formatNumber(exact?.gx ?? null)}</td>
-                  </tr>
-                  <tr>
-                    <th>Gᵧ(1) · y bonds</th>
-                    <td>{formatNumber(current?.gy.mean ?? null)}</td>
-                    <td>{formatNumber(exact?.gy ?? null)}</td>
-                  </tr>
-                </tbody>
-              </table>
-              <p className="plot-note">
-                χ uses the signed mean m. cᵥ is heat capacity per site at fixed
-                physical Jx, Jy and h. These use population fluctuations of
-                retained measurements, not the N−1 sample variances above. U₄ is
-                N/A when 〈m²〉 is numerically unusable. Bond means divide by
-                actual x/y bond counts, including periodic length-two parallel
-                records. Exact columns apply only to 2×2.
-              </p>
-              {exact && (
-                <p data-testid="lattice-exact">
-                  2×2 exact enumeration (all 16 states; {exact.bonds} distinct
-                  bonds): log Z={formatNumber(exact.logZ)}, 〈m〉=
-                  {formatNumber(exact.m)}, 〈|m|〉={formatNumber(exact.absM)},
-                  〈e〉={formatNumber(exact.e)}, 〈e²〉={formatNumber(exact.e2)}
-                  . Exact P(m):{' '}
-                  {exact.distribution
-                    .map(
-                      ([value, probability]) =>
-                        `${value}: ${formatNumber(probability)}`,
-                    )
-                    .join(' · ')}
-                  .
-                </p>
-              )}
-              {tc !== null ? (
+                    </thead>
+                    <tbody>
+                      {current &&
+                        (
+                          [
+                            ['m', current.m],
+                            ['|m|', current.absM],
+                            ['e=H/N', current.e],
+                            ['m²', current.m2],
+                            ['e²', current.e2],
+                          ] as const
+                        ).map(([name, stats]) => (
+                          <tr key={name}>
+                            <th>{name}</th>
+                            <td>{formatNumber(stats.mean)}</td>
+                            <td>{formatNumber(stats.variance)}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  <table
+                    className="moments-table"
+                    data-testid="lattice-equilibrium-observables"
+                  >
+                    <caption>
+                      Equilibrium fluctuation and bond observables · current
+                      segment
+                    </caption>
+                    <thead>
+                      <tr>
+                        <th>Observable</th>
+                        <th>Sampled estimate</th>
+                        <th>Exact 2×2</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <th>χ = N(〈m²〉−〈m〉²)/T</th>
+                        <td>
+                          {formatNumber(
+                            current?.fluctuations?.susceptibility ?? null,
+                          )}
+                        </td>
+                        <td>{formatNumber(exact?.chi ?? null)}</td>
+                      </tr>
+                      <tr>
+                        <th>U₄ = 1−〈m⁴〉/(3〈m²〉²)</th>
+                        <td>
+                          {formatNumber(current?.fluctuations?.binder ?? null)}
+                        </td>
+                        <td>{formatNumber(exact?.binder ?? null)}</td>
+                      </tr>
+                      <tr>
+                        <th>cᵥ = N(〈e²〉−〈e〉²)/T²</th>
+                        <td>
+                          {formatNumber(
+                            current?.fluctuations?.specificHeat ?? null,
+                          )}
+                        </td>
+                        <td>{formatNumber(exact?.specificHeat ?? null)}</td>
+                      </tr>
+                      <tr>
+                        <th>Gₓ(1) · x bonds</th>
+                        <td>{formatNumber(current?.gx.mean ?? null)}</td>
+                        <td>{formatNumber(exact?.gx ?? null)}</td>
+                      </tr>
+                      <tr>
+                        <th>Gᵧ(1) · y bonds</th>
+                        <td>{formatNumber(current?.gy.mean ?? null)}</td>
+                        <td>{formatNumber(exact?.gy ?? null)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p className="plot-note">
+                    χ uses the signed mean m. cᵥ is heat capacity per site at
+                    fixed physical Jx, Jy and h. These use population
+                    fluctuations of retained measurements, not the N−1 sample
+                    variances above. U₄ is N/A when 〈m²〉 is numerically
+                    unusable. Bond means divide by actual x/y bond counts,
+                    including periodic length-two parallel records. Exact
+                    columns apply only to 2×2.
+                  </p>
+                  {exact && (
+                    <p data-testid="lattice-exact">
+                      2×2 exact enumeration (all 16 states; {exact.bonds}{' '}
+                      distinct bonds): log Z={formatNumber(exact.logZ)}, 〈m〉=
+                      {formatNumber(exact.m)}, 〈|m|〉=
+                      {formatNumber(exact.absM)}, 〈e〉={formatNumber(exact.e)},
+                      〈e²〉={formatNumber(exact.e2)}. Exact P(m):{' '}
+                      {exact.distribution
+                        .map(
+                          ([value, probability]) =>
+                            `${value}: ${formatNumber(probability)}`,
+                        )
+                        .join(' · ')}
+                      .
+                    </p>
+                  )}
+                  {tc !== null ? (
+                    <p>
+                      Infinite-volume theoretical critical temperature for
+                      positive Jx,Jy and h=0: Tc={formatNumber(tc)}. Isotropic
+                      case:{' '}
+                      <InlineMath>{String.raw`T_c/J=2/\log(1+\sqrt2)`}</InlineMath>
+                      . A finite lattice has no true thermodynamic singularity.
+                    </p>
+                  ) : (
+                    <p>
+                      No 2D ferromagnetic critical-temperature reference applies
+                      to these signed couplings or nonzero field.
+                    </p>
+                  )}
+                  <p className="plot-note">
+                    At h=0 the finite-volume exact mean 〈m〉 is zero by
+                    spin-flip symmetry, but a finite local chain may remain in
+                    one sector. |m|, histograms and trajectories help reveal
+                    this. No MCMC error bars or claim of spontaneous symmetry
+                    breaking.
+                  </p>
+                </section>
+                {current && (
+                  <LatticeStatisticalDiagnostics
+                    key={current.id}
+                    segment={current}
+                  />
+                )}
+              </div>
+            </details>
+            <details className="model-page-details lattice-teaching-notes">
+              <summary>
+                Mathematics, exercises &amp; suggested experiments
+              </summary>
+              <div>
                 <p>
-                  Infinite-volume theoretical critical temperature for positive
-                  Jx,Jy and h=0: Tc={formatNumber(tc)}. Isotropic case:{' '}
-                  <InlineMath>{String.raw`T_c/J=2/\log(1+\sqrt2)`}</InlineMath>.
-                  A finite lattice has no true thermodynamic singularity.
+                  The Gibbs probability of a spin configuration is proportional
+                  to <InlineMath>{String.raw`e^{-H/T}`}</InlineMath>. Metropolis
+                  proposes local changes and may reject them; heat bath
+                  resamples from the local conditional law. A nominal sweep
+                  counts N random-site attempts, never physical time.
                 </p>
-              ) : (
                 <p>
-                  No 2D ferromagnetic critical-temperature reference applies to
-                  these signed couplings or nonzero field.
+                  Compare magnetization, susceptibility and the Binder cumulant
+                  across finite sizes. Spatial correlations depend on
+                  boundaries: only fully periodic boxes use the global-mean
+                  connected form. Recent-window autocorrelation and blocking
+                  reveal limitations of Monte Carlo precision, not proof of
+                  equilibration. At zero field, spin-flip symmetry can coexist
+                  with long-lived magnetized trajectories.
                 </p>
-              )}
-              <p className="plot-note">
-                At h=0 the finite-volume exact mean 〈m〉 is zero by spin-flip
-                symmetry, but a finite local chain may remain in one sector.
-                |m|, histograms and trajectories help reveal this. No MCMC error
-                bars or claim of spontaneous symmetry breaking.
-              </p>
-            </section>
-            {current && (
-              <LatticeStatisticalDiagnostics
-                key={current.id}
-                segment={current}
-              />
-            )}
-            <details className="model-notes">
-              <summary>Suggested experiments</summary>
-              {experiments.map(([title, note]) => (
-                <p key={title}>
-                  <strong>{title}.</strong> {note}
+                <p>
+                  Enumerate all 16 states of a 2×2 box to compare exact finite
+                  results with sampling. The theoretical critical temperature
+                  applies only to the infinite-volume ferromagnetic zero-field
+                  model; a finite box has no singularity.
                 </p>
-              ))}
+                {experiments.map(([title, note]) => (
+                  <p key={title}>
+                    <strong>{title}.</strong> {note}
+                  </p>
+                ))}
+              </div>
             </details>
           </div>
         </div>

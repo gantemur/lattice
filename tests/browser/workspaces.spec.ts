@@ -31,7 +31,11 @@ test('five routes keep their order, legacy field route, and independent sessions
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('oscillator-samples')).toHaveText('1');
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
-  await expect(page.getByLabel('Tool 2 type')).toHaveValue('gap');
+  await expect(
+    page
+      .getByRole('region', { name: 'Lattice QM tools' })
+      .getByLabel('Tool 2 type'),
+  ).toHaveValue('gap');
   await page.getByRole('link', { name: 'Lattice Fields', exact: true }).click();
   await expect(page).toHaveURL(/#fields-paths$/);
   await expect(page.getByTestId('field-samples')).toHaveText('0');
@@ -73,7 +77,10 @@ test('tool edits stay in presentation state across parameter changes', async ({
     0,
   );
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
-  await page.getByLabel('Tool 2 type').selectOption('transfer');
+  await page
+    .getByRole('region', { name: 'Lattice QM tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('transfer');
   await expect(page.getByTestId('oscillator-quadrature-quality')).toBeVisible();
   const phoneDetail = page.getByLabel('Lattice QM tools detail tool');
   if (await phoneDetail.isVisible()) {
@@ -144,7 +151,10 @@ test('display changes and navigation preserve a seeded QM path and running worke
     .locator('polyline')
     .getAttribute('points');
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
-  await page.getByLabel('Tool 2 type').selectOption('reflection');
+  await page
+    .getByRole('region', { name: 'Lattice QM tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('reflection');
   await detail(page, 'Lattice QM', 0);
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
@@ -192,7 +202,10 @@ test('field tools explain Fourier availability and phone overview stays within v
 }, testInfo) => {
   await page.goto('#fields-paths');
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
-  await page.getByLabel('Tool 2 type').selectOption('spectrum');
+  await page
+    .getByRole('region', { name: 'Lattice Fields tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('spectrum');
   await expect(
     page
       .getByText(/Full periodicity is required for these momentum eigenmodes/)
@@ -294,7 +307,7 @@ test('featured QM tool spans the main width and swaps without changing seeded pa
   ).toBe(first);
   if (testInfo.project.name === 'desktop') {
     await page.getByRole('button', { name: 'Add tool', exact: true }).click();
-    await page.getByLabel('Tool 2 type').selectOption('history');
+    await deck.getByLabel('Tool 2 type').selectOption('history');
     const [featureBox, firstCard, secondCard] = await Promise.all([
       stage.boundingBox(),
       gallery.nth(0).boundingBox(),
@@ -318,7 +331,9 @@ test('featured Fields tool retains Fourier mode through swaps and phone overview
     .getByRole('button', { name: 'Draft massive periodic example' })
     .click();
   await page.getByRole('button', { name: 'Apply parameters' }).click();
-  const stage = page.getByTestId('featured-tool');
+  const stage = page
+    .getByRole('region', { name: 'Lattice Fields tools' })
+    .getByTestId('featured-tool');
   await expect(
     stage.getByRole('heading', {
       name: 'Current field configuration',
@@ -326,7 +341,11 @@ test('featured Fields tool retains Fourier mode through swaps and phone overview
     }),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
-  await expect(page.getByLabel('Tool 2 type')).toHaveValue('spectrum');
+  await expect(
+    page
+      .getByRole('region', { name: 'Lattice Fields tools' })
+      .getByLabel('Tool 2 type'),
+  ).toHaveValue('spectrum');
   await page.getByLabel('Fourier momentum index').fill('3');
   const spectrumCard = page.getByRole('region', {
     name: 'Fourier spectrum tool',

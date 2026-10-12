@@ -22,7 +22,7 @@ test('QM gallery fills a single desktop row, returns to two columns, and stops a
   }
 
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
-  await expect(page.getByLabel('Tool 2 type')).toHaveValue('gap');
+  await expect(deck.getByLabel('Tool 2 type')).toHaveValue('gap');
   await expect(deck.getByText('2/6 tools')).toBeVisible();
   if (testInfo.project.name === 'desktop') {
     const [first, second] = await Promise.all([
