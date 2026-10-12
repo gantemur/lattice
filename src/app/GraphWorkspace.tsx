@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { IsingModel } from '../models/ising';
 import {
   exactIsing,
@@ -17,67 +17,26 @@ import type { SegmentSnapshot } from '../engine/protocol';
 import type { TransitionRecord } from '../observables/trajectory';
 import { InlineMath } from '../ui/Math';
 import { formatNumber } from '../plotting/PlotFrame';
-export function GraphWorkspace({
+export function GraphVisualization({
   model,
   state,
   record,
   selected,
   setSelected,
-  apply,
-  disabled,
+  edge,
+  setEdge,
 }: {
   model: IsingModel;
   state: number | null;
   record?: TransitionRecord;
   selected: string;
-  setSelected: (s: string) => void;
-  apply: (model: IsingModel) => void;
-  disabled: boolean;
+  setSelected: (site: string) => void;
+  edge: string;
+  setEdge: (edge: string) => void;
 }) {
-  const { domain } = model.parameters,
-    positions = drawingPositions(domain),
-    values = state === null ? null : spins(model, state);
-  const [couplings, setCouplings] = useState(
-      Object.fromEntries(
-        Object.entries(model.parameters.couplings).map(([k, v]) => [
-          k,
-          String(v),
-        ]),
-      ),
-    ),
-    [fields, setFields] = useState(
-      Object.fromEntries(
-        Object.entries(model.parameters.fields).map(([k, v]) => [k, String(v)]),
-      ),
-    ),
-    [edge, setEdge] = useState(domain.edges[0]?.id ?? '');
-  const parameterKey = JSON.stringify([
-    model.parameters.couplings,
-    model.parameters.fields,
-  ]);
-  useEffect(() => {
-    setCouplings(
-      Object.fromEntries(
-        Object.entries(model.parameters.couplings).map(([k, v]) => [
-          k,
-          String(v),
-        ]),
-      ),
-    );
-    setFields(
-      Object.fromEntries(
-        Object.entries(model.parameters.fields).map(([k, v]) => [k, String(v)]),
-      ),
-    );
-  }, [parameterKey]);
-  const selectedEdge = domain.edges.find((e) => e.id === edge);
-  const editor = useRef<HTMLDetailsElement>(null);
-  const couplingInputs = useRef<Record<string, HTMLInputElement | null>>({});
-  const index = domain.vertices.findIndex((v) => v.id === selected);
-  const local = state === null ? null : neighborhood(model, state, index);
-  const plus = state === null ? null : conditionalPlus(model, state, index);
-  const bond =
-    state === null || !selectedEdge ? null : bondInspection(model, state, edge);
+  const { domain } = model.parameters;
+  const positions = drawingPositions(domain);
+  const values = state === null ? null : spins(model, state);
   return (
     <section className="graph-workspace" aria-label="Interactive Ising graph">
       <div className="section-heading">
@@ -272,6 +231,31 @@ export function GraphWorkspace({
           </select>
         </label>
       </div>
+    </section>
+  );
+}
+
+export function GraphInspection({
+  model,
+  state,
+  selected,
+  edge,
+}: {
+  model: IsingModel;
+  state: number | null;
+  selected: string;
+  edge: string;
+}) {
+  const { domain } = model.parameters;
+  const values = state === null ? null : spins(model, state);
+  const selectedEdge = domain.edges.find((bond) => bond.id === edge);
+  const index = domain.vertices.findIndex((vertex) => vertex.id === selected);
+  const local = state === null ? null : neighborhood(model, state, index);
+  const plus = state === null ? null : conditionalPlus(model, state, index);
+  const bond =
+    state === null || !selectedEdge ? null : bondInspection(model, state, edge);
+  return (
+    <section aria-label="Graph local inspection">
       <div className="selection-panels">
         <details className="selection-panel" data-testid="selected-site-panel">
           <summary>
@@ -314,8 +298,8 @@ export function GraphWorkspace({
               </p>
               <p className="plot-note">
                 Conditional on the current neighbors, not the equilibrium
-                marginal. Use “Plot selected spin {selected}” in the plots below
-                to inspect its trajectory.
+                marginal. Select spin {selected} as the target of a trajectory
+                tool to inspect its history.
               </p>
             </>
           ) : (
@@ -351,8 +335,11 @@ export function GraphWorkspace({
             <button
               className="button secondary"
               onClick={() => {
-                if (editor.current) editor.current.open = true;
-                couplingInputs.current[edge]?.focus();
+                const editor = document.getElementById(
+                  'graph-parameter-editor',
+                ) as HTMLDetailsElement | null;
+                if (editor) editor.open = true;
+                document.getElementById(`graph-coupling-${edge}`)?.focus();
               }}
             >
               Edit coupling {edge}
@@ -364,99 +351,144 @@ export function GraphWorkspace({
           </details>
         )}
       </div>
-      <details className="graph-editor" ref={editor}>
-        <summary>Geometry & numerical parameters</summary>
-        <label>
-          Geometry preset
-          <select
-            aria-label="Geometry preset"
-            value={domain.id}
-            disabled={disabled}
-            onChange={(e) => apply(isingPreset(e.target.value as GraphPreset))}
-          >
-            {Object.entries(presetNames).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p className="plot-note">
-          Geometry changes start a new session and restart the chosen seed.
-          Numerical coupling and field edits retain this preset’s topology. In
-          K4, set unwanted pairwise couplings to zero to realize any simple
-          four-site interaction graph. Zero weights never delete bond records.
-        </p>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const number = (v: string) => (v.trim() ? Number(v) : NaN);
-            apply({
-              ...model,
-              parameters: {
-                ...model.parameters,
-                couplings: Object.fromEntries(
-                  Object.entries(couplings).map(([k, v]) => [k, number(v)]),
-                ),
-                fields: Object.fromEntries(
-                  Object.entries(fields).map(([k, v]) => [k, number(v)]),
-                ),
-              },
-            });
-          }}
-          noValidate
-        >
-          <div className="graph-fields">
-            {domain.vertices.map((v) => (
-              <label key={v.id}>
-                Field b at {v.id}
-                <input
-                  aria-label={`Field ${v.id}`}
-                  type="number"
-                  step="any"
-                  min="-10"
-                  max="10"
-                  value={fields[v.id] ?? ''}
-                  onChange={(e) =>
-                    setFields({ ...fields, [v.id]: e.target.value })
-                  }
-                />
-              </label>
-            ))}
-          </div>
-          <div className="graph-fields">
-            {domain.edges.map((e) => (
-              <label key={e.id}>
-                K {e.id} · {e.tail} → {e.head}
-                <input
-                  ref={(input) => {
-                    couplingInputs.current[e.id] = input;
-                  }}
-                  aria-label={`Coupling ${e.id}`}
-                  type="number"
-                  step="any"
-                  min="-10"
-                  max="10"
-                  value={couplings[e.id] ?? ''}
-                  onChange={(ev) =>
-                    setCouplings({ ...couplings, [e.id]: ev.target.value })
-                  }
-                />
-              </label>
-            ))}
-          </div>
-          <button className="button primary" disabled={disabled}>
-            Apply graph parameters
-          </button>
-          <p className="plot-note">
-            K and b: −10 to 10. Apply preserves the configuration and RNG,
-            begins separate statistics and restarts configured warm-up.
-          </p>
-        </form>
-      </details>
     </section>
   );
 }
+
+export function GraphParameterEditor({
+  model,
+  apply,
+  disabled,
+}: {
+  model: IsingModel;
+  apply: (model: IsingModel) => void;
+  disabled: boolean;
+}) {
+  const { domain } = model.parameters;
+  const [couplings, setCouplings] = useState(
+      Object.fromEntries(
+        Object.entries(model.parameters.couplings).map(([k, v]) => [
+          k,
+          String(v),
+        ]),
+      ),
+    ),
+    [fields, setFields] = useState(
+      Object.fromEntries(
+        Object.entries(model.parameters.fields).map(([k, v]) => [k, String(v)]),
+      ),
+    );
+  const parameterKey = JSON.stringify([
+    model.parameters.couplings,
+    model.parameters.fields,
+  ]);
+  useEffect(() => {
+    setCouplings(
+      Object.fromEntries(
+        Object.entries(model.parameters.couplings).map(([k, v]) => [
+          k,
+          String(v),
+        ]),
+      ),
+    );
+    setFields(
+      Object.fromEntries(
+        Object.entries(model.parameters.fields).map(([k, v]) => [k, String(v)]),
+      ),
+    );
+  }, [parameterKey]);
+  return (
+    <details className="graph-editor" id="graph-parameter-editor">
+      <summary>Geometry & numerical parameters</summary>
+      <label>
+        Geometry preset
+        <select
+          aria-label="Geometry preset"
+          value={domain.id}
+          disabled={disabled}
+          onChange={(e) => apply(isingPreset(e.target.value as GraphPreset))}
+        >
+          {Object.entries(presetNames).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="plot-note">
+        Geometry changes start a new session and restart the chosen seed.
+        Numerical coupling and field edits retain this preset’s topology. In K4,
+        set unwanted pairwise couplings to zero to realize any simple four-site
+        interaction graph. Zero weights never delete bond records.
+      </p>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          const number = (v: string) => (v.trim() ? Number(v) : NaN);
+          apply({
+            ...model,
+            parameters: {
+              ...model.parameters,
+              couplings: Object.fromEntries(
+                Object.entries(couplings).map(([k, v]) => [k, number(v)]),
+              ),
+              fields: Object.fromEntries(
+                Object.entries(fields).map(([k, v]) => [k, number(v)]),
+              ),
+            },
+          });
+        }}
+        noValidate
+      >
+        <div className="graph-fields">
+          {domain.vertices.map((v) => (
+            <label key={v.id}>
+              Field b at {v.id}
+              <input
+                aria-label={`Field ${v.id}`}
+                type="number"
+                step="any"
+                min="-10"
+                max="10"
+                value={fields[v.id] ?? ''}
+                onChange={(e) =>
+                  setFields({ ...fields, [v.id]: e.target.value })
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <div className="graph-fields">
+          {domain.edges.map((e) => (
+            <label key={e.id}>
+              K {e.id} · {e.tail} → {e.head}
+              <input
+                id={`graph-coupling-${e.id}`}
+                aria-label={`Coupling ${e.id}`}
+                type="number"
+                step="any"
+                min="-10"
+                max="10"
+                value={couplings[e.id] ?? ''}
+                onChange={(ev) =>
+                  setCouplings({ ...couplings, [e.id]: ev.target.value })
+                }
+              />
+            </label>
+          ))}
+        </div>
+        <button className="button primary" disabled={disabled}>
+          Apply graph parameters
+        </button>
+        <p className="plot-note">
+          K and b: −10 to 10. Apply preserves the configuration and RNG, begins
+          separate statistics and restarts configured warm-up.
+        </p>
+      </form>
+    </details>
+  );
+}
+
 export function ExactIsingPanel({ segment }: { segment: SegmentSnapshot }) {
   const model = segment.model;
   if (model.kind !== 'ising' || !segment.ising) return null;

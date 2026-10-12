@@ -11,8 +11,9 @@ import { variableName } from '../models/singleVariable';
 import { isingTargets } from '../models/ising';
 import { standardGaussianPreset } from '../engine/preset';
 import { useViewport } from '../plotting/useViewport';
+import type { ViewportMemory } from '../plotting/useViewport';
 import { projectSegments } from '../plotting/isingProjection';
-const plotNames: Record<PlotAssignment['plot'], string> = {
+export const plotNames: Record<PlotAssignment['plot'], string> = {
   density: 'Distribution / histogram',
   trajectory: 'Sample trajectory',
   mean: 'Running mean',
@@ -21,31 +22,39 @@ const plotNames: Record<PlotAssignment['plot'], string> = {
   correlation: 'Connected correlation matrix',
   conditional: 'Local conditional probability',
 };
-const targetNames: Record<string, string> = {
+export const targetNames: Record<string, string> = {
   M: 'Total magnetization M',
   m: 'Mean magnetization m',
   absM: 'Absolute magnetization |M|',
   E: 'Total action E = S',
 };
-function Plot({
+export function Plot({
   snapshot,
   assignment,
   fitVersion,
   showHistogram,
+  viewportMemory,
+  viewportKey,
 }: {
   snapshot: Snapshot;
   assignment: PlotAssignment;
   fitVersion: number;
   showHistogram: boolean;
+  viewportMemory?: ViewportMemory;
+  viewportKey?: string;
 }) {
   const segments = useMemo(
     () => projectSegments(snapshot.segments, assignment.target),
     [snapshot, assignment.target],
   );
   const projected = { ...snapshot, segments };
-  const { range, fitAll } = useViewport(projected);
+  const { range, fitAll } = useViewport(projected, viewportMemory, viewportKey);
+  const previousFit = useRef(fitVersion);
   useEffect(() => {
-    fitAll();
+    if (previousFit.current !== fitVersion) {
+      previousFit.current = fitVersion;
+      fitAll();
+    }
   }, [fitVersion]);
   if (!range) return null;
   if (assignment.plot === 'correlation')

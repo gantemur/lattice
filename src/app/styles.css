@@ -1547,14 +1547,17 @@ footer {
   gap: 10px;
   margin: 12px 0;
 }
-.graph-workspace label {
+.graph-workspace label,
+.graph-editor label {
   display: grid;
   gap: 5px;
   font-size: 13px;
   min-width: 0;
 }
 .graph-workspace select,
-.graph-workspace input {
+.graph-workspace input,
+.graph-editor select,
+.graph-editor input {
   width: 100%;
   min-width: 0;
   min-height: 42px;
@@ -1564,8 +1567,77 @@ footer {
   margin-top: 12px;
   padding-top: 10px;
 }
+.sidebar .graph-editor {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #fdfdf9;
+}
 .graph-editor > label {
   margin-top: 12px;
+}
+.graph-editor form {
+  min-width: 0;
+}
+.graph-editor .graph-fields {
+  grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+}
+.tool-body .graph-workspace {
+  max-width: none;
+}
+.tool-body .graph-diagram {
+  max-width: 600px;
+}
+.small-plot-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 18px;
+  margin-bottom: 10px;
+}
+.small-plot-options label:not(.checkbox-label) {
+  min-width: min(100%, 220px);
+  font-size: 12px;
+}
+.small-plot-options select {
+  margin-top: 4px;
+}
+.small-refit-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.small-refit-controls .plot-note {
+  margin: 0;
+}
+.variable-visual {
+  text-align: center;
+}
+.variable-visual .site-diagram {
+  margin-inline: auto;
+}
+.small-technical-details {
+  margin: 12px 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 8px 14px;
+  background: #fdfdf9;
+}
+.small-technical-details > summary {
+  cursor: pointer;
+  min-height: 40px;
+  align-content: center;
+  color: var(--teal);
+  font-weight: 700;
+}
+.small-technical-details .moments-panel {
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 0 0;
 }
 .plot-card.expanded-plot {
   grid-column: 1 / -1;

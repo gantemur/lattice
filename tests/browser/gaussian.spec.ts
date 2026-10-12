@@ -74,8 +74,8 @@ test('settings, display changes, and keyboard controls preserve seed replay', as
   await settings.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByLabel('Seed on Reset')).not.toBeVisible();
-  await page.getByLabel('Histogram', { exact: true }).uncheck();
-  await page.getByLabel('Histogram', { exact: true }).check();
+  await page.getByLabel('Histogram for tool 0', { exact: true }).uncheck();
+  await page.getByLabel('Histogram for tool 0', { exact: true }).check();
   await expect(page.getByTestId('sample-count')).toHaveText('1');
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await expect(step(page)).toBeEnabled();
@@ -127,7 +127,7 @@ test('parameter switching preserves old segments, current value, and axes; Reset
   await expect(page.getByTestId('current-value')).toHaveText('—');
 });
 
-test('Fit All adjusts only the viewport and leaves history and RNG untouched', async ({
+test('Refit axes adjusts only the viewport and leaves history and RNG untouched', async ({
   page,
 }) => {
   await page.goto('./');
@@ -142,7 +142,7 @@ test('Fit All adjusts only the viewport and leaves history and RNG untouched', a
   const history = await page
     .getByRole('region', { name: 'Recent measurement segments' })
     .textContent();
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect
     .poll(
       async () =>
@@ -156,64 +156,78 @@ test('Fit All adjusts only the viewport and leaves history and RNG untouched', a
   ).toHaveText(history!);
 });
 
-test('dynamic plots add, remove, collapse, expand and rearrange without sampling', async ({
+test('teaching tools add, collapse, feature, expand and rearrange without sampling', async ({
   page,
 }, info) => {
   await page.goto('./');
   await sampleBatch(page);
-  const count = await page.getByTestId('sample-count').textContent(),
-    value = await page.getByTestId('current-value').textContent();
+  const count = await page.getByTestId('sample-count').textContent();
+  const value = await page.getByTestId('current-value').textContent();
   await expect(
-    page.getByRole('article', { name: /Plot /, includeHidden: true }),
-  ).toHaveCount(2);
-  await expect(page.getByLabel('View for plot 1')).toHaveValue('density');
-  const mobile = info.project.name !== 'desktop';
-  if (mobile)
-    await page
-      .getByRole('button', { name: 'Compact overview', exact: true })
-      .click();
-  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
-  await page.getByLabel('View for plot 3').selectOption('error');
+    page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('featured-tool'),
+  ).toContainText('Distribution / histogram');
   await expect(
-    page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
-  ).toBeVisible();
-  await page
-    .getByRole('button', { name: 'Collapse plot 3', exact: true })
-    .click();
+    page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('teaching-tool'),
+  ).toHaveCount(1);
+  const add = page.getByRole('button', { name: 'Add tool', exact: true });
+  await add.click();
+  const errorCard = page.locator('[data-assignment-key="2"]').first();
+  await errorCard.getByLabel('Tool 2 type').selectOption('error');
+  await expect(errorCard).toContainText('Absolute error (log–log)');
+  await errorCard.getByRole('button', { name: /Collapse/ }).click();
+  await expect(errorCard).toHaveClass(/tool-collapsed/);
+  await errorCard.getByRole('button', { name: /Open/ }).click();
+  await errorCard.getByRole('button', { name: /Move earlier/ }).click();
   await expect(
-    page.getByRole('img', { name: 'Log–log absolute error of running mean' }),
-  ).not.toBeVisible();
-  await page.getByRole('button', { name: 'Open plot 3', exact: true }).click();
-  await page
-    .getByRole('button', { name: 'Move plot 3 up', exact: true })
-    .click();
-  await expect(page.getByLabel('View for plot 2')).toHaveValue('error');
-  await page
-    .getByRole('button', { name: 'Expand plot 2', exact: true })
-    .click();
+    page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('teaching-tool')
+      .first(),
+  ).toHaveAttribute('data-assignment-key', '2');
+  await errorCard.getByRole('button', { name: /Expand/ }).click();
+  await expect(errorCard).toHaveClass(/tool-expanded/);
+  await errorCard.getByRole('button', { name: /Feature/ }).click();
   await expect(
-    page.getByRole('article', { name: 'Plot 2', exact: true }),
-  ).toHaveClass(/expanded-plot/);
-  if (mobile)
-    await page
-      .getByRole('button', { name: 'Compact overview', exact: true })
-      .click();
-  for (let i = 0; i < 3; i++)
-    await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
+    page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('featured-tool'),
+  ).toContainText('Absolute error (log–log)');
   await expect(
-    page.getByRole('button', { name: 'Add Plot', exact: true }),
-  ).toBeDisabled();
-  for (let i = 6; i >= 1; i--)
-    await page
-      .getByRole('button', { name: `Remove plot ${i}`, exact: true })
-      .click();
+    page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('teaching-tool')
+      .first(),
+  ).toHaveAttribute('data-assignment-key', '0');
+  for (let i = 0; i < 4; i++) await add.click();
   await expect(
-    page.getByRole('article', { name: /Plot /, includeHidden: true }),
+    page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('teaching-tool'),
+  ).toHaveCount(6);
+  await expect(add).toBeDisabled();
+  for (let i = 0; i < 6; i++) {
+    const first = page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('teaching-tool')
+      .first();
+    const detail = page.getByLabel('Small Systems tools detail tool');
+    if (await detail.isVisible())
+      await detail.selectOption(
+        (await first.getAttribute('data-assignment-key'))!,
+      );
+    await first.getByRole('button', { name: /Remove/ }).click();
+  }
+  await expect(
+    page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('teaching-tool'),
   ).toHaveCount(0);
-  await expect(
-    page.getByText('No plots open.', { exact: false }),
-  ).toBeVisible();
-  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
+  await expect(page.getByText('No gallery tools are open.')).toBeVisible();
+  await add.click();
   await expect(page.getByTestId('sample-count')).toHaveText(count!);
   await expect(page.getByTestId('current-value')).toHaveText(value!);
   expect(
@@ -221,7 +235,7 @@ test('dynamic plots add, remove, collapse, expand and rearrange without sampling
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
-  if (mobile) {
+  if (info.project.name !== 'desktop') {
     await page.setViewportSize({ width: 780, height: 360 });
     expect(
       await page.evaluate(

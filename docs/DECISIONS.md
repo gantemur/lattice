@@ -286,6 +286,14 @@ Lattice Systems adopts the QM/Fields model-page hierarchy. The existing interact
 
 The selected canvas site belongs to the Lattice Systems workspace so it survives a feature/gallery exchange; selection does not flip a spin or consume randomness. The synchronized 100/500/1000 nominal-sweep history window belongs to the Lattice Systems presentation adapter and appears only when an active history tool needs it. Separate spatial displacement choices belong to keyed spatial-tool assignments and follow them across exchanges. React may remount a renderer when moved; the worker snapshot remains authoritative. Tool edits, viewport navigation and collapse state cannot change sampling or merge parameter segments. The finite lattice's fully periodic connected-versus-open/mixed raw spatial-correlation convention, exact 2×2 bond multiplicity and conditional infinite-volume critical-temperature label remain intact. Small Systems and Experiments are not migrated by this decision.
 
+## Accepted Small Systems model-page Stage D1 convention — 2026-10-12
+
+### D-048 — Keep numerical ownership while standardizing elementary and graph-Ising presentation
+
+The Gaussian, single-spin, binomial and finite graph-Ising pages use the same one-featured-plus-six-gallery assignment system as the other model pages. Elementary models feature their exact distribution and start with a trajectory card; graph Ising features its interactive, read-only topology/configuration and starts with magnetization distribution and trajectory cards. The existing seven Small Systems scientific renderers remain the sole implementations of these plots. Connected correlation and local conditional views are offered only for graph Ising. A graph plot's observable and a distribution card's empirical-histogram choice belong to its keyed presentation assignment; a feature/gallery exchange preserves them. Refit axes replaces the old Small Systems Fit All label and recomputes display bounds only. The real scalar graph keeps its legacy inspector and Fit All label until Stage D2.
+
+Graph visualization/selection and local inspection are separate from the sidebar's numerical coupling, field and topology editor. The selected site and edge belong to the mounted Small Systems workspace, so remounting the graph visualization never selects a new numerical state. Draft parameters still apply through the established `applyGraph`/topology-key path: compatible values begin isolated segments while topology changes start seeded sessions. The worker, RNG, exact calculations, capture/archive formats, periodic multigraph edges and faces remain unchanged. Existing graph presets remain accessible; the named-example catalog and edge-presence editing wait for Stage D3.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

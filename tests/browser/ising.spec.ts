@@ -10,6 +10,9 @@ async function start(page: Page) {
   await expect(
     page.getByRole('heading', { name: 'Periodic 1×4 chain', exact: true }),
   ).toBeVisible();
+  await page
+    .getByText('Exact references & diagnostics', { exact: true })
+    .click();
 }
 async function editor(page: Page) {
   if (!(await page.getByLabel('Geometry preset', { exact: true }).isVisible()))
@@ -28,12 +31,9 @@ async function sampler(page: Page, kind: string, warmup = '2') {
     .click();
   await expect(step(page)).toBeEnabled();
 }
-async function overview(page: Page) {
-  const toggle = page.getByRole('button', {
-    name: 'Compact overview',
-    exact: true,
-  });
-  if (await toggle.isVisible()) await toggle.click();
+async function detail(page: Page, key: number) {
+  const select = page.getByLabel('Small Systems tools detail tool');
+  if (await select.isVisible()) await select.selectOption(String(key));
 }
 async function noOverflow(page: Page) {
   expect(
@@ -282,29 +282,30 @@ test('graph selection and six observable views do not mutate the paused experime
   await expect(page.getByLabel('Selected site', { exact: true })).toHaveValue(
     'v2',
   );
-  await page
-    .getByRole('button', { name: 'Plot selected spin v2', exact: true })
-    .click();
-  await expect(page.getByLabel('Variable for plot 3')).toHaveValue('v2');
-  await overview(page);
-  await page.getByLabel('View for plot 3').selectOption('conditional');
+  const add = page.getByRole('button', { name: 'Add tool', exact: true });
+  await add.click();
+  const card3 = page
+    .getByRole('region', { name: 'Small Systems tools' })
+    .getByTestId('teaching-tool')
+    .filter({ has: page.getByLabel('Tool 3 type') });
+  await card3.getByLabel('Tool 3 type').selectOption('conditional');
+  await expect(card3.getByLabel('Observable for tool 3')).toHaveValue('v2');
   await expect(
     page.getByRole('heading', {
       name: 'v2 · conditional at current neighbors',
-      exact: true,
     }),
   ).toBeVisible();
   for (let i = 4; i <= 6; i++) {
-    await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
+    await add.click();
     await page
-      .getByLabel(`View for plot ${i}`)
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByLabel(`Tool ${i} type`)
       .selectOption(i === 4 ? 'correlation' : i === 5 ? 'mean' : 'density');
-    if (i === 5 || i === 6)
-      await page.getByLabel(`Variable for plot ${i}`).selectOption('E');
+    if (i >= 5)
+      await page.getByLabel(`Observable for tool ${i}`).selectOption('E');
   }
-  await expect(
-    page.getByRole('button', { name: 'Add Plot', exact: true }),
-  ).toBeDisabled();
+  await expect(add).toBeDisabled();
+  await detail(page, 4);
   await expect(
     page.getByText(
       'Connected correlations · exact / sampled (current segment)',
@@ -318,13 +319,21 @@ test('graph selection and six observable views do not mutate the paused experime
     }),
   ).toBeVisible();
   await expect(page.getByTestId('independent-band')).toHaveCount(0);
+  await detail(page, 6);
   await page
-    .getByRole('button', { name: 'Move plot 6 up', exact: true })
+    .getByRole('region', { name: 'Small Systems tools' })
+    .getByTestId('teaching-tool')
+    .filter({ has: page.getByLabel('Tool 6 type') })
+    .getByRole('button', { name: /Move earlier/ })
     .click();
+  await detail(page, 4);
   await page
-    .getByRole('button', { name: 'Collapse plot 4', exact: true })
+    .getByRole('region', { name: 'Small Systems tools' })
+    .getByTestId('teaching-tool')
+    .filter({ has: page.getByLabel('Tool 4 type') })
+    .getByRole('button', { name: /Collapse/ })
     .click();
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect(page.getByTestId('spin-configuration')).toHaveText(state!);
   await expect(page.getByTestId('total-updates')).toHaveText('1');
   await noOverflow(page);
@@ -366,7 +375,7 @@ test('Run, pause and inspect retain graph history across thousands of worker upd
   await expect(page.getByTestId('sample-count')).toHaveText(String(n - 10));
   await step(page).click();
   await expect(page.getByTestId('total-updates')).toHaveText(String(n + 1));
-  await overview(page);
+  await detail(page, 2);
   await expect(page.getByTestId('trajectory-retention')).toContainText(
     '100 exact transitions shown',
   );
@@ -387,6 +396,7 @@ test('local selection, edit handoff and log-error inspection preserve seeded sam
   await expect(page.getByLabel('Selected site', { exact: true })).toHaveValue(
     'v1',
   );
+  await page.getByText('Local graph inspection', { exact: true }).click();
   const site = page.getByTestId('selected-site-panel');
   await site.locator('summary').click();
   await expect(site).toContainText(
@@ -405,8 +415,11 @@ test('local selection, edit handoff and log-error inspection preserve seeded sam
     .getByRole('button', { name: 'Edit coupling e2', exact: true })
     .click();
   await expect(page.getByLabel('Coupling e2', { exact: true })).toBeFocused();
-  await overview(page);
-  await page.getByLabel('View for plot 1').selectOption('error');
+  await detail(page, 1);
+  await page
+    .getByRole('region', { name: 'Small Systems tools' })
+    .getByLabel('Tool 1 type')
+    .selectOption('error');
   const chart = page.getByRole('img', {
     name: 'Log–log absolute error of running mean',
     exact: true,
@@ -418,7 +431,7 @@ test('local selection, edit handoff and log-error inspection preserve seeded sam
     'current absolute error:',
   );
   const viewport = await chart.getAttribute('data-viewport');
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect(chart).toHaveAttribute('data-viewport', viewport!);
   await expect(page.getByTestId('spin-configuration')).toHaveText(state!);
   await expect(page.getByTestId('total-updates')).toHaveText('1');

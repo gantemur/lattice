@@ -154,7 +154,7 @@ export function ModelNotes({ model }: { model: Model }) {
           RNG stream. Model-family changes start a new session. Reset clears
           history and restarts the selected seed with applied settings; initial
           chain states are 0 (Gaussian), +1 (spin), or round(np) (binomial),
-          never fabricated measurements. Fit All changes axes only.
+          never fabricated measurements. Refit axes changes visual limits only.
           Reproducibility requires the same seed, settings/update sequence and
           build.
         </p>
@@ -197,11 +197,11 @@ function IsingNotes() {
           Reset starts local chains with all spins +1. Warm-up (default 200
           local updates) is discarded per new segment, not proof of mixing.
           Coupling, field and algorithm changes keep compatible configurations
-          and the random stream. Topology changes start a new session; Add Plot,
-          graph selection and Fit All do not change numerical state. Eight
-          segments retain at most 1000 transitions each, bounded running-mean
-          checkpoints and full configuration counts. No MCMC confidence bands or
-          ESS.
+          and the random stream. Topology changes start a new session; tool
+          selection, graph selection and Refit axes do not change numerical
+          state. Eight segments retain at most 1000 transitions each, bounded
+          running-mean checkpoints and full configuration counts. No MCMC
+          confidence bands or ESS.
         </p>
         <DisplayMath>{String.raw`T_{st}=\exp(Kst+b(s+t)/2),\qquad Z_{\mathrm{ring},N=4}=\operatorname{Tr}(T^4)`}</DisplayMath>
         <p>
