@@ -1,4 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
 import type {
   LatticeSegmentSnapshot,
   LatticeSnapshot,
@@ -29,7 +28,7 @@ export type LatticePlot =
   | 'e-blocking'
   | 'spatial-x'
   | 'spatial-y';
-const names: Record<LatticePlot, string> = {
+export const latticePlotNames: Record<LatticePlot, string> = {
   'm-history': 'Magnetization history',
   'abs-history': '|m| history',
   'e-history': 'Energy density history',
@@ -47,13 +46,10 @@ const names: Record<LatticePlot, string> = {
   'spatial-x': 'Spatial correlation · x',
   'spatial-y': 'Spatial correlation · y',
 };
-const choices = Object.entries(names) as [LatticePlot, string][];
-type Assignment = {
-  id: number;
-  plot: LatticePlot;
-  collapsed: boolean;
-  expanded: boolean;
-};
+export const latticePlotChoices = Object.entries(latticePlotNames) as [
+  LatticePlot,
+  string,
+][];
 const field = (
   plot: LatticePlot,
 ): keyof Pick<Measurement, 'm' | 'absM' | 'e'> =>
@@ -88,7 +84,7 @@ function History({
   const high = plot === 'e-history' ? Math.max(0.1, ...values) : 1;
   return (
     <PlotFrame
-      label={`${names[plot]}, sweeps ${start}–${end}`}
+      label={`${latticePlotNames[plot]}, sweeps ${start}–${end}`}
       viewport={`${start}:${end}`}
     >
       {(f) => {
@@ -166,7 +162,7 @@ function Histogram({
     ),
   );
   return (
-    <PlotFrame label={names[plot]} viewport={`${low}:${high}`}>
+    <PlotFrame label={latticePlotNames[plot]} viewport={`${low}:${high}`}>
       {(f) => (
         <>
           <line
@@ -244,7 +240,7 @@ function Mean({
   const low = Math.min(0, ...all.map((p) => p.value), ...values),
     high = Math.max(0.1, ...all.map((p) => p.value), ...values);
   return (
-    <PlotFrame label={names[plot]} viewport={`1:${maxCount}`}>
+    <PlotFrame label={latticePlotNames[plot]} viewport={`1:${maxCount}`}>
       {(f) => (
         <>
           <line
@@ -334,289 +330,80 @@ function Outcomes({ segments }: { segments: LatticeSegmentSnapshot[] }) {
   );
 }
 
-export function LatticePlots({ snapshot }: { snapshot: LatticeSnapshot }) {
-  const [slots, setSlots] = useState<Assignment[]>([
-    { id: 1, plot: 'm-history', collapsed: false, expanded: false },
-    { id: 2, plot: 'e-history', collapsed: false, expanded: false },
-  ]);
-  const [nextId, setNextId] = useState(3),
-    [windowSize, setWindowSize] = useState(100),
-    [follow, setFollow] = useState(true),
-    [end, setEnd] = useState(0),
-    [overview, setOverview] = useState(false),
-    [detail, setDetail] = useState(1),
-    [spatialMaximum, setSpatialMaximum] = useState(4);
-  useEffect(() => {
-    setSlots([
-      { id: 1, plot: 'm-history', collapsed: false, expanded: false },
-      { id: 2, plot: 'e-history', collapsed: false, expanded: false },
-    ]);
-    setNextId(3);
-    setWindowSize(100);
-    setFollow(true);
-    setEnd(0);
-    setOverview(false);
-    setDetail(1);
-    setSpatialMaximum(4);
-  }, [snapshot.runId]);
+/** Scientific projections stay independent of gallery placement and worker scheduling. */
+export function LatticePlotView({
+  snapshot,
+  plot,
+  windowSize,
+  end,
+  spatialMaximum,
+}: {
+  snapshot: LatticeSnapshot;
+  plot: LatticePlot;
+  windowSize: number;
+  end: number;
+  spatialMaximum: number;
+}) {
   const earliest = Math.min(
     snapshot.sweeps,
-    ...snapshot.segments.flatMap((s) => s.measurements.map((m) => m.sweep)),
+    ...snapshot.segments.flatMap((segment) =>
+      segment.measurements.map((measurement) => measurement.sweep),
+    ),
   );
-  const displayedEnd = follow
-    ? snapshot.sweeps
-    : Math.min(snapshot.sweeps, Math.max(earliest, end));
-  const update = (id: number, patch: Partial<Assignment>) =>
-    setSlots((old) => old.map((s) => (s.id === id ? { ...s, ...patch } : s)));
-  const visible = useMemo(() => slots, [slots]);
+  const current = snapshot.segments.at(-1)!;
   return (
-    <section
-      className={`lattice-plots ${overview ? 'show-overview' : ''}`}
-      aria-label="Lattice plots"
-    >
-      <div className="section-heading">
-        <h2>Measurements & diagnostics</h2>
-        <button
-          className="button"
-          disabled={slots.length >= 6}
-          onClick={() => {
-            setSlots([
-              ...slots,
-              {
-                id: nextId,
-                plot: 'm-histogram',
-                collapsed: false,
-                expanded: false,
-              },
-            ]);
-            setDetail(nextId);
-            setNextId(nextId + 1);
-          }}
-        >
-          Add plot
-        </button>
-      </div>
-      <div className="plot-controls">
-        <label>
-          Spatial max r{' '}
-          <select
-            aria-label="Spatial maximum displacement"
-            value={spatialMaximum}
-            onChange={(e) => setSpatialMaximum(Number(e.target.value))}
-          >
-            {[1, 2, 3, 4].map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Window{' '}
-          <select
-            aria-label="Measurement window"
-            value={windowSize}
-            onChange={(e) => setWindowSize(Number(e.target.value))}
-          >
-            <option value="100">100 sweeps</option>
-            <option value="500">500 sweeps</option>
-            <option value="1000">1000 sweeps</option>
-          </select>
-        </label>
-        <button
-          className="button"
-          onClick={() => {
-            setFollow(false);
-            setEnd(Math.max(earliest, displayedEnd - windowSize));
-          }}
-        >
-          Older
-        </button>
-        <button
-          className="button"
-          onClick={() => {
-            const newer = Math.min(snapshot.sweeps, displayedEnd + windowSize);
-            setEnd(newer);
-            setFollow(newer === snapshot.sweeps);
-          }}
-        >
-          Newer
-        </button>
-        <label>
-          <input
-            type="checkbox"
-            checked={follow}
-            onChange={(e) => {
-              setFollow(e.target.checked);
-              if (!e.target.checked) setEnd(snapshot.sweeps);
-            }}
-          />{' '}
-          Follow latest
-        </label>
-        <label>
-          End sweep{' '}
-          <input
-            aria-label="End sweep"
-            type="number"
-            min={earliest}
-            max={snapshot.sweeps}
-            value={displayedEnd}
-            onChange={(e) => {
-              setFollow(false);
-              setEnd(Number(e.target.value));
-            }}
-          />
-        </label>
-      </div>
-      <div className="mobile-plot-controls">
-        <label>
-          Detail{' '}
-          <select
-            aria-label="Lattice detail plot"
-            value={detail}
-            onChange={(e) => setDetail(Number(e.target.value))}
-          >
-            {slots.map((s) => (
-              <option key={s.id} value={s.id}>
-                {names[s.plot]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={overview}
-            onChange={(e) => setOverview(e.target.checked)}
-          />{' '}
-          Overview
-        </label>
-      </div>
-      <div className="plot-grid">
-        {visible.map((slot, index) => (
-          <article
-            key={slot.id}
-            className={`plot-card assigned-slot ${slot.expanded ? 'expanded-plot' : ''} ${detail === slot.id ? 'active-detail' : ''}`}
-          >
-            <div className="plot-card-heading">
-              <label>
-                Plot {index + 1}
-                <select
-                  aria-label={`Plot ${index + 1} type`}
-                  value={slot.plot}
-                  onChange={(e) =>
-                    update(slot.id, { plot: e.target.value as LatticePlot })
-                  }
-                >
-                  {choices.map(([key, title]) => (
-                    <option key={key} value={key}>
-                      {title}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="slot-actions">
-                <button
-                  className="text-button"
-                  onClick={() =>
-                    update(slot.id, { collapsed: !slot.collapsed })
-                  }
-                >
-                  {slot.collapsed ? 'Open' : 'Collapse'}
-                </button>
-                <button
-                  className="text-button"
-                  onClick={() => update(slot.id, { expanded: !slot.expanded })}
-                >
-                  {slot.expanded ? 'Normal' : 'Expand'}
-                </button>
-                <button
-                  className="text-button"
-                  disabled={index === 0}
-                  onClick={() =>
-                    setSlots((old) => {
-                      const next = [...old];
-                      [next[index - 1], next[index]] = [
-                        next[index]!,
-                        next[index - 1]!,
-                      ];
-                      return next;
-                    })
-                  }
-                >
-                  ↑
-                </button>
-                <button
-                  className="text-button"
-                  onClick={() => {
-                    const remaining = slots.filter((s) => s.id !== slot.id);
-                    setSlots(remaining);
-                    if (detail === slot.id) setDetail(remaining[0]?.id ?? 0);
-                  }}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-            {!slot.collapsed &&
-              (slot.plot.endsWith('history') ? (
-                <History
-                  snapshot={snapshot}
-                  plot={slot.plot}
-                  windowSize={windowSize}
-                  end={displayedEnd}
-                />
-              ) : slot.plot.endsWith('histogram') ? (
-                <Histogram segments={snapshot.segments} plot={slot.plot} />
-              ) : slot.plot.endsWith('mean') ? (
-                <Mean segments={snapshot.segments} plot={slot.plot} />
-              ) : slot.plot.endsWith('acf') ? (
-                <AutocorrelationPlot
-                  diagnostic={
-                    snapshot.segments.at(-1)!.diagnostics[
-                      slot.plot.startsWith('abs')
-                        ? 'absM'
-                        : slot.plot.startsWith('e-')
-                          ? 'e'
-                          : 'm'
-                    ]
-                  }
-                />
-              ) : slot.plot.endsWith('blocking') ? (
-                <BlockingPlot
-                  diagnostic={
-                    snapshot.segments.at(-1)!.diagnostics[
-                      slot.plot.startsWith('e-') ? 'e' : 'm'
-                    ]
-                  }
-                />
-              ) : slot.plot.startsWith('spatial') ? (
-                <SpatialPlot
-                  segment={snapshot.segments.at(-1)!}
-                  axis={slot.plot.endsWith('x') ? 'x' : 'y'}
-                  maximum={spatialMaximum}
-                />
-              ) : (
-                <Outcomes segments={snapshot.segments} />
-              ))}
-            <p className="plot-note">
-              {slot.plot.endsWith('history')
-                ? `Global sweep window ${Math.max(0, displayedEnd - windowSize)}–${displayedEnd}. Earliest retained sweep ${earliest}; gaps and segments are never joined.`
-                : slot.plot.endsWith('histogram')
-                  ? 'Each color is one parameter segment; full-segment counts, not only visible history.'
-                  : slot.plot.endsWith('mean')
-                    ? 'Correlated MCMC means; no independent-sample error band or mixing guarantee.'
-                    : slot.plot.endsWith('acf')
-                      ? 'Worker-computed recent-window ρ(k); lag is in retained measurements, not spin updates. Dashed line marks the summation window.'
-                      : slot.plot.endsWith('blocking')
-                        ? 'Nonoverlapping blocks; the remainder is omitted. Orange is the autocorrelation-window SE when supported.'
-                        : slot.plot.startsWith('spatial')
-                          ? 'Current segment only. Fully periodic: G(r)−〈m〉²; open or mixed boundaries: raw G(r). Ordered positive-axis origin pairs, not all pairs.'
-                          : 'Counts include warm-up. Heat bath has no acceptance test.'}
-            </p>
-          </article>
-        ))}
-      </div>
+    <section className="lattice-plot-view" aria-label={latticePlotNames[plot]}>
+      {plot.endsWith('history') ? (
+        <History
+          snapshot={snapshot}
+          plot={plot}
+          windowSize={windowSize}
+          end={end}
+        />
+      ) : plot.endsWith('histogram') ? (
+        <Histogram segments={snapshot.segments} plot={plot} />
+      ) : plot.endsWith('mean') ? (
+        <Mean segments={snapshot.segments} plot={plot} />
+      ) : plot.endsWith('acf') ? (
+        <AutocorrelationPlot
+          diagnostic={
+            current.diagnostics[
+              plot.startsWith('abs')
+                ? 'absM'
+                : plot.startsWith('e-')
+                  ? 'e'
+                  : 'm'
+            ]
+          }
+        />
+      ) : plot.endsWith('blocking') ? (
+        <BlockingPlot
+          diagnostic={current.diagnostics[plot.startsWith('e-') ? 'e' : 'm']}
+        />
+      ) : plot.startsWith('spatial') ? (
+        <SpatialPlot
+          segment={current}
+          axis={plot.endsWith('x') ? 'x' : 'y'}
+          maximum={spatialMaximum}
+        />
+      ) : (
+        <Outcomes segments={snapshot.segments} />
+      )}
+      <p className="plot-note">
+        {plot.endsWith('history')
+          ? `Global sweep window ${Math.max(0, end - windowSize)}–${end}. Earliest retained sweep ${earliest}; gaps and segments are never joined.`
+          : plot.endsWith('histogram')
+            ? 'Each color is one parameter segment; full-segment counts, not only visible history.'
+            : plot.endsWith('mean')
+              ? 'Correlated MCMC means; no independent-sample error band or mixing guarantee.'
+              : plot.endsWith('acf')
+                ? 'Worker-computed recent-window ρ(k); lag is in retained measurements, not spin updates. Dashed line marks the summation window.'
+                : plot.endsWith('blocking')
+                  ? 'Nonoverlapping blocks; the remainder is omitted. Orange is the autocorrelation-window SE when supported.'
+                  : plot.startsWith('spatial')
+                    ? 'Current segment only. Fully periodic: G(r)−〈m〉²; open or mixed boundaries: raw G(r). Ordered positive-axis origin pairs, not all pairs.'
+                    : 'Counts include warm-up. Heat bath has no acceptance test.'}
+      </p>
     </section>
   );
 }

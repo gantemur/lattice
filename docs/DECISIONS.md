@@ -278,6 +278,14 @@ The model-page hierarchy keeps a concise action and conventions above collapsibl
 
 The present Small Systems **Fit All** operation recomputes viewport axes from retained segments and analytical references without changing samples or model parameters; axes otherwise tend to grow rather than shrink. In the later Small Systems migration, label this operation **Refit axes** and explain that it only changes the display, not numerical parameter fitting. The current global Histogram checkbox affects sampled histogram overlays on all distribution cards. A future migration should give each applicable card its own histogram choice keyed by assignment, including separate states for repeated distribution views. Stage B does not change those existing controls or their scientific projections.
 
+## Accepted Lattice Systems model-page Stage C convention — 2026-10-12
+
+### D-047 — Preserve the Ising canvas and scientific projections as independent teaching tools
+
+Lattice Systems adopts the QM/Fields model-page hierarchy. The existing interactive square-lattice spin canvas is extracted into one renderer and featured by default; the two default gallery cards show signed magnetization and physical energy density against nominal sweeps. The original 16 plot IDs and their model-specific projections remain available as zero to six optional cards in the existing `ToolDeck`. The 2×2 exact reference, full-segment finite observables, M3a statistical readout, parameter segments and measurement coverage remain below the gallery in collapsible technical details. The local transition inspector remains near Run/Pause and Step. This changes presentation, not Hamiltonian, transition kernels, worker measurements, archive data or sweep commands.
+
+The selected canvas site belongs to the Lattice Systems workspace so it survives a feature/gallery exchange; selection does not flip a spin or consume randomness. The synchronized 100/500/1000 nominal-sweep history window belongs to the Lattice Systems presentation adapter and appears only when an active history tool needs it. Separate spatial displacement choices belong to keyed spatial-tool assignments and follow them across exchanges. React may remount a renderer when moved; the worker snapshot remains authoritative. Tool edits, viewport navigation and collapse state cannot change sampling or merge parameter segments. The finite lattice's fully periodic connected-versus-open/mixed raw spatial-correlation convention, exact 2×2 bond multiplicity and conditional infinite-volume critical-temperature label remain intact. Small Systems and Experiments are not migrated by this decision.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

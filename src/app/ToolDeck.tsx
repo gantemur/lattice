@@ -11,6 +11,7 @@ import {
   removeGalleryTool,
   replaceFeaturedTool,
 } from './toolAssignments';
+import type { ToolLayout } from './toolAssignments';
 
 export type ToolDefinition<Id extends string> = {
   id: Id;
@@ -29,6 +30,7 @@ export function ToolDeck<Id extends string>({
   defaults,
   addPreference,
   renderTool,
+  renderSharedControls,
   onRemove,
 }: {
   title: string;
@@ -38,6 +40,11 @@ export function ToolDeck<Id extends string>({
   /** Currently useful defaults in model order; every tool remains selectable. */
   addPreference?: readonly Id[];
   renderTool: (id: Id, assignmentKey: number) => ReactNode;
+  /** Optional contextual toolbar for tools sharing one display-only view state. */
+  renderSharedControls?: (
+    layout: ToolLayout<Id>,
+    activeTools: readonly Id[],
+  ) => ReactNode;
   onRemove?: (assignmentKey: number) => void;
 }) {
   const eligible = tools.filter((tool) => tool.featureable !== false);
@@ -66,6 +73,15 @@ export function ToolDeck<Id extends string>({
   const featuredDefinition = tools.find(
     (tool) => tool.id === layout.featured.tool,
   )!;
+  const activeTools = [
+    layout.featured.tool,
+    ...layout.gallery
+      .filter(
+        (item) =>
+          !item.collapsed && (!phone || (!overview && item.key === detail)),
+      )
+      .map((item) => item.tool),
+  ];
 
   return (
     <section
@@ -112,6 +128,8 @@ export function ToolDeck<Id extends string>({
           {renderTool(layout.featured.tool, layout.featured.key)}
         </div>
       </div>
+
+      {renderSharedControls?.(layout, activeTools)}
 
       <div className="tool-deck-controls">
         <h2>Measurements &amp; diagnostics</h2>

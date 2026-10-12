@@ -7,12 +7,21 @@ async function open(page: import('@playwright/test').Page) {
     page.getByRole('button', { name: 'Step', exact: true }),
   ).toBeEnabled();
 }
+async function openTechnical(page: import('@playwright/test').Page) {
+  const details = page.locator('.lattice-technical-details');
+  if (
+    !(await details.evaluate((element) => (element as HTMLDetailsElement).open))
+  )
+    await details.locator('summary').first().click();
+}
+
 test('2×2 exact reference, true step trace, quench segments and Reset', async ({
   page,
 }) => {
   await open(page);
   await page.getByLabel('Size preset').selectOption('2');
   await page.getByRole('button', { name: 'Apply settings' }).click();
+  await openTechnical(page);
   await expect(page.getByTestId('lattice-exact')).toContainText(
     '8 distinct bonds',
   );
@@ -41,6 +50,7 @@ test('valid low-temperature 2×2 reference renders through Step and Run without 
   await page.getByLabel('Vertical Jy').fill('10');
   await page.getByLabel('Field h').fill('10');
   await page.getByRole('button', { name: 'Apply settings' }).click();
+  await openTechnical(page);
   const reference = page.getByTestId('lattice-exact');
   await expect(reference).toBeVisible();
   await expect(reference).toContainText('8 distinct bonds');
@@ -108,8 +118,8 @@ test('16, 32 and 64 grids sample in a worker and plots remain display-only', asy
   ).toBeEnabled();
   const count = Number(await page.getByTestId('lattice-updates').textContent());
   await page.getByLabel('Measurement window').selectOption('500');
-  await page.getByRole('button', { name: 'Add plot' }).click();
-  await page.getByRole('button', { name: 'Older' }).click();
+  await page.getByRole('button', { name: 'Add tool' }).click();
+  await page.getByRole('checkbox', { name: 'Follow latest' }).uncheck();
   await expect(page.getByTestId('lattice-updates')).toHaveText(String(count));
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('lattice-updates')).toHaveText(
@@ -127,9 +137,12 @@ test('phone lattice, settings and plot controls fit width; heat bath labels acce
     .getByLabel('Sampler')
     .selectOption('heat-bath');
   await page.getByRole('button', { name: 'Apply settings' }).click();
-  await page.getByRole('button', { name: 'Add plot' }).click();
-  await page.getByLabel('Plot 3 type').selectOption('acceptance');
-  if (isMobile) await page.getByLabel('Lattice detail plot').selectOption('3');
+  await page.getByRole('button', { name: 'Add tool' }).click();
+  await page.getByLabel('Tool 3 type').selectOption('acceptance');
+  if (isMobile)
+    await page
+      .getByLabel('Lattice Systems tools detail tool')
+      .selectOption('3');
   await expect(page.getByText('acceptance N/A')).toBeVisible();
   const widths = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
@@ -167,6 +180,7 @@ test('M3a exact and sampled 2×2 fluctuation observables and constant diagnostic
   await page.getByLabel('Temperature T').fill('2');
   await page.getByLabel('Warm-up sweeps').fill('0');
   await page.getByRole('button', { name: 'Apply settings' }).click();
+  await openTechnical(page);
   const table = page.getByTestId('lattice-equilibrium-observables');
   await expect(table.getByRole('row', { name: /χ =/ })).toContainText('0.5');
   await expect(table.getByRole('row', { name: /U₄ =/ })).toContainText(
@@ -234,6 +248,7 @@ test('M3a autocorrelation plots and quench statistics remain segment-local and d
     )
     .toBeGreaterThan(64);
   await page.getByRole('button', { name: 'Ⅱ Pause' }).click();
+  await openTechnical(page);
   await page
     .getByTestId('lattice-diagnostics')
     .locator('summary')
@@ -241,14 +256,16 @@ test('M3a autocorrelation plots and quench statistics remain segment-local and d
     .click();
   await expect(page.getByTestId('diagnostic-coverage')).toContainText('/');
   const before = await page.getByTestId('lattice-updates').textContent();
-  await page.getByRole('button', { name: 'Add plot' }).click();
-  await page.getByLabel('Plot 3 type').selectOption('m-acf');
-  if (await page.getByLabel('Lattice detail plot').isVisible())
-    await page.getByLabel('Lattice detail plot').selectOption('3');
+  await page.getByRole('button', { name: 'Add tool' }).click();
+  await page.getByLabel('Tool 3 type').selectOption('m-acf');
+  if (await page.getByLabel('Lattice Systems tools detail tool').isVisible())
+    await page
+      .getByLabel('Lattice Systems tools detail tool')
+      .selectOption('3');
   await expect(
     page.getByRole('img', { name: /Autocorrelation of m/ }).first(),
   ).toBeVisible();
-  await page.getByLabel('Plot 3 type').selectOption('spatial-x');
+  await page.getByLabel('Tool 3 type').selectOption('spatial-x');
   await expect(
     page.getByRole('img', { name: /pair correlation/ }),
   ).toBeVisible();
@@ -274,6 +291,7 @@ test('M3a sweep cadence and spatial labels respect mixed boundaries', async ({
   await page.getByLabel('Warm-up sweeps').fill('0');
   await page.getByLabel('Measure every sweeps').fill('3');
   await page.getByRole('button', { name: 'Apply settings' }).click();
+  await openTechnical(page);
   const diagnostics = page.getByTestId('lattice-diagnostics');
   await diagnostics.locator('summary').first().click();
   await expect(diagnostics.getByText('3 nominal sweep(s)')).toBeVisible();
@@ -286,22 +304,22 @@ test('M3a sweep cadence and spatial labels respect mixed boundaries', async ({
   await page.getByLabel('Size preset').selectOption('4');
   await page.getByLabel('Periodic y').uncheck();
   await page.getByRole('button', { name: 'Apply settings' }).click();
-  await page.getByRole('button', { name: 'Add plot' }).click();
-  await page.getByLabel('Plot 3 type').selectOption('spatial-x');
+  await page.getByRole('button', { name: 'Add tool' }).click();
+  await page.getByLabel('Tool 3 type').selectOption('spatial-x');
   await expect(
     page.getByRole('img', { name: /^Raw x-axis pair correlation/ }),
   ).toBeVisible();
   await page.getByLabel('Periodic y').check();
   await page.getByRole('button', { name: 'Apply settings' }).click();
-  await page.getByRole('button', { name: 'Add plot' }).click();
-  await page.getByLabel('Plot 3 type').selectOption('spatial-x');
+  await page.getByRole('button', { name: 'Add tool' }).click();
+  await page.getByLabel('Tool 3 type').selectOption('spatial-x');
   await expect(
     page.getByRole('img', { name: /^Connected x-axis pair correlation/ }),
   ).toBeVisible();
   await page.getByLabel('Periodic x').uncheck();
   await page.getByRole('button', { name: 'Apply settings' }).click();
-  await page.getByRole('button', { name: 'Add plot' }).click();
-  await page.getByLabel('Plot 3 type').selectOption('spatial-y');
+  await page.getByRole('button', { name: 'Add tool' }).click();
+  await page.getByLabel('Tool 3 type').selectOption('spatial-y');
   await expect(
     page.getByRole('img', { name: /^Raw y-axis pair correlation/ }),
   ).toBeVisible();
