@@ -182,8 +182,11 @@ export function OscillatorView({
     defaultOscillatorConfiguration,
   );
   const [seed, setSeed] = useState(String(defaultOscillatorConfiguration.seed));
-  const [limit, setLimit] = useState(3);
-  const [lag, setLag] = useState(1);
+  // Presentation options follow assignment keys across feature/gallery swaps.
+  const [pathLimits, setPathLimits] = useState<Record<number, number>>({});
+  const [effectiveLags, setEffectiveLags] = useState<Record<number, number>>(
+    {},
+  );
   const [notice, setNotice] = useState(
     'Draw a periodic path or Step one Monte Carlo update.',
   );
@@ -202,7 +205,6 @@ export function OscillatorView({
   const sampled = current?.measurements
     ? segmentCorrelator(current.pairProducts)
     : null;
-  const shownLag = Math.max(1, Math.min(lag, Math.floor(p.sites / 2)));
 
   function attempt(action: () => void, message: string) {
     try {
@@ -295,8 +297,6 @@ export function OscillatorView({
         },
       ]
     : [];
-  const clipped = path?.filter((value) => Math.abs(value) > limit).length ?? 0;
-
   return (
     <>
       <a className="skip-link" href="#qm-laboratory">
@@ -393,44 +393,52 @@ export function OscillatorView({
                   : `One nominal Monte Carlo sweep is ${p.sites} random-site updates. Warm-up and stride belong to this segment; local-chain measurements can be correlated.`}
               </p>
             </section>
-            <div className="field-display-controls">
-              <label>
-                Fixed path range ±
-                <input
-                  aria-label="Oscillator path range"
-                  type="number"
-                  min="0.1"
-                  max="50"
-                  step="any"
-                  value={limit}
-                  onChange={(event) => {
-                    const number = Number(event.target.value);
-                    if (number >= 0.1 && number <= 50) setLimit(number);
-                  }}
-                />
-              </label>
-              <label>
-                Effective-gap lag ℓ
-                <input
-                  aria-label="Oscillator effective-gap lag"
-                  type="number"
-                  min="1"
-                  max={Math.floor(p.sites / 2)}
-                  step="1"
-                  value={shownLag}
-                  onChange={(event) => setLag(Number(event.target.value))}
-                />
-              </label>
-            </div>
             <ToolDeck
               title="Lattice QM tools"
               tools={qmTools}
               featuredDefault="path"
               defaults={['correlator']}
-              renderTool={(tool) => {
-                if (tool === 'path')
+              onRemove={(key) => {
+                setPathLimits((current) => {
+                  const next = { ...current };
+                  delete next[key];
+                  return next;
+                });
+                setEffectiveLags((current) => {
+                  const next = { ...current };
+                  delete next[key];
+                  return next;
+                });
+              }}
+              renderTool={(tool, assignmentKey) => {
+                if (tool === 'path') {
+                  const limit = pathLimits[assignmentKey] ?? 3;
+                  const clipped =
+                    path?.filter((value) => Math.abs(value) > limit).length ??
+                    0;
                   return (
                     <>
+                      <div className="tool-options">
+                        <label>
+                          Fixed path range ±
+                          <input
+                            aria-label="Oscillator path range"
+                            type="number"
+                            min="0.1"
+                            max="50"
+                            step="any"
+                            value={limit}
+                            onChange={(event) => {
+                              const value = Number(event.target.value);
+                              if (value >= 0.1 && value <= 50)
+                                setPathLimits((current) => ({
+                                  ...current,
+                                  [assignmentKey]: value,
+                                }));
+                            }}
+                          />
+                        </label>
+                      </div>
                       <ScientificChart
                         title="Current periodic path x(t)"
                         curves={pathCurve}
@@ -444,6 +452,7 @@ export function OscillatorView({
                       </p>
                     </>
                   );
+                }
                 if (tool === 'correlator')
                   return (
                     <>
@@ -478,27 +487,109 @@ export function OscillatorView({
                   ) : (
                     <p>Wait for a path session.</p>
                   );
+                const lag = Math.max(
+                  1,
+                  Math.min(
+                    effectiveLags[assignmentKey] ?? 1,
+                    Math.floor(p.sites / 2),
+                  ),
+                );
                 return (
-                  <OscillatorTheory
-                    p={p}
-                    sampled={sampled}
-                    shownLag={shownLag}
-                    measurements={current?.measurements ?? 0}
-                    samplerKind={current?.settings.sampler.kind ?? 'spectral'}
-                    panel={tool}
-                  />
+                  <>
+                    {tool === 'effective' && (
+                      <div className="tool-options">
+                        <label>
+                          Effective-gap lag ℓ
+                          <input
+                            aria-label="Oscillator effective-gap lag"
+                            type="number"
+                            min="1"
+                            max={Math.floor(p.sites / 2)}
+                            step="1"
+                            value={lag}
+                            onChange={(event) =>
+                              setEffectiveLags((previous) => ({
+                                ...previous,
+                                [assignmentKey]: Number(event.target.value),
+                              }))
+                            }
+                          />
+                        </label>
+                      </div>
+                    )}
+                    <OscillatorTheory
+                      p={p}
+                      sampled={sampled}
+                      shownLag={lag}
+                      measurements={current?.measurements ?? 0}
+                      samplerKind={current?.settings.sampler.kind ?? 'spectral'}
+                      panel={tool}
+                    />
+                  </>
                 );
               }}
             />
-            <p className="plot-note">
-              Seed {snapshot?.seed ?? seed}; segment {current?.id ?? '—'} began
-              at update {current?.startUpdate ?? 0}.{' '}
-              {current?.warmupUpdates ?? 0} warm-up updates,{' '}
-              {current?.measurements ?? 0} retained paths,{' '}
-              {current?.discardedMeasurements ?? 0} recent display vectors
-              evicted. Pair-product aggregates still span the whole retained
-              segment. A fixed warm-up period does not prove equilibration.
-            </p>
+            <details className="model-page-details">
+              <summary>Technical details &amp; measurement coverage</summary>
+              <div>
+                <p>
+                  Seed {snapshot?.seed ?? seed}; segment {current?.id ?? '—'}{' '}
+                  began at update {current?.startUpdate ?? 0}.{' '}
+                  {current?.warmupUpdates ?? 0} warm-up updates,{' '}
+                  {current?.measurements ?? 0} retained paths,{' '}
+                  {current?.discardedMeasurements ?? 0} older display vectors
+                  evicted. Pair-product aggregates span the full retained
+                  segment, while plotted paths are bounded. Changed physical
+                  parameters start a separate measurement segment.
+                </p>
+                <p>
+                  A fixed warm-up period does not prove equilibration. Sampled
+                  effective gaps are provisional and have no nonlinear
+                  uncertainty estimate. The finite-grid transfer calculation is
+                  optional, lazy and labeled by its numerical quality.
+                </p>
+              </div>
+            </details>
+            <details className="model-page-details">
+              <summary>
+                Mathematics, exercises &amp; suggested experiments
+              </summary>
+              <div>
+                <p>
+                  The harmonic Hamiltonian H=p²/2+ω²x²/2 gives a periodic
+                  Euclidean path action. The inverse temperature β is divided
+                  among N time sites, so a=β/N. Euclidean separation along the
+                  path is neither algorithmic update count nor physical real
+                  time.
+                </p>
+                <p>
+                  The finite-spacing lattice gap approaches the continuum gap ω
+                  as a shrinks. The exact and sampled two-point correlators give
+                  an effective-gap estimate; finite sampling can make its acosh
+                  ratio unusable. The transfer-operator quadrature is a
+                  finite-grid illustration with explicit quality warnings.
+                  Reflection-positive covariance here is an illustration, not a
+                  proof of all reconstruction axioms.
+                </p>
+                <ul>
+                  <li>
+                    Increase N at fixed β and compare finite-spacing and
+                    continuum gaps.
+                  </li>
+                  <li>
+                    Compare independent Fourier draws with local Metropolis or
+                    heat bath.
+                  </li>
+                  <li>
+                    Inspect effective-gap instability and under-resolved
+                    transfer quadrature.
+                  </li>
+                </ul>
+                <a href="https://github.com/gantemur/lattice/blob/main/docs/math/euclidean-oscillator.md">
+                  Euclidean-oscillator mathematics ↗
+                </a>
+              </div>
+            </details>
           </div>
         </div>
       </main>

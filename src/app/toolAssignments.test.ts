@@ -5,6 +5,7 @@ import {
   featureGalleryTool,
   initialToolLayout,
   moveGalleryTool,
+  nextGalleryTool,
   removeGalleryTool,
   replaceFeaturedTool,
 } from './toolAssignments';
@@ -76,5 +77,44 @@ describe('featured and gallery assignments', () => {
     expect(featureGalleryTool(layout, 1, eligible)).toBe(layout);
     expect(featureGalleryTool(layout, 999, eligible)).toBe(layout);
     expect(replaceFeaturedTool(layout, 'update', eligible)).toBe(layout);
+  });
+});
+
+describe('Add tool defaults', () => {
+  const order: Tool[] = ['profile', 'inspection', 'spectrum', 'update'];
+
+  it('skips featured and gallery types until each suitable type is represented', () => {
+    let layout = initialToolLayout<Tool>('profile', ['inspection']);
+    expect(nextGalleryTool(layout, order)).toBe('spectrum');
+    layout = addGalleryTool(layout, 2, nextGalleryTool(layout, order));
+    expect(nextGalleryTool(layout, order)).toBe('update');
+  });
+
+  it('uses a useful duplicate once every suitable type is represented', () => {
+    const layout = initialToolLayout<Tool>('profile', [
+      'inspection',
+      'spectrum',
+    ]);
+    expect(nextGalleryTool(layout, order, ['profile', 'inspection'])).toBe(
+      'inspection',
+    );
+  });
+
+  it('defers an inapplicable Fourier view without hiding its explicit choice', () => {
+    const layout = initialToolLayout<Tool>('profile', ['inspection']);
+    expect(
+      nextGalleryTool(layout, order, ['profile', 'inspection', 'update']),
+    ).toBe('update');
+    expect(order).toContain('spectrum');
+  });
+
+  it('keeps the six-card limit even when the default is a duplicate', () => {
+    let layout = initialToolLayout<Tool>('profile', []);
+    for (let key = 1; key <= 6; key++)
+      layout = addGalleryTool(layout, key, nextGalleryTool(layout, order));
+    expect(layout.gallery).toHaveLength(6);
+    expect(addGalleryTool(layout, 7, nextGalleryTool(layout, order))).toBe(
+      layout,
+    );
   });
 });

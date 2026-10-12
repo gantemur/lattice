@@ -1904,6 +1904,15 @@ footer {
   font-size: 12px;
   overflow-x: auto;
 }
+.field-layout .model-card .katex-display {
+  text-align: left;
+}
+.field-layout .settings button[type='submit'] {
+  background: #e4f0e9;
+  border-color: #9abdae;
+  color: var(--teal);
+  font-weight: 700;
+}
 .field-main {
   min-width: 0;
 }
@@ -1974,8 +1983,9 @@ footer {
   font-weight: 700;
 }
 .tool-featured-heading label {
-  min-width: min(100%, 230px);
+  min-width: min(100%, 210px);
   font-size: 12px;
+  color: var(--muted);
 }
 .tool-featured-heading select {
   margin-top: 4px;
@@ -1985,30 +1995,32 @@ footer {
 }
 .tool-deck-controls {
   display: flex;
-  align-items: end;
+  align-items: center;
   flex-wrap: wrap;
   gap: 10px;
   margin-bottom: 12px;
 }
 .tool-deck-controls h2 {
-  flex: 1 1 100%;
+  flex: 1 1 auto;
   margin: 0;
 }
-.tool-deck-controls label,
-.tool-change {
+.tool-deck-controls label {
   font-size: 12px;
   min-width: 0;
 }
-.tool-deck-controls label {
-  flex: 1 1 210px;
-}
-.tool-deck-controls select,
+.tool-detail-select select,
 .tool-change select {
   margin-top: 4px;
 }
 .tool-deck-controls > .plot-note {
   align-self: center;
   margin: 0;
+}
+.tool-count {
+  color: var(--muted);
+}
+.tool-add {
+  min-height: 40px;
 }
 .tool-grid {
   display: grid;
@@ -2026,44 +2038,60 @@ footer {
 .tool-card.tool-expanded {
   grid-column: 1 / -1;
 }
+.tool-grid-single .tool-card:not(.tool-collapsed) {
+  grid-column: 1 / -1;
+}
 .tool-card-heading {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 0.8fr);
+  align-items: end;
   gap: 8px;
 }
-.tool-card-heading h3 {
-  margin: 0;
-}
-.tool-card-heading p {
-  color: var(--muted);
-  font-size: 12px;
-  margin: 3px 0 0;
+.tool-card-heading .tool-overview-title {
+  display: none;
 }
 .tool-card-heading small {
   color: var(--teal);
   font-weight: 700;
 }
+.tool-change {
+  min-width: 0;
+  margin: 0;
+  font-size: 12px;
+}
+.tool-change select {
+  width: 100%;
+}
 .tool-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  grid-column: 1 / -1;
+  gap: 2px 7px;
+  border-top: 1px solid var(--line);
+  padding-top: 5px;
 }
 .tool-card-actions button {
-  min-height: 44px;
-  padding: 5px 9px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  min-height: 40px;
+  padding: 5px 4px;
+  border: 0;
+  border-radius: 4px;
   color: var(--teal);
-  background: #fff;
+  background: transparent;
 }
-.tool-change {
-  display: block;
-  margin: 9px 0;
+.tool-card-actions button:hover:not(:disabled) {
+  background: #edf5ef;
+}
+.tool-card-actions button:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+}
+.tool-card-actions button:disabled {
+  opacity: 0.38;
 }
 .tool-body {
   min-width: 0;
   overflow-x: auto;
+  margin-top: 10px;
 }
 .tool-body > .field-results,
 .tool-body > .field-visual,
@@ -2076,6 +2104,47 @@ footer {
 }
 .tool-body > .plot-note {
   margin: 10px 0 0;
+}
+.tool-body svg.field-history,
+.tool-body .field-visual svg,
+.tool-body .oscillator-chart svg {
+  max-width: 840px;
+  margin-inline: auto;
+}
+.tool-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 2px 0 10px;
+}
+.tool-options label {
+  flex: 1 1 130px;
+  max-width: 230px;
+  font-size: 12px;
+}
+.tool-options input {
+  margin-top: 4px;
+}
+.model-page-details {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+}
+.model-page-details > summary {
+  padding-inline: 2px;
+}
+.model-page-details > div {
+  padding: 0 2px 12px;
+  max-width: 76ch;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.model-page-details p {
+  margin: 0 0 10px;
+}
+.model-page-details ul {
+  margin: 0 0 10px;
+  padding-left: 20px;
 }
 .tool-empty {
   padding: 20px;
@@ -2101,6 +2170,10 @@ footer {
   .tool-overview .tool-card {
     display: block;
   }
+  .tool-overview .tool-card-heading .tool-overview-title {
+    display: block;
+    margin: 3px 0 0;
+  }
   .tool-overview .tool-body,
   .tool-overview .tool-change,
   .tool-overview .tool-card-actions {
@@ -2108,6 +2181,14 @@ footer {
   }
   .tool-overview .tool-view-detail {
     display: block;
+  }
+}
+@media (max-width: 560px) {
+  .tool-card-heading {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .tool-card-actions {
+    grid-column: 1;
   }
 }
 .oscillator-quality-warning {

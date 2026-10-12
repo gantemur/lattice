@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.16 (featured-tool Stage A, 2026-10-11)
+**Version:** 0.17 (QM/Fields model-page Stage B, 2026-10-12)
 
-**Status:** M0–M4c0 and the architecture audit are merged. Featured-tool Stage A is implemented; interacting fields remain planned.
+**Status:** M0–M4c0 and the architecture audit are merged. Model-page Stages A–B are implemented for QM and Fields; interacting fields remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -92,6 +92,8 @@ The five top-level workspaces are Small Systems, Lattice Systems, Lattice QM, La
 QM features the current path above a gallery defaulting to the two-point correlator. Optional views show exact gap references, sampled effective gap and correlator table, finite-grid transfer analysis, reflection positivity, and bounded recent path-average history. Fields features the current configuration profile/heatmap above a gallery defaulting to selected-site/covariance inspection. Optional views show Fourier spectrum, retained history and latest update inspection. Nonperiodic Fourier analysis states why it is unavailable.
 
 Each page has one full-width featured assignment, independent of a zero-to-six-card gallery. Stable tool IDs name renderers; unique assignment keys name placements, including repeated tool types. A gallery **Feature** action swaps whole assignments with the stage; the featured selector explicitly replaces its current tool without discarding a gallery card. Summary analyses that do not benefit from the stage are gallery-only. A swap may remount React renderers, so persistent presentation choices such as Fourier momentum remain keyed above them. Add/change, collapse/open, expand/normal width, reorder, remove, feature and replace affect presentation only; phone layout keeps the feature visible above single-detail or compact-overview gallery modes. An empty gallery explains how to add a tool. Optional transfer quadrature is computed lazily only when its active body renders and is cached by physical parameters. No tool change alters RNG, measurement cadence or worker-side collection. The main Run/Pause button is unified while Step and Reset remain separate; Pause permits an already posted batch to finish.
+
+For these two pages, a concise mathematical definition and collapsible applied-settings draft form occupy the left sidebar. The main column puts Run/Pause, Step, Reset and readings before the feature; **Measurements & diagnostics** follows, then collapsible technical coverage and short mathematics, exercises and suggested experiments. **Add tool** creates a card immediately, selecting the first currently suitable unrepresented tool in model order, counting both featured and gallery assignments; when all suitable views are represented it may duplicate a useful view. Every card retains its own selector. On desktop, a sole open gallery card spans both columns without forcing its chart to stretch; two or more open cards use two columns. Collapsed cards do not constrain the sole open visualization. Card actions are quiet but retain accessible names, keyboard focus and touch targets. Model-specific display controls appear beside the visualization or analysis they affect: path/field range, selected and comparison site, effective-gap lag and Fourier momentum. Their persistent choices follow keyed assignments through an exchange; display changes never issue worker updates. The Fields site selection is intentionally shared between relevant tools. Small Systems, Lattice Systems and Experiments have not yet adopted this page structure.
 
 ### 2.5 Navigation contract
 

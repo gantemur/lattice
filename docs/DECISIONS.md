@@ -266,6 +266,18 @@ Stage A gives each of QM and Fields one always-visible, full-width featured assi
 
 React can remount a tool moved between containers. Persistent Fourier mode selection therefore belongs to its keyed assignment in the Fields workspace, and removed assignments release that state. Other persistent viewport, time-lag and site choices remain owned by the corresponding workspace. All these operations read existing snapshots only: they do not post update commands, consume random numbers, reset a segment, or change worker ownership. Inactive or collapsed transfer analysis remains lazy and cached. This is a presentation pilot, not a universal tool registry or a migration of Small Systems, Lattice Systems or Experiments.
 
+## Accepted model-page Stage B conventions — 2026-10-12
+
+### D-045 — Direct, model-ordered gallery additions and contextual display controls
+
+In QM and Fields, Add tool immediately creates one card. A small pure helper takes the page's existing tool order and, where known, a list of currently suitable views. It first chooses a suitable type absent from both the featured position and gallery; after exhausting those types it chooses a useful duplicate. Applicability affects only this default, not explicit choices in a card selector. Six is the gallery limit regardless of the featured assignment. A newly added card becomes the active phone detail. Replacing the featured tool retains its placement key; Feature exchanges whole keyed assignments. A persistent display range, comparison site, effective-gap lag or Fourier momentum follows that key across exchange. The selected field site is intentionally shared across relevant tools. None of these presentation operations posts numerical commands.
+
+The model-page hierarchy keeps a concise action and conventions above collapsible parameter drafts in the sidebar, with Run/Pause/Step/Reset and readings, full-width featured display, diagnostics gallery, collapsible technical details and short mathematics/exercises in the main column. One open gallery card spans the desktop grid; two or more open cards use two columns. Quiet action styling retains named controls, visible keyboard focus and touch-size targets. Optional numerical analyses remain selectable tools and are activated only by an open body. Small Systems, Lattice Systems and Experiments retain their existing layouts until separate migrations.
+
+### D-046 — Deferred Small Systems display-control labels
+
+The present Small Systems **Fit All** operation recomputes viewport axes from retained segments and analytical references without changing samples or model parameters; axes otherwise tend to grow rather than shrink. In the later Small Systems migration, label this operation **Refit axes** and explain that it only changes the display, not numerical parameter fitting. The current global Histogram checkbox affects sampled histogram overlays on all distribution cards. A future migration should give each applicable card its own histogram choice keyed by assignment, including separate states for repeated distribution views. Stage B does not change those existing controls or their scientific projections.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

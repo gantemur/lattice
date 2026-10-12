@@ -28,7 +28,7 @@ export function OscillatorControls({
     <aside className="sidebar" aria-label="Oscillator settings">
       <section className="model-card">
         <p className="eyebrow">Physical path action · ℏ=kB=m=1</p>
-        <DisplayMath>{String.raw`S_a(x)=\sum_{j=0}^{N-1}\left[\frac{(x_{j+1}-x_j)^2}{2a}+\frac{a\omega^2x_j^2}{2}\right]`}</DisplayMath>
+        <DisplayMath>{String.raw`\begin{aligned}S_a(x)={}&\sum_{j=0}^{N-1}\frac{(x_{j+1}-x_j)^2}{2a}\\&+\sum_{j=0}^{N-1}\frac{a\omega^2x_j^2}{2}\end{aligned}`}</DisplayMath>
         <p>
           Periodic xₙ=x₀ closes the path but is not another variable. The target
           is <InlineMath>{String.raw`e^{-S_a}\prod_j dx_j`}</InlineMath>. Its

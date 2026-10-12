@@ -30,8 +30,8 @@ test('five routes keep their order, legacy field route, and independent sessions
   ).toHaveAttribute('aria-current', 'page');
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('oscillator-samples')).toHaveText('1');
-  await page.getByLabel('Lattice QM tools add tool type').selectOption('gap');
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  await expect(page.getByLabel('Tool 2 type')).toHaveValue('gap');
   await page.getByRole('link', { name: 'Lattice Fields', exact: true }).click();
   await expect(page).toHaveURL(/#fields-paths$/);
   await expect(page.getByTestId('field-samples')).toHaveText('0');
@@ -72,10 +72,8 @@ test('tool edits stay in presentation state across parameter changes', async ({
   await expect(page.getByTestId('oscillator-quadrature-quality')).toHaveCount(
     0,
   );
-  await page
-    .getByLabel('Lattice QM tools add tool type')
-    .selectOption('transfer');
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  await page.getByLabel('Tool 2 type').selectOption('transfer');
   await expect(page.getByTestId('oscillator-quadrature-quality')).toBeVisible();
   const phoneDetail = page.getByLabel('Lattice QM tools detail tool');
   if (await phoneDetail.isVisible()) {
@@ -113,18 +111,12 @@ test('tool edits stay in presentation state across parameter changes', async ({
     .getByLabel('Tool 1 type')
     .selectOption('history');
   await expect(
-    page.getByRole('heading', {
-      name: 'Recent path-average history',
-      level: 3,
-    }),
+    page.getByRole('region', { name: 'Recent path-average history tool' }),
   ).toBeVisible();
   await page.getByLabel('Oscillator omega').fill('2');
   await page.getByRole('button', { name: 'Apply parameters' }).click();
   await expect(
-    page.getByRole('heading', {
-      name: 'Recent path-average history',
-      level: 3,
-    }),
+    page.getByRole('region', { name: 'Recent path-average history tool' }),
   ).toBeVisible();
   await page
     .getByRole('button', { name: 'Recent path-average history: Remove' })
@@ -138,7 +130,7 @@ test('tool edits stay in presentation state across parameter changes', async ({
     .getByRole('button', { name: 'Euclidean two-point correlator: Remove' })
     .click();
   await expect(
-    page.getByText('No gallery tools are open. Choose a tool and Add tool.'),
+    page.getByText(/No gallery tools are open. Add tool/),
   ).toBeVisible();
 });
 
@@ -151,10 +143,8 @@ test('display changes and navigation preserve a seeded QM path and running worke
     .getByRole('img', { name: /Current periodic path/ })
     .locator('polyline')
     .getAttribute('points');
-  await page
-    .getByLabel('Lattice QM tools add tool type')
-    .selectOption('reflection');
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  await page.getByLabel('Tool 2 type').selectOption('reflection');
   await detail(page, 'Lattice QM', 0);
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
@@ -201,10 +191,8 @@ test('field tools explain Fourier availability and phone overview stays within v
   page,
 }, testInfo) => {
   await page.goto('#fields-paths');
-  await page
-    .getByLabel('Lattice Fields tools add tool type')
-    .selectOption('spectrum');
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  await page.getByLabel('Tool 2 type').selectOption('spectrum');
   await expect(
     page
       .getByText(/Full periodicity is required for these momentum eigenmodes/)
@@ -282,23 +270,19 @@ test('featured QM tool spans the main width and swaps without changing seeded pa
       exact: true,
     }),
   ).toBeVisible();
-  await expect(
-    gallery.getByRole('heading', {
-      name: 'Current periodic path',
-      exact: true,
-    }),
-  ).toBeVisible();
+  await expect(gallery).toHaveAttribute(
+    'aria-label',
+    'Current periodic path tool',
+  );
   expect(await gallery.getAttribute('data-assignment-key')).toBe('0');
   await page.getByLabel('Lattice QM tools featured tool').selectOption('path');
   await expect(
     stage.getByRole('heading', { name: 'Current periodic path', exact: true }),
   ).toBeVisible();
-  await expect(
-    gallery.getByRole('heading', {
-      name: 'Current periodic path',
-      exact: true,
-    }),
-  ).toHaveCount(1);
+  await expect(gallery).toHaveAttribute(
+    'aria-label',
+    'Current periodic path tool',
+  );
   await expect(page.getByTestId('oscillator-samples')).toHaveText('1');
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
@@ -309,10 +293,8 @@ test('featured QM tool spans the main width and swaps without changing seeded pa
       .getAttribute('points'),
   ).toBe(first);
   if (testInfo.project.name === 'desktop') {
-    await page
-      .getByLabel('Lattice QM tools add tool type')
-      .selectOption('history');
     await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+    await page.getByLabel('Tool 2 type').selectOption('history');
     const [featureBox, firstCard, secondCard] = await Promise.all([
       stage.boundingBox(),
       gallery.nth(0).boundingBox(),
@@ -343,10 +325,8 @@ test('featured Fields tool retains Fourier mode through swaps and phone overview
       exact: true,
     }),
   ).toBeVisible();
-  await page
-    .getByLabel('Lattice Fields tools add tool type')
-    .selectOption('spectrum');
   await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  await expect(page.getByLabel('Tool 2 type')).toHaveValue('spectrum');
   await page.getByLabel('Fourier momentum index').fill('3');
   const spectrumCard = page.getByRole('region', {
     name: 'Fourier spectrum tool',
