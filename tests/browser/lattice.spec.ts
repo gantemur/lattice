@@ -9,7 +9,9 @@ async function open(page: import('@playwright/test').Page) {
 }
 async function openTechnical(page: import('@playwright/test').Page) {
   const details = page.locator('.lattice-technical-details');
-  if (!(await details.evaluate((element) => (element as HTMLDetailsElement).open)))
+  if (
+    !(await details.evaluate((element) => (element as HTMLDetailsElement).open))
+  )
     await details.locator('summary').first().click();
 }
 
@@ -117,7 +119,8 @@ test('16, 32 and 64 grids sample in a worker and plots remain display-only', asy
   const count = Number(await page.getByTestId('lattice-updates').textContent());
   await page.getByLabel('Measurement window').selectOption('500');
   await page.getByRole('button', { name: 'Add tool' }).click();
-  await page.getByLabel('Follow latest').uncheck();
+  await page.getByLabel('Tool 3 type').selectOption('abs-history');
+  await page.getByRole('checkbox', { name: 'Follow latest' }).uncheck();
   await expect(page.getByTestId('lattice-updates')).toHaveText(String(count));
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('lattice-updates')).toHaveText(
@@ -137,7 +140,10 @@ test('phone lattice, settings and plot controls fit width; heat bath labels acce
   await page.getByRole('button', { name: 'Apply settings' }).click();
   await page.getByRole('button', { name: 'Add tool' }).click();
   await page.getByLabel('Tool 3 type').selectOption('acceptance');
-  if (isMobile) await page.getByLabel('Lattice Systems tools detail tool').selectOption('3');
+  if (isMobile)
+    await page
+      .getByLabel('Lattice Systems tools detail tool')
+      .selectOption('3');
   await expect(page.getByText('acceptance N/A')).toBeVisible();
   const widths = await page.evaluate(() => ({
     scroll: document.documentElement.scrollWidth,
@@ -145,7 +151,15 @@ test('phone lattice, settings and plot controls fit width; heat bath labels acce
   }));
   expect(widths.scroll).toBeLessThanOrEqual(widths.viewport);
   await page.getByLabel('Inspect x').fill('3');
-  await expect(page.getByLabel('Selected site neighborhood')).toBeVisible();
+  await page
+    .getByLabel('Lattice Systems tools featured tool')
+    .selectOption('local-neighborhood');
+  await expect(
+    page.getByRole('region', { name: 'Local 5×5 neighborhood' }),
+  ).toBeVisible();
+  await expect(
+    page.getByTestId('featured-tool').locator('[data-center="true"]'),
+  ).toHaveAttribute('data-site', '3');
 });
 
 test('workspace navigation preserves both independent sessions', async ({
@@ -254,7 +268,9 @@ test('M3a autocorrelation plots and quench statistics remain segment-local and d
   await page.getByRole('button', { name: 'Add tool' }).click();
   await page.getByLabel('Tool 3 type').selectOption('m-acf');
   if (await page.getByLabel('Lattice Systems tools detail tool').isVisible())
-    await page.getByLabel('Lattice Systems tools detail tool').selectOption('3');
+    await page
+      .getByLabel('Lattice Systems tools detail tool')
+      .selectOption('3');
   await expect(
     page.getByRole('img', { name: /Autocorrelation of m/ }).first(),
   ).toBeVisible();
