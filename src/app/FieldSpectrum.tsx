@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { FieldSegmentSnapshot } from '../engine/fieldRun';
 import {
   createFourierBasis,
@@ -8,9 +7,17 @@ import {
 import { sampledModePower } from '../observables/fieldSpectrum';
 import { formatNumber } from '../plotting/PlotFrame';
 
-/** Momentum selection changes only React state; the worker owns all samples. */
-export function FieldSpectrum({ segment }: { segment: FieldSegmentSnapshot }) {
-  const [selected, setSelected] = useState(0);
+/** Momentum selection is owned by the keyed tool assignment, so a feature swap
+ * may remount this renderer without losing the selected mode. */
+export function FieldSpectrum({
+  segment,
+  selected,
+  onSelect,
+}: {
+  segment: FieldSegmentSnapshot;
+  selected: number;
+  onSelect: (mode: number) => void;
+}) {
   const p = segment.settings.parameters;
   if (!isFullyPeriodic(p.shape))
     return (
@@ -65,7 +72,7 @@ export function FieldSpectrum({ segment }: { segment: FieldSegmentSnapshot }) {
           onChange={(event) => {
             const value = Number(event.target.value);
             if (Number.isInteger(value) && value >= 0 && value < basis.size)
-              setSelected(value);
+              onSelect(value);
           }}
         />
       </label>
@@ -89,7 +96,7 @@ export function FieldSpectrum({ segment }: { segment: FieldSegmentSnapshot }) {
               className="field-spectrum-cell"
               aria-pressed={mode === index}
               aria-label={`Select momentum kx ${index % basis.lx}, ky ${Math.floor(index / basis.lx)}${isRemoved ? ', removed zero mode' : `, exact power ${formatNumber(power)}`}`}
-              onClick={() => setSelected(index)}
+              onClick={() => onSelect(index)}
               style={{
                 backgroundColor: isRemoved
                   ? '#e5e8e3'

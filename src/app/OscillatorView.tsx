@@ -54,12 +54,14 @@ const qmTools: ToolDefinition<QmTool>[] = [
     title: 'Finite-spacing and continuum gaps',
     kind: 'Analysis',
     description: 'Analytic lattice and continuum energy gaps.',
+    featureable: false,
   },
   {
     id: 'effective',
     title: 'Effective gap and correlator table',
     kind: 'Analysis',
     description: 'Provisional sampled estimator with exact references.',
+    featureable: false,
   },
   {
     id: 'transfer',
@@ -72,6 +74,7 @@ const qmTools: ToolDefinition<QmTool>[] = [
     title: 'Reflection positivity',
     kind: 'Analysis',
     description: 'Finite covariance Gram illustration.',
+    featureable: false,
   },
   {
     id: 'history',
@@ -422,7 +425,8 @@ export function OscillatorView({
             <ToolDeck
               title="Lattice QM tools"
               tools={qmTools}
-              defaults={['path', 'correlator']}
+              featuredDefault="path"
+              defaults={['correlator']}
               renderTool={(tool) => {
                 if (tool === 'path')
                   return (

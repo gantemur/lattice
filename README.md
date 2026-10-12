@@ -1,12 +1,16 @@
 # Lattice Lab
 
-**Status:** M0–M4b are merged. M4c0 workspace and teaching-tool refinement is on a feature branch for review.
+**Status:** M0–M4c0 and the model-interface architecture audit are merged. Full-width featured-tool Stage A is implemented in Lattice QM and Lattice Fields.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
-## New in M4c0 (feature branch)
+## Featured tools (Stage A)
+
+Lattice QM and Lattice Fields now show one configurable, full-width featured display above up to six optional gallery cards. The default feature is the current Euclidean path or spatial field configuration, respectively; the default gallery card is the correlator or selected-site/covariance inspection. A gallery card's **Feature** action swaps the two assignments, while the featured selector explicitly replaces the current feature. Fourier momentum selection follows its assignment across a swap. Gallery collapse, expansion, reordering, desktop two-column layout and phone detail/overview remain available. These choices affect only presentation, not worker sampling or measurements. See the [Stage A review](docs/FEATURED_STAGE_A_REVIEW.md).
+
+## M4c0 (merged)
 
 Five mounted workspaces now have a shared navigation order: **Small Systems**, **Lattice Systems**, **Lattice QM**, **Lattice Fields**, and **Experiments**. The old `#fields-paths` link opens Lattice Fields; `#lattice-qm` opens the harmonic oscillator in its own numerical session. Tab changes retain separate workers, histories, selections and display settings, including a running worker. QM and Fields use one Run/Pause control and a bounded six-card tool deck. Each card can be changed, collapsed, expanded, moved or removed; phones offer single-detail and compact-overview views. Tool edits read existing snapshots and do not advance the simulation. The optional finite-grid transfer eigensolve runs only when its tool is open and caches validated parameters. See [M4c0 review](docs/M4C0_REVIEW.md).
 

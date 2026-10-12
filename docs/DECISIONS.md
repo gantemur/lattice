@@ -260,6 +260,12 @@ The five top-level destinations are Small Systems, Lattice Systems, Lattice QM, 
 
 QM and Fields each use one Run/Pause control and a local six-card tool deck. A tool is a named, model-specific visualization, plot or analysis, not a programmable plugin. Add/change, collapse/open, expand, reorder, remove, phone detail/overview and viewport choices operate only on React presentation state; worker measurements remain unconditional and unchanged. Optional finite-grid oscillator quadrature is computed only when an open transfer card renders and is cached by validated physical parameters. A hidden workspace retains its mounted worker, but unselected or collapsed expensive analysis does not run. A posted batch may finish after Pause. The older Small Systems and Lattice Systems plot galleries retain their working internals in this milestone.
 
+### D-044 — Full-width featured assignment for QM and Fields
+
+Stage A gives each of QM and Fields one always-visible, full-width featured assignment above an optional gallery of at most six cards. A tool ID names a model-specific renderer; a unique assignment key names one placement, so the same tool type may appear in multiple places. An explicit featured-selector choice replaces the tool in that placement. A card's Feature action instead exchanges the two whole assignments, preserving their keys and presentation settings without silently evicting a card at gallery capacity. Ineligible analyses remain gallery-only. Desktop retains two gallery columns; phone retains single-detail and compact-overview modes below the featured display.
+
+React can remount a tool moved between containers. Persistent Fourier mode selection therefore belongs to its keyed assignment in the Fields workspace, and removed assignments release that state. Other persistent viewport, time-lag and site choices remain owned by the corresponding workspace. All these operations read existing snapshots only: they do not post update commands, consume random numbers, reset a segment, or change worker ownership. Inactive or collapsed transfer analysis remains lazy and cached. This is a presentation pilot, not a universal tool registry or a migration of Small Systems, Lattice Systems or Experiments.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
 async function qmDetail(page: Page, key: number) {
+  if (key === 0) return; // The featured path remains visible on phones.
   const selector = page.getByLabel('Lattice QM tools detail tool');
   if (await selector.isVisible()) await selector.selectOption(String(key));
 }
