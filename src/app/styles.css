@@ -2286,7 +2286,7 @@ footer {
     display: block;
     margin: 3px 0 0;
   }
-  .tool-overview .tool-body,
+  .tool-overview .tool-card .tool-body,
   .tool-overview .tool-change,
   .tool-overview .tool-card-actions {
     display: none;

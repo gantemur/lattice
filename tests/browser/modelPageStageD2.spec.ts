@@ -389,6 +389,9 @@ test('six-card limit and phone detail/overview retain a usable page', async ({
   ).toBeDisabled();
   if (info.project.name !== 'desktop') {
     await tools.getByRole('button', { name: 'Compact overview' }).click();
+    await expect(
+      tools.getByRole('region', { name: 'Interactive real scalar graph' }),
+    ).toBeVisible();
     await expect(tools.getByTestId('teaching-tool')).toHaveCount(6);
     await tools.getByRole('button', { name: 'Single detail' }).click();
     await tools.getByLabel('Real scalar tools detail tool').selectOption('6');
