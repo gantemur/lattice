@@ -1,5 +1,5 @@
 import { ScalarSettings } from './ScalarSettings';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Settings, Sampler } from '../algorithms/transitions';
 import { defaultModel } from '../models/singleVariable';
@@ -40,6 +40,23 @@ function ScalarSettingsPanel({
   const [warmup, setWarmup] = useState(
     sampler.kind === 'metropolis' ? String(sampler.warmup) : '200',
   );
+  const appliedParameters = JSON.stringify(model.parameters);
+  const appliedSampler = JSON.stringify(sampler);
+  useEffect(() => {
+    setA(model.kind === 'gaussian' ? String(model.parameters.a) : '1');
+    setH(
+      model.kind === 'gaussian' || model.kind === 'spin'
+        ? String(model.parameters.h)
+        : '0',
+    );
+    setN(model.kind === 'binomial' ? String(model.parameters.n) : '20');
+    setP(model.kind === 'binomial' ? String(model.parameters.p) : '0.5');
+  }, [appliedParameters]);
+  useEffect(() => {
+    setKind(sampler.kind);
+    setWidth(sampler.kind === 'metropolis' ? String(sampler.width) : '2');
+    setWarmup(sampler.kind === 'metropolis' ? String(sampler.warmup) : '200');
+  }, [appliedSampler]);
   function submit(event: FormEvent) {
     event.preventDefault();
     const number = (s: string) => (s.trim() ? Number(s) : NaN);
@@ -287,6 +304,15 @@ function GraphSamplerSettings({
         ? '200'
         : String(settings.sampler.warmup ?? 200),
     );
+  const appliedSampler = JSON.stringify(settings.sampler);
+  useEffect(() => {
+    setKind(settings.sampler.kind);
+    setWarmup(
+      settings.sampler.kind === 'direct'
+        ? '200'
+        : String(settings.sampler.warmup ?? 200),
+    );
+  }, [appliedSampler]);
   return (
     <details className="settings">
       <summary>Model & sampler settings</summary>

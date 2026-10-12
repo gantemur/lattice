@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Settings, Sampler } from '../algorithms/transitions';
 import type { ScalarModel } from '../models/scalarField';
 export function ScalarSettings({
@@ -26,6 +26,15 @@ export function ScalarSettings({
       ? '200'
       : String(settings.sampler.warmup ?? 200),
   );
+  const appliedSampler = JSON.stringify(settings.sampler);
+  // Only an applied sampler change replaces local drafts. Worker snapshots from
+  // ordinary sampling leave uncommitted width and warm-up edits untouched.
+  useEffect(() => {
+    const sampler = settings.sampler;
+    setKind(sampler.kind);
+    setWidth(sampler.kind === 'metropolis' ? String(sampler.width) : '1');
+    setWarmup(sampler.kind === 'direct' ? '200' : String(sampler.warmup));
+  }, [appliedSampler]);
   const gaussian = model.parameters.domain.vertices.every(
     (v) => model.parameters.lambda[v.id] === 0,
   );

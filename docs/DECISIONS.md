@@ -310,6 +310,14 @@ The Lattice Systems spin canvas remains the default featured view; signed magnet
 
 Map display offsets `(dx,dy)` to the physical row-major site `x+Lx*y`, wrapping x/y independently only when that axis is periodic. Mark out-of-bounds cells on open axes. A periodic 2×2 can display the same physical site in multiple tiles; these are repeated images, not distinct spins or bond records. This is a presentation rule and does not change the indexed lattice, its bond multiplicities, or the local-update inspector. The six-card tool limit and phone detail/overview modes remain in force.
 
+## Accepted pedagogical catalog Stage D3 convention — 2026-10-12
+
+### D-051 — Named examples are recipes over model families and concrete systems
+
+A mathematical family owns state space, Gibbs law and numerical capabilities; a concrete system adds geometry, parameters and sampler; a named example supplies pedagogical defaults and presentation metadata. The compact grouped Small Systems chooser uses `src/app/smallCatalog.ts` and does not add IDs to workers, archives or schema-v1 scalar URLs. Dimer, three-site chain and triangle are Ising-only graph constructors with stable site/edge IDs and no inferred faces; positive and negative triangle examples share one topology. Same-topology changes retain configuration/RNG in isolated segments, while family/topology changes restart a seeded session. Reset uses actually applied settings. Applied sampler changes synchronize sidebar drafts without erasing ordinary uncommitted edits during sampling.
+
+The visible initial catalog keeps the one-spin elementary model and open small Ising graphs, while the four-site open chain, K4 and periodic 2×2 torus remain reachable as advanced examples. The torus retains eight bond records and four oriented faces. Physical edge presence remains different from zero coupling; explicit simple-graph edge-presence editing is Stage E, not D3. Legacy graph/scalar presets, exact references and saved configurations remain valid.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

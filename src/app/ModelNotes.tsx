@@ -48,7 +48,7 @@ export function ModelFormula({ model }: { model: Model }) {
   );
 }
 export function ModelNotes({ model }: { model: Model }) {
-  if (model.kind === 'ising') return <IsingNotes />;
+  if (model.kind === 'ising') return <IsingNotes model={model} />;
   if (model.kind === 'scalar') return <ScalarNotes />;
   return (
     <details className="model-notes" id="model-notes">
@@ -163,7 +163,18 @@ export function ModelNotes({ model }: { model: Model }) {
   );
 }
 
-function IsingNotes() {
+function IsingNotes({ model }: { model: Extract<Model, { kind: 'ising' }> }) {
+  const { domain, couplings, fields } = model.parameters;
+  const zeroField = domain.vertices.every((site) => fields[site.id] === 0);
+  const firstEdgeId = domain.edges[0]?.id;
+  const uniformCoupling =
+    firstEdgeId !== undefined &&
+    domain.edges.every((edge) => couplings[edge.id] === couplings[firstEdgeId]);
+  const smallUniform = zeroField && uniformCoupling;
+  const frustrated =
+    domain.id === 'triangle' &&
+    smallUniform &&
+    couplings[domain.edges[0]!.id]! < 0;
   return (
     <details className="model-notes" id="model-notes">
       <summary>The mathematics & suggested experiments</summary>
@@ -177,6 +188,28 @@ function IsingNotes() {
           single-spin model is the one-site, zero-bond special case.
         </p>
         <DisplayMath>{String.raw`Z=\sum_{s\in\{-1,+1\}^N}e^{-S(s)},\quad \langle O\rangle=\sum_s O(s)P(s)`}</DisplayMath>
+        {smallUniform && domain.id === 'dimer' && (
+          <DisplayMath>{String.raw`Z_{\mathrm{dimer}}=4\cosh K,\qquad\langle s_0s_1\rangle=\tanh K`}</DisplayMath>
+        )}
+        {smallUniform && domain.id === 'chain3' && (
+          <DisplayMath>{String.raw`Z_{P_3}=8\cosh^2 K,\qquad\langle s_0s_2\rangle=\tanh^2 K`}</DisplayMath>
+        )}
+        {smallUniform && domain.id === 'triangle' && (
+          <>
+            <DisplayMath>{String.raw`Z_{\triangle}=2e^{3K}+6e^{-K}`}</DisplayMath>
+            {frustrated && (
+              <p>
+                With three negative bonds on an odd cycle, no spin assignment
+                can make every neighboring pair opposite. Six configurations
+                have one unsatisfied bond and lowest action; the two aligned
+                configurations have three unsatisfied bonds. Compare the exact
+                magnetization masses and correlations with the positive-K
+                triangle, then watch a local chain switch between these six
+                states. This finite graph has no thermodynamic phase transition.
+              </p>
+            )}
+          </>
+        )}
         <p>
           All at most 16 configurations are enumerated with log-sum-exp
           normalization. Exact values need no sampling. M = Σsᵢ, m = M/N; a zero

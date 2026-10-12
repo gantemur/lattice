@@ -1,5 +1,5 @@
-import { graphPreset, validateDomain } from '../domain/graph';
-import type { Domain, GraphPreset } from '../domain/graph';
+import { isingGraphPreset, validateDomain } from '../domain/graph';
+import type { Domain, IsingGraphPreset } from '../domain/graph';
 /**
  * Tiny graph Ising uses S=−Σ_e K_e s_tail s_head−Σ_i b_i s_i, with β already
  * absorbed into K and b. Every edge ID contributes, including parallel bonds;
@@ -15,8 +15,8 @@ export type IsingModel = {
   };
   observable?: string;
 };
-export function isingPreset(preset: GraphPreset = 'ring'): IsingModel {
-  const domain = graphPreset(preset);
+export function isingPreset(preset: IsingGraphPreset = 'ring'): IsingModel {
+  const domain = isingGraphPreset(preset);
   return {
     kind: 'ising',
     parameters: {

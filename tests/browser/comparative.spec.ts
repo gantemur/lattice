@@ -17,13 +17,11 @@ async function sampler(page: Page, kind: string, warmup = '3') {
   await expect(step(page)).toBeEnabled();
 }
 async function model(page: Page, kind: string) {
-  await page
-    .getByLabel('Probability model', { exact: true })
-    .selectOption(kind);
+  await page.getByLabel('Named example', { exact: true }).selectOption(kind);
   await expect(step(page)).toBeEnabled();
-  await expect(
-    page.getByLabel('Probability model', { exact: true }),
-  ).toHaveValue(kind);
+  await expect(page.getByLabel('Named example', { exact: true })).toHaveValue(
+    kind,
+  );
 }
 async function noOverflow(page: Page) {
   expect(
@@ -150,9 +148,9 @@ test('binomial parameter histories, support changes and Reset stay in the correc
   await expect(page.getByTestId('segment-1')).toBeVisible();
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await expect(step(page)).toBeEnabled();
-  await expect(
-    page.getByLabel('Probability model', { exact: true }),
-  ).toHaveValue('binomial');
+  await expect(page.getByLabel('Named example', { exact: true })).toHaveValue(
+    'binomial',
+  );
   await expect(page.getByTestId('current-value')).toHaveText('2');
   await expect(page.getByTestId('segment-2')).toHaveCount(0);
   await expect(page.getByTestId('total-updates')).toHaveText('0');

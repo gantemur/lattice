@@ -16,7 +16,7 @@ const step = (page: Page) =>
 async function scalar(page: Page) {
   await page.goto('./#small-systems');
   await page
-    .getByLabel('Probability model', { exact: true })
+    .getByLabel('Named example', { exact: true })
     .selectOption('scalar');
   await expect(deck(page).getByTestId('featured-tool')).toContainText(
     'Real scalar configuration',

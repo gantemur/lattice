@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 async function start(page: import('@playwright/test').Page) {
   await page.goto('./');
   await page
-    .getByLabel('Probability model', { exact: true })
+    .getByLabel('Named example', { exact: true })
     .selectOption('scalar');
   await expect(
     page.getByRole('heading', { name: 'Coupled Gaussian pair', exact: true }),

@@ -31,6 +31,40 @@ export const presetNames = {
   torus: 'Periodic 2×2 square lattice',
 } as const;
 export type GraphPreset = keyof typeof presetNames;
+/** Ising-only teaching geometries; the legacy scalar geometry menu is unchanged. */
+export const smallIsingNames = {
+  dimer: 'Two-spin dimer',
+  chain3: 'Three-spin open chain',
+  triangle: 'Three-spin triangle',
+} as const;
+export type SmallIsingGraph = keyof typeof smallIsingNames;
+export type IsingGraphPreset = GraphPreset | SmallIsingGraph;
+export function isIsingGraphPreset(id: string): id is IsingGraphPreset {
+  return Object.hasOwn(presetNames, id) || Object.hasOwn(smallIsingNames, id);
+}
+export function isingGraphPreset(kind: IsingGraphPreset): Domain {
+  if (Object.hasOwn(presetNames, kind)) return graphPreset(kind as GraphPreset);
+  const length = kind === 'dimer' ? 2 : 3;
+  const edges =
+    kind === 'dimer'
+      ? [[0, 1]]
+      : [
+          [0, 1],
+          [1, 2],
+        ];
+  if (kind === 'triangle') edges.push([2, 0]);
+  return {
+    id: kind,
+    name: smallIsingNames[kind as SmallIsingGraph],
+    vertices: Array.from({ length }, (_, i) => ({ id: `v${i}` })),
+    edges: edges.map(([tail, head], i) => ({
+      id: `e${i}`,
+      tail: `v${tail}`,
+      head: `v${head}`,
+    })),
+    faces: [], // A graph cycle alone does not declare an oriented plaquette.
+  };
+}
 export function graphPreset(kind: GraphPreset): Domain {
   const domain: Domain = {
     id: kind,
@@ -134,33 +168,50 @@ export function drawingPositions(
   const points: [number, number][] =
     domain.vertices.length === 1
       ? [[180, 115]]
-      : domain.id === 'ring'
+      : domain.id === 'dimer'
         ? [
-            [85, 60],
-            [275, 60],
-            [275, 190],
-            [85, 190],
+            [85, 115],
+            [275, 115],
           ]
-        : domain.id === 'path'
+        : domain.id === 'chain3'
           ? [
-              [45, 115],
-              [135, 115],
-              [225, 115],
-              [315, 115],
+              [60, 115],
+              [180, 115],
+              [300, 115],
             ]
-          : domain.id === 'star'
+          : domain.id === 'triangle'
             ? [
-                [180, 115],
-                [70, 55],
-                [290, 55],
-                [180, 200],
+                [180, 38],
+                [75, 185],
+                [285, 185],
               ]
-            : [
-                [85, 60],
-                [275, 60],
-                [85, 190],
-                [275, 190],
-              ];
+            : domain.id === 'ring'
+              ? [
+                  [85, 60],
+                  [275, 60],
+                  [275, 190],
+                  [85, 190],
+                ]
+              : domain.id === 'path'
+                ? [
+                    [45, 115],
+                    [135, 115],
+                    [225, 115],
+                    [315, 115],
+                  ]
+                : domain.id === 'star'
+                  ? [
+                      [180, 115],
+                      [70, 55],
+                      [290, 55],
+                      [180, 200],
+                    ]
+                  : [
+                      [85, 60],
+                      [275, 60],
+                      [85, 190],
+                      [275, 190],
+                    ];
   return Object.fromEntries(domain.vertices.map((v, i) => [v.id, points[i]!]));
 }
 export function topologyKey(domain: Domain): string {

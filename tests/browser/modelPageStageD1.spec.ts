@@ -22,9 +22,7 @@ test('elementary and graph pages use model-appropriate featured displays', async
     ['binomial', 'Distribution / histogram', 1],
     ['ising', 'Spin configuration', 2],
   ] as const) {
-    await page
-      .getByLabel('Probability model', { exact: true })
-      .selectOption(kind);
+    await page.getByLabel('Named example', { exact: true }).selectOption(kind);
     await expect(step(page)).toBeEnabled();
     await expect(sidebar.locator('.katex-mathml math').first()).toBeAttached();
     await expect(sidebar.getByText('Model & sampler settings')).toBeVisible();
@@ -86,7 +84,7 @@ test('elementary and graph pages use model-appropriate featured displays', async
       fullPage: true,
     });
   await page
-    .getByLabel('Probability model', { exact: true })
+    .getByLabel('Named example', { exact: true })
     .selectOption('scalar');
   await expect(page.getByLabel('Small Systems tools')).toHaveCount(0);
   await expect(

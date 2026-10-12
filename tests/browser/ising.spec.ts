@@ -3,9 +3,7 @@ import type { Page } from '@playwright/test';
 const step = (p: Page) => p.getByRole('button', { name: 'Step', exact: true });
 async function start(page: Page) {
   await page.goto('./');
-  await page
-    .getByLabel('Probability model', { exact: true })
-    .selectOption('ising');
+  await page.getByLabel('Named example', { exact: true }).selectOption('ising');
   await expect(step(page)).toBeEnabled();
   await expect(
     page.getByRole('heading', { name: 'Periodic 1×4 chain', exact: true }),

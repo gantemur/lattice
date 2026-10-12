@@ -23,13 +23,10 @@ import { standardGaussianPreset } from '../engine/preset';
 import type { RunConfiguration } from '../engine/protocol';
 import { MAX_SEGMENTS } from '../engine/protocol';
 import {
-  defaultModel,
-  modelNames,
   modelReference,
   modelSummary,
   variableName,
 } from '../models/singleVariable';
-import type { ModelKind } from '../models/singleVariable';
 import { samplerName } from '../algorithms/transitions';
 import type { Settings } from '../algorithms/transitions';
 import { formatNumber } from '../plotting/PlotFrame';
@@ -41,6 +38,13 @@ import { SmallIsingStatisticalDiagnostics } from './StatisticalDiagnostics';
 import { SettingsPanel } from './SettingsPanel';
 import { ModelFormula, ModelNotes } from './ModelNotes';
 import { StepInspector } from './StepInspector';
+import {
+  catalogGroups,
+  exampleConfiguration,
+  examples,
+  matchingExample,
+} from './smallCatalog';
+import type { ExampleId } from './smallCatalog';
 
 export function SmallSystemsApp({
   saveCaptures,
@@ -65,6 +69,7 @@ export function SmallSystemsApp({
   const [notice, setNotice] = useState('Draw one sample or start a run.');
   const [selectedSite, setSelectedSite] = useState('v0');
   const [selectedEdge, setSelectedEdge] = useState('');
+  const [chosenExample, setChosenExample] = useState<ExampleId | null>(null);
   // The featured graph can be remounted or swapped; the sidebar editor remains
   // the sole owner of draft parameters and exposes only its focus action.
   const editScalarCoupling = useRef<((edge: string) => void) | null>(null);
@@ -76,6 +81,7 @@ export function SmallSystemsApp({
     try {
       const shared = decodeScalarConfiguration(location.href);
       client.current?.initialize(shared);
+      setChosenExample(null);
       setSeed(String(shared.seed));
       setNotice(
         'Loaded schema-v1 scalar configuration from URL as a new seeded session.',
@@ -115,9 +121,12 @@ export function SmallSystemsApp({
     if (
       topologyKey(next.parameters.domain) ===
       topologyKey(model.parameters.domain)
-    )
+    ) {
+      const match = matchingExample(next);
+      if (match) setChosenExample(match);
       apply({ model: next, sampler });
-    else {
+    } else {
+      setChosenExample(null);
       setSelectedSite('v0');
       setSelectedEdge('');
       attempt(
@@ -133,6 +142,8 @@ export function SmallSystemsApp({
   }
   function applyScalar(next: ScalarModel) {
     if (model.kind !== 'scalar') return;
+    // The legacy preset selector is independent of the catalog chooser.
+    setChosenExample(null);
     const gaussian = next.parameters.domain.vertices.every(
       (v) => next.parameters.lambda[v.id] === 0,
     );
@@ -169,6 +180,35 @@ export function SmallSystemsApp({
       'Reset cleared history and refitted plots. Applied settings restart with the selected seed.',
     );
   }
+  function selectExample(id: ExampleId) {
+    const next = exampleConfiguration(id);
+    const sameTopology =
+      model.kind === next.model.kind &&
+      (model.kind === 'ising' && next.model.kind === 'ising'
+        ? topologyKey(model.parameters.domain) ===
+          topologyKey(next.model.parameters.domain)
+        : model.kind === 'scalar' && next.model.kind === 'scalar'
+          ? topologyKey(model.parameters.domain) ===
+            topologyKey(next.model.parameters.domain)
+          : true);
+    attempt(
+      () => {
+        if (sameTopology) client.current?.changeSettings(next);
+        else {
+          client.current?.initialize({
+            ...next,
+            seed: seed.trim() ? Number(seed) : NaN,
+          });
+          setSelectedSite('v0');
+          setSelectedEdge('');
+        }
+        setChosenExample(id);
+      },
+      sameTopology
+        ? 'Example parameters applied to the current topology. Changed settings begin an isolated measurement segment.'
+        : 'Example topology or model changed: new seeded session.',
+    );
+  }
   async function save(all: boolean) {
     if (!snapshot || !client.current) return;
     try {
@@ -198,20 +238,18 @@ export function SmallSystemsApp({
       );
     }
   }
-  function selectModel(kind: ModelKind) {
-    if (kind === model.kind) return;
-    setSelectedSite('v0');
-    setSelectedEdge('');
-    attempt(
-      () =>
-        client.current?.initialize({
-          model: defaultModel(kind),
-          sampler: { kind: 'direct' },
-          seed: seed.trim() ? Number(seed) : NaN,
-        }),
-      'New model session: previous model history cleared, default parameters and direct sampler selected, RNG restarted with the selected seed.',
-    );
-  }
+  const inferredExample = matchingExample(model);
+  const displayedExample = chosenExample ?? inferredExample;
+  const currentRecipe = displayedExample
+    ? exampleConfiguration(displayedExample)
+    : null;
+  const modified = currentRecipe
+    ? JSON.stringify(currentRecipe.model) !== JSON.stringify(model) ||
+      JSON.stringify(currentRecipe.sampler) !== JSON.stringify(sampler)
+    : true;
+  const exampleDescription = examples.find(
+    ([id]) => id === displayedExample,
+  )?.[2];
   return (
     <>
       <a className="skip-link" href="#laboratory">
@@ -244,24 +282,56 @@ export function SmallSystemsApp({
           <aside className="sidebar" aria-label="Model and settings">
             <section className="model-card">
               <label className="eyebrow" htmlFor="model">
-                Probability model
+                Named example
               </label>
               <select
                 id="model"
                 className="model-select"
-                value={model.kind}
-                onChange={(e) => selectModel(e.target.value as ModelKind)}
+                value={displayedExample ?? ''}
+                onChange={(e) => selectExample(e.target.value as ExampleId)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
+                    return;
+                  // A worker response can replace the selected option while a
+                  // native popup is open. Commit arrow navigation immediately.
+                  event.preventDefault();
+                  const ids = examples.map(([id]) => id);
+                  const index = ids.indexOf(displayedExample ?? 'gaussian');
+                  const next = Math.max(
+                    0,
+                    Math.min(
+                      ids.length - 1,
+                      index + (event.key === 'ArrowDown' ? 1 : -1),
+                    ),
+                  );
+                  if (ids[next] !== displayedExample) selectExample(ids[next]!);
+                }}
                 disabled={!snapshot || !!view.error}
               >
-                {Object.entries(modelNames).map(([kind, name]) => (
-                  <option key={kind} value={kind}>
-                    {name}
+                {!displayedExample && (
+                  <option value="" disabled>
+                    Customized or loaded configuration
                   </option>
+                )}
+                {catalogGroups.map((group) => (
+                  <optgroup label={group.label} key={group.label}>
+                    {group.examples.map(([id, label]) => (
+                      <option key={id} value={id}>
+                        {label}
+                      </option>
+                    ))}
+                  </optgroup>
                 ))}
               </select>
+              <p className="plot-note" data-testid="example-description">
+                {displayedExample
+                  ? `${examples.find(([id]) => id === displayedExample)?.[1]}${modified ? ' · modified' : ''}. ${exampleDescription}`
+                  : 'Customized or loaded configuration. All applied parameters remain editable.'}
+              </p>
               <ModelFormula model={model} />
               <small>
-                Changing model starts a new session. Applied:{' '}
+                A new model or topology starts a session; same-topology
+                parameter changes retain isolated segments. Applied:{' '}
                 {samplerName(sampler)}.
               </small>
               <a href="#model-notes">Model notes & experiments ↓</a>
@@ -297,6 +367,8 @@ export function SmallSystemsApp({
                 load={(shared) => {
                   setSeed(String(shared.seed));
                   setSelectedSite('v0');
+                  setSelectedEdge('');
+                  setChosenExample(null);
                   attempt(
                     () => client.current?.initialize(shared),
                     'Loaded scalar configuration as a new seeded session.',

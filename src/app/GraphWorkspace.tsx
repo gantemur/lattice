@@ -11,8 +11,12 @@ import {
   bondInspection,
   spins,
 } from '../models/ising';
-import { drawingPositions, presetNames } from '../domain/graph';
-import type { GraphPreset } from '../domain/graph';
+import {
+  drawingPositions,
+  isIsingGraphPreset,
+  presetNames,
+  smallIsingNames,
+} from '../domain/graph';
 import type { SegmentSnapshot } from '../engine/protocol';
 import type { TransitionRecord } from '../observables/trajectory';
 import { InlineMath } from '../ui/Math';
@@ -406,8 +410,19 @@ export function GraphParameterEditor({
           aria-label="Geometry preset"
           value={domain.id}
           disabled={disabled}
-          onChange={(e) => apply(isingPreset(e.target.value as GraphPreset))}
+          onChange={(e) => {
+            const id = e.target.value;
+            if (isIsingGraphPreset(id)) apply(isingPreset(id));
+          }}
         >
+          {!isIsingGraphPreset(domain.id) && (
+            <option value={domain.id}>{domain.name} · loaded</option>
+          )}
+          {Object.entries(smallIsingNames).map(([k, v]) => (
+            <option key={k} value={k}>
+              {v}
+            </option>
+          ))}
           {Object.entries(presetNames).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
