@@ -163,6 +163,43 @@ test('torus retains eight gradient bonds and display edits preserve seeded updat
     ),
   ).toBe(true);
 });
+test('scalar topology changes discard a selected bond from the previous graph', async ({
+  page,
+}) => {
+  await start(page);
+  await openParameters(page);
+  await page.getByLabel('Scalar geometry').selectOption('torus');
+  const featured = page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByTestId('featured-tool');
+  await featured.getByRole('button', { name: /Select bond e6,/ }).click();
+  await expect(featured.getByLabel('Selected bond')).toHaveValue('e6');
+
+  await openParameters(page);
+  await page.getByLabel('Scalar geometry').selectOption('pair');
+  await expect(featured).toContainText('Coupled Gaussian pair');
+  await expect(
+    featured.getByRole('button', { name: /Select bond e0,/ }),
+  ).toBeVisible();
+  await expect(featured.getByLabel('Selected bond')).toHaveValue('e0');
+  await openLocalInspection(page);
+  await expect(page.getByLabel('Inspect bond')).toHaveValue('e0');
+  await expect(page.getByTestId('scalar-bond-panel')).toContainText('Bond e0');
+  await page.getByTestId('scalar-bond-panel').locator('summary').click();
+  await page.getByRole('button', { name: 'Edit coupling e0' }).click();
+  await expect(page.getByLabel('Coupling e0')).toBeFocused();
+
+  await openParameters(page);
+  await page.getByLabel('Scalar geometry').selectOption('site');
+  await expect(featured).toContainText('Single site');
+  await expect(
+    featured.getByRole('button', { name: /Select bond/ }),
+  ).toHaveCount(0);
+  await expect(featured.getByLabel('Selected bond')).toHaveValue('');
+  await expect(page.getByLabel('Inspect bond')).toHaveValue('');
+  await expect(page.getByTestId('scalar-bond-panel')).toHaveCount(0);
+  await expect(page.getByLabel('Coupling e0')).toHaveCount(0);
+});
 test('versioned URL reload restores scalar parameters and sampler without measurement history', async ({
   page,
 }) => {

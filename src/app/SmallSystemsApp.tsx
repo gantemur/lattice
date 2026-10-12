@@ -120,7 +120,6 @@ export function SmallSystemsApp({
     else {
       setSelectedSite('v0');
       setSelectedEdge('');
-      setSelectedEdge('');
       attempt(
         () =>
           client.current?.initialize({
@@ -148,6 +147,7 @@ export function SmallSystemsApp({
       apply({ model: next, sampler: nextSampler });
     else {
       setSelectedSite('v0');
+      setSelectedEdge('');
       attempt(
         () =>
           client.current?.initialize({
