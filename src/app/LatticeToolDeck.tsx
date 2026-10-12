@@ -3,10 +3,11 @@ import type { LatticeSnapshot } from '../engine/latticeRun';
 import { LatticePlotView, latticePlotChoices } from '../plotting/LatticePlots';
 import type { LatticePlot } from '../plotting/LatticePlots';
 import { CanvasLattice } from './CanvasLattice';
+import { LatticeNeighborhood } from './LatticeNeighborhood';
 import { ToolDeck } from './ToolDeck';
 import type { ToolDefinition } from './ToolDeck';
 
-type LatticeTool = 'spin-configuration' | LatticePlot;
+type LatticeTool = 'spin-configuration' | 'local-neighborhood' | LatticePlot;
 
 /** The 16 plot IDs remain the old scientific views; only their placement changes. */
 const latticeTools: ToolDefinition<LatticeTool>[] = [
@@ -15,6 +16,12 @@ const latticeTools: ToolDefinition<LatticeTool>[] = [
     title: 'Spin configuration',
     kind: 'Visualization',
     description: 'Select sites on the current square-lattice spin image.',
+  },
+  {
+    id: 'local-neighborhood',
+    title: 'Local 5×5 neighborhood',
+    kind: 'Visualization',
+    description: 'Inspect the selected spin and its surrounding 5×5 image.',
   },
   ...latticePlotChoices.map(([id, title]) => ({
     id,
@@ -145,6 +152,14 @@ export function LatticeToolDeck({
         if (tool === 'spin-configuration')
           return (
             <CanvasLattice
+              snapshot={snapshot}
+              selected={selected}
+              select={select}
+            />
+          );
+        if (tool === 'local-neighborhood')
+          return (
+            <LatticeNeighborhood
               snapshot={snapshot}
               selected={selected}
               select={select}

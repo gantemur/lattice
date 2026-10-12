@@ -54,7 +54,7 @@ test('32×32 canvas is the sole default feature; selection and latest-update mar
   await expect(page.getByTestId('lattice-updates')).toHaveText('0');
   await stage.getByLabel('Inspect x').fill('7');
   await stage.getByLabel('Inspect y').fill('9');
-  await expect(stage.getByText('5×5 detail centered on (7, 9)')).toBeVisible();
+  await expect(stage.locator('.lattice-detail')).toHaveCount(0);
   const selectedOutline = await canvas.evaluate((element) => {
     const image = element as HTMLCanvasElement;
     return Array.from(
@@ -106,6 +106,7 @@ test('all 16 plots remain selectable; feature exchange keeps one canvas and six-
     );
   expect(choices).toEqual([
     'spin-configuration',
+    'local-neighborhood',
     'm-history',
     'abs-history',
     'e-history',
@@ -151,7 +152,9 @@ test('all 16 plots remain selectable; feature exchange keeps one canvas and six-
     });
   }
   await deck.getByRole('button', { name: 'Add tool', exact: true }).click();
-  await expect(deck.getByLabel('Tool 2 type')).toHaveValue('abs-history');
+  await expect(deck.getByLabel('Tool 2 type')).toHaveValue(
+    'local-neighborhood',
+  );
   await deck.getByTestId('featured-tool').getByLabel('Inspect x').fill('11');
   if (testInfo.project.name !== 'desktop')
     await deck

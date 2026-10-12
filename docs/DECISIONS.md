@@ -302,6 +302,14 @@ The existing real scalar graph becomes the default featured visualization, with 
 
 Each plot assignment owns its applicable target, histogram visibility, display viewport and trajectory window/end update. Bare and conditional views accept only individual sites; scatter explicitly displays the first two sites; covariance and acceptance have no arbitrary target. A feature/gallery exchange preserves assignment choices even if React remounts the renderer. Refit axes changes only graphical limits. Conditional potential and density continue to use current neighbors and every non-self incident edge; neither is presented as an equilibrium marginal. Exact multivariate Gaussian, independent-site quartic quadrature and coupled-quartic sampled-only cases retain distinct labels. Worker kernels, RNG order, segment accumulators, bounded trajectories, archive captures and scalar configuration URL schema v1 are unchanged. The named-example catalog and new topologies remain Stage D3 work.
 
+## Accepted Ising local-neighborhood teaching-tool convention — 2026-10-12
+
+### D-050 — Separate local spin images from the full lattice canvas
+
+The Lattice Systems spin canvas remains the default featured view; signed magnetization and physical energy-density histories remain its two default gallery cards. A separate, selectable and featureable Local neighborhood visualization shows a larger 5×5 image around the workspace-owned selected spin. The canvas keeps direct pointer selection; both views offer numeric coordinate controls. Swapping, replacing or removing either renderer does not change the worker configuration, updates, measurements, RNG stream, captures or scientific plot IDs.
+
+Map display offsets `(dx,dy)` to the physical row-major site `x+Lx*y`, wrapping x/y independently only when that axis is periodic. Mark out-of-bounds cells on open axes. A periodic 2×2 can display the same physical site in multiple tiles; these are repeated images, not distinct spins or bond records. This is a presentation rule and does not change the indexed lattice, its bond multiplicities, or the local-update inspector. The six-card tool limit and phone detail/overview modes remain in force.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

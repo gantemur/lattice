@@ -1867,17 +1867,19 @@ footer {
 }
 .lattice-detail {
   display: grid;
-  grid-template-columns: repeat(5, 27px);
-  gap: 2px;
+  grid-template-columns: repeat(5, clamp(39px, 5vw, 58px));
+  gap: 4px;
   width: max-content;
-  margin: 12px 0 6px;
+  margin: 16px 0 12px;
 }
 .lattice-detail span {
   display: grid;
   place-items: center;
-  height: 27px;
+  aspect-ratio: 1;
   color: white;
-  font-size: 12px;
+  font-size: 20px;
+  font-weight: 700;
+  border-radius: 4px;
 }
 .lattice-detail .plus {
   background: #14625a;
@@ -1887,10 +1889,21 @@ footer {
 }
 .lattice-detail .outside {
   background: #e4e8df;
+  color: #6f7c75;
 }
 .lattice-detail .center {
-  outline: 3px solid #172e28;
+  outline: 4px solid #172e28;
+  outline-offset: 2px;
   z-index: 1;
+}
+.lattice-neighborhood > .plot-note {
+  margin: 2px 0 8px;
+}
+.lattice-neighborhood .lattice-site-controls {
+  margin-top: 4px;
+}
+.tool-featured .lattice-detail {
+  grid-template-columns: repeat(5, clamp(42px, 6vw, 66px));
 }
 .lattice-form-pair {
   display: grid;

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { LatticeSnapshot } from '../engine/latticeRun';
+import { LatticeSiteControls } from './LatticeSiteControls';
 
 /** Draws one current spin image. Selection is presentation state; it never posts an update. */
 export function CanvasLattice({
@@ -56,7 +57,6 @@ export function CanvasLattice({
     if (snapshot.lastTrace)
       mark(snapshot.lastTrace.site, '#f5ce66', Math.max(2, cell / 9));
   }, [snapshot, selected, lx, ly]);
-  const site = Math.min(snapshot.spins.length - 1, Math.max(0, selected));
   return (
     <section className="lattice-canvas-card" aria-label="Spin configuration">
       <div className="section-heading">
@@ -114,72 +114,11 @@ export function CanvasLattice({
         edges{periodicX || periodicY ? ' periodically' : ''}. Pixel position
         selects lattice coordinates; selection does not change spins.
       </p>
-      <div className="lattice-site-controls">
-        <label>
-          Inspect x{' '}
-          <input
-            aria-label="Inspect x"
-            type="number"
-            min="0"
-            max={lx - 1}
-            value={site % lx}
-            onChange={(e) =>
-              select(
-                Math.min(lx - 1, Math.max(0, Number(e.target.value))) +
-                  lx * Math.floor(site / lx),
-              )
-            }
-          />
-        </label>
-        <label>
-          y{' '}
-          <input
-            aria-label="Inspect y"
-            type="number"
-            min="0"
-            max={ly - 1}
-            value={Math.floor(site / lx)}
-            onChange={(e) =>
-              select(
-                (site % lx) +
-                  lx * Math.min(ly - 1, Math.max(0, Number(e.target.value))),
-              )
-            }
-          />
-        </label>
-        <span>
-          Spin <strong>{snapshot.spins[site] === 1 ? '+1' : '−1'}</strong>
-        </span>
-      </div>
-      <div className="lattice-detail" aria-label="Selected site neighborhood">
-        {Array.from({ length: 25 }, (_, i) => {
-          const dx = (i % 5) - 2,
-            dy = Math.floor(i / 5) - 2,
-            x = (site % lx) + dx,
-            y = Math.floor(site / lx) + dy;
-          const inBounds =
-            (periodicX || (x >= 0 && x < lx)) &&
-            (periodicY || (y >= 0 && y < ly));
-          const at = ((x + lx) % lx) + lx * ((y + ly) % ly);
-          return (
-            <span
-              key={i}
-              className={`${inBounds ? (snapshot.spins[at] === 1 ? 'plus' : 'minus') : 'outside'} ${i === 12 ? 'center' : ''}`}
-              title={
-                inBounds
-                  ? `(${(x + lx) % lx},${(y + ly) % ly}) ${snapshot.spins[at]}`
-                  : 'Outside open boundary'
-              }
-            >
-              {inBounds ? (snapshot.spins[at] === 1 ? '+' : '−') : ''}
-            </span>
-          );
-        })}
-      </div>
-      <small>
-        5×5 detail centered on ({site % lx}, {Math.floor(site / lx)}); periodic
-        directions wrap.
-      </small>
+      <LatticeSiteControls
+        snapshot={snapshot}
+        selected={selected}
+        select={select}
+      />
     </section>
   );
 }
