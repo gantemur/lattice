@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.10, 2026-10-11
+**Version:** 0.11, 2026-10-12
 
-**Status:** M0–M4c0 and the architecture audit are merged. QM/Fields model-page Stages A–B are implemented; later models remain planned.
+**Status:** M0–M4c0 and the architecture audit are merged. Model-page Stages A–D1 are implemented for QM, Fields, Lattice Systems and elementary/graph-Ising Small Systems; the real scalar page and catalog remain later work.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -24,7 +24,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
-| **M4: Continuous lattice fields** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–B model pages, then interacting fields and HMC | Tiny-matrix covariance, Fourier/oscillator invariants; HMC later | M4a1–M4c0 merged; Stages A–B implemented |
+| **M4: Continuous lattice fields** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–D1 model pages, then interacting fields and HMC | Tiny-matrix covariance, Fourier/oscillator invariants; HMC later | M4a1–M4c0 merged; Stages A–D1 implemented |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
@@ -227,10 +227,13 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 3. **M4b harmonic Euclidean oscillator (merged).** Periodic N-site path, physical β/ω controls, independent Fourier and local Gaussian sampling, full-segment two-point correlator, finite-spacing and continuum gaps, kinetic-normalized transfer trace, bounded quadrature and reflection-covariance illustration. The [M4b review](M4B_REVIEW.md) records validation and limits. Double-well paths remain future work.
 4. **M4c0 workspace and teaching tools (merged).** Separate mounted QM and Fields sessions, five shared routes, unified Run/Pause, and configurable six-card galleries. Optional transfer quadrature is lazy; presentation changes preserve the numerical stream. See [review](M4C0_REVIEW.md).
 5. **Featured-tool migration Stage A (implemented).** Pilot one full-width assignment plus up to six optional gallery tools in QM and Fields. Whole-assignment swaps retain keys and presentation choices; explicit replacement retains every gallery card. Existing numerical workers and archive data are unchanged. See the [architecture audit](MODEL_INTERFACE_AUDIT.md) and [Stage A review](FEATURED_STAGE_A_REVIEW.md).
-6. **QM/Fields model-page Stage B (implemented).** The model formula and collapsible editable settings lead the sidebar; the main column has controls/readings, feature, compact zero-to-six-card diagnostics, collapsible technical coverage and short mathematics/exercises. Add creates a suitable card directly; one open desktop gallery card spans both columns. Tool-specific display controls stay with their tools, keyed across feature exchange. The [Stage B review](MODEL_PAGE_STAGE_B_REVIEW.md) records tests and screenshots. Small Systems and Experiments retain their existing designs.
-7. **Lattice Systems model-page Stage C (implemented).** The existing 2D Ising canvas is the default full-width feature; m and physical-e histories are the initial gallery cards. All 16 prior plot types use the shared six-card tool deck, with one synchronized nominal-sweep history window and assignment-local spatial displacement controls. Exact 2×2 references, full-segment observables, recent diagnostics and archives remain accessible below in collapsible technical details. Sampling, worker protocols and capture formats are unchanged. See the [Stage C review](MODEL_PAGE_STAGE_C_REVIEW.md). Small Systems and Experiments remain outside this migration.
-8. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
-9. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
+6. **QM/Fields model-page Stage B (implemented).** The model formula and collapsible editable settings lead the sidebar; the main column has controls/readings, feature, compact zero-to-six-card diagnostics, collapsible technical coverage and short mathematics/exercises. Add creates a suitable card directly; one open desktop gallery card spans both columns. Tool-specific display controls stay with their tools, keyed across feature exchange. The [Stage B review](MODEL_PAGE_STAGE_B_REVIEW.md) records tests and screenshots. Small Systems and Experiments are migrated separately.
+7. **Lattice Systems model-page Stage C (implemented).** The existing 2D Ising canvas is the default full-width feature; m and physical-e histories are the initial gallery cards. All 16 prior plot types use the shared six-card tool deck, with one synchronized nominal-sweep history window and assignment-local spatial displacement controls. Exact 2×2 references, full-segment observables, recent diagnostics and archives remain accessible below in collapsible technical details. Sampling, worker protocols and capture formats are unchanged. See the [Stage C review](MODEL_PAGE_STAGE_C_REVIEW.md).
+8. **Small Systems model-page Stage D1 (implemented).** Gaussian, single spin, binomial count and existing graph Ising now use a model-specific featured display and zero-to-six-card ToolDeck gallery. Their original scientific plots are reused with graph-only applicability, per-card histogram overlays and display-only Refit axes. Graph drawing/selection is separate from its sidebar parameter editor; exact results and diagnostics remain in technical details. Seeded sessions, worker captures and archive formats remain unchanged. See the [Stage D1 review](MODEL_PAGE_STAGE_D1_REVIEW.md).
+9. **Small Systems real scalar Stage D2 (planned).** Migrate the existing vector/graph scalar interface and its specialized inspector without changing its numerical or URL behavior.
+10. **Named examples Stage D3 (planned).** Introduce the audited pedagogical catalog, custom simple-graph edge presence and example defaults in a separate release, preserving periodic multigraph/cell-complex support.
+11. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
+12. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
 
 **Acceptance gate**
 
@@ -272,7 +275,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4c0, the readability pass and the architecture audit are merged. **Model-page Stages A–B are implemented for QM and Fields only**. Keep the later Small Systems catalog/controls migration, double-well paths, φ⁴, HMC, gauge and archive stages as future scope.
+M0–M4c0, the readability pass and the architecture audit are merged. **Model-page Stages A–D1 are implemented for QM, Fields, Lattice Systems and elementary/graph-Ising Small Systems**. Keep the real scalar D2 migration and named-example D3 catalog, double-well paths, φ⁴, HMC, gauge and archive stages as future scope.
 
 ## Definition of done for the initial public usable release
 

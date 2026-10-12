@@ -44,6 +44,7 @@ export function ToolDeck<Id extends string>({
   renderSharedControls?: (
     layout: ToolLayout<Id>,
     activeTools: readonly Id[],
+    addTool: (tool: Id) => number | null,
   ) => ReactNode;
   onRemove?: (assignmentKey: number) => void;
 }) {
@@ -82,6 +83,13 @@ export function ToolDeck<Id extends string>({
       )
       .map((item) => item.tool),
   ];
+  const addTool = (tool: Id) => {
+    if (layout.gallery.length >= MAX_GALLERY_TOOLS) return null;
+    const key = nextKey.current++;
+    setLayout((current) => addGalleryTool(current, key, tool));
+    setDetailKey(key);
+    return key;
+  };
 
   return (
     <section
@@ -129,7 +137,7 @@ export function ToolDeck<Id extends string>({
         </div>
       </div>
 
-      {renderSharedControls?.(layout, activeTools)}
+      {renderSharedControls?.(layout, activeTools, addTool)}
 
       <div className="tool-deck-controls">
         <h2>Measurements &amp; diagnostics</h2>
@@ -138,19 +146,13 @@ export function ToolDeck<Id extends string>({
           className="button tool-add"
           disabled={layout.gallery.length >= MAX_GALLERY_TOOLS}
           onClick={() => {
-            const key = nextKey.current++;
-            setLayout((current) =>
-              addGalleryTool(
-                current,
-                key,
-                nextGalleryTool(
-                  current,
-                  tools.map((tool) => tool.id),
-                  addPreference,
-                ),
+            addTool(
+              nextGalleryTool(
+                layout,
+                tools.map((tool) => tool.id),
+                addPreference,
               ),
             );
-            setDetailKey(key);
           }}
         >
           Add tool

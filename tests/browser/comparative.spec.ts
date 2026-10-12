@@ -25,13 +25,6 @@ async function model(page: Page, kind: string) {
     page.getByLabel('Probability model', { exact: true }),
   ).toHaveValue(kind);
 }
-async function overview(page: Page) {
-  const toggle = page.getByRole('button', {
-    name: 'Compact overview',
-    exact: true,
-  });
-  if (await toggle.isVisible()) await toggle.click();
-}
 async function noOverflow(page: Page) {
   expect(
     await page.evaluate(
@@ -66,7 +59,6 @@ test('single-spin exact references, direct and heat-bath draws have coherent ins
   await expect(page.getByTestId('transition-details')).toContainText(
     'heat-bath resample',
   );
-  await overview(page);
   await expect(
     page
       .getByRole('img', { name: 'Exact distribution and sampled histogram' })
@@ -110,9 +102,11 @@ test('Metropolis excludes warm-up and displays a complete consistent transition'
   await expect(page.getByTestId('transition-outcome')).toContainText(
     /Accepted|Rejected/,
   );
-  await overview(page);
-  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
-  await page.getByLabel('View for plot 3').selectOption('acceptance');
+  await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  await page
+    .getByRole('region', { name: 'Small Systems tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('acceptance');
   await expect(
     page.getByRole('group', {
       name: 'Sampling acceptance and movement diagnostics',
@@ -167,7 +161,6 @@ test('binomial parameter histories, support changes and Reset stay in the correc
     await expect(page.getByTestId('total-updates')).toHaveText(String(i));
   }
   await expect(page.getByTestId('sample-count')).toHaveText('2');
-  await overview(page);
   await noOverflow(page);
   await page.getByText('Model & sampler settings', { exact: true }).click();
   await page.screenshot({
@@ -176,7 +169,16 @@ test('binomial parameter histories, support changes and Reset stay in the correc
   });
   await model(page, 'spin');
   await expect(page.getByTestId('total-updates')).toHaveText('0');
-  await expect(page.getByLabel('Variable for plot 1')).toHaveValue('s');
+  await expect(
+    page
+      .getByRole('region', { name: 'Small Systems tools' })
+      .getByTestId('featured-tool'),
+  ).toContainText('Distribution / histogram');
+  await expect(
+    page
+      .getByLabel('Small Systems tools featured tool')
+      .locator('option[value=correlation]'),
+  ).toHaveCount(0);
 });
 
 test('thousands of updates, Pause, Step and retained trajectory browsing preserve numerical state', async ({
@@ -203,11 +205,10 @@ test('thousands of updates, Pause, Step and retained trajectory browsing preserv
     );
   }
   const value = await page.getByTestId('current-value').textContent();
-  await overview(page);
-  const trajectory = page.getByRole('article', {
-    name: 'Plot 2',
-    exact: true,
-  });
+  const trajectory = page
+    .getByRole('region', { name: 'Small Systems tools' })
+    .getByTestId('teaching-tool')
+    .first();
   await expect(trajectory.getByTestId('trajectory-retention')).toContainText(
     '100 exact transitions shown',
   );
@@ -219,7 +220,7 @@ test('thousands of updates, Pause, Step and retained trajectory browsing preserv
   );
   await expect(page.getByTestId('total-updates')).toHaveText(String(total + 3));
   await expect(page.getByTestId('current-value')).toHaveText(value!);
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect(page.getByTestId('sample-count')).toHaveText(
     String(total + 3 - 200),
   );
