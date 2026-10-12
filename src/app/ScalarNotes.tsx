@@ -31,7 +31,7 @@ export function ScalarNotes() {
           then four-site Gaussian and quartic systems. Compare marginal widths
           and correlations as κ changes. Parameter Apply starts a new segment
           and warm-up with the current vector and RNG. Reset clears history and
-          replays the seed; Fit All changes only the view.
+          replays the seed; Refit axes changes only the view.
         </p>
       </div>
     </details>

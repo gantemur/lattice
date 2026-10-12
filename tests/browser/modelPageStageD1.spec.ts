@@ -89,14 +89,19 @@ test('elementary and graph pages use model-appropriate featured displays', async
     .getByLabel('Probability model', { exact: true })
     .selectOption('scalar');
   await expect(page.getByLabel('Small Systems tools')).toHaveCount(0);
-  await expect(page.locator('.scalar-workspace')).toHaveCount(1);
   await expect(
-    page.getByRole('region', { name: 'Real scalar plots' }),
+    page
+      .getByRole('region', { name: 'Real scalar tools' })
+      .getByTestId('featured-tool'),
+  ).toContainText('Real scalar configuration');
+  await expect(page.locator('.tool-featured .scalar-workspace')).toHaveCount(1);
+  await expect(
+    page.getByRole('region', { name: 'Real scalar tools' }),
   ).toHaveCount(1);
   expect(await noOverflow(page)).toBe(true);
   if (info.project.name !== 'mobile-webkit')
     await page.screenshot({
-      path: `docs/screenshots/model-page-stage-d1-scalar-legacy-${info.project.name}.png`,
+      path: `docs/screenshots/model-page-stage-d2-scalar-${info.project.name}.png`,
       fullPage: true,
     });
 });

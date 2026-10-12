@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import { drawingPositions, graphPreset, presetNames } from '../domain/graph';
 import type { GraphPreset } from '../domain/graph';
 import {
@@ -20,95 +21,35 @@ const examples: Record<ScalarPreset, string> = {
   'four-gaussian': 'Four coupled Gaussians',
   'four-quartic': 'Four coupled quartic sites',
 };
-export function ScalarWorkspace({
+type Selection = {
+  selected: string;
+  setSelected: (site: string) => void;
+  selectedEdge: string;
+  setSelectedEdge: (edge: string) => void;
+};
+
+/** Only the current vector and edge/site selection live in the featured view.
+ * Re-mounting this presentation must never initialize or step the worker. */
+export function ScalarGraphVisualization({
   model,
   state,
   trace,
   selected,
   setSelected,
-  apply,
-  disabled,
+  selectedEdge,
+  setSelectedEdge,
 }: {
   model: ScalarModel;
   state: number[] | null;
   trace?: ScalarTrace;
-  selected: string;
-  setSelected: (v: string) => void;
-  apply: (m: ScalarModel) => void;
-  disabled: boolean;
-}) {
-  const { domain } = model.parameters,
-    positions = drawingPositions(domain);
-  const [edge, setEdge] = useState(domain.edges[0]?.id ?? '');
-  const [draft, setDraft] = useState(
-    () =>
-      Object.fromEntries(
-        (['a', 'lambda', 'h', 'kappa'] as const).map((key) => [
-          key,
-          Object.fromEntries(
-            Object.entries(model.parameters[key]).map(([id, v]) => [
-              id,
-              String(v),
-            ]),
-          ),
-        ]),
-      ) as Record<'a' | 'lambda' | 'h' | 'kappa', Record<string, string>>,
-  );
-  const editor = useRef<HTMLDetailsElement>(null),
-    input = useRef<Record<string, HTMLInputElement | null>>({});
-  const key = JSON.stringify(model.parameters);
-  useEffect(() => {
-    setDraft(
-      Object.fromEntries(
-        (['a', 'lambda', 'h', 'kappa'] as const).map((key) => [
-          key,
-          Object.fromEntries(
-            Object.entries(model.parameters[key]).map(([id, v]) => [
-              id,
-              String(v),
-            ]),
-          ),
-        ]),
-      ) as typeof draft,
-    );
-  }, [key]);
-  const i = domain.vertices.findIndex((v) => v.id === selected),
-    bond = domain.edges.find((e) => e.id === edge);
-  const neighbor =
-    state &&
-    domain.edges
-      .filter(
-        (e) =>
-          e.tail !== e.head && (e.tail === selected || e.head === selected),
-      )
-      .map((e) => {
-        const other = e.tail === selected ? e.head : e.tail,
-          j = domain.vertices.findIndex((v) => v.id === other);
-        return {
-          edge: e.id,
-          other,
-          value: state[j]!,
-          k: model.parameters.kappa[e.id]!,
-        };
-      });
-  const cond =
-    state &&
-    (() => {
-      let A = model.parameters.a[selected]!,
-        H = model.parameters.h[selected]!;
-      for (const item of neighbor!) {
-        A += item.k;
-        H += item.k * item.value;
-      }
-      return quarticReference(A, model.parameters.lambda[selected]!, H);
-    })();
+} & Selection) {
+  const { domain } = model.parameters;
+  const positions = drawingPositions(domain);
   const color = (v: number) =>
     `hsl(${v >= 0 ? 172 : 25} 51% ${Math.round(90 - 45 * Math.tanh(Math.abs(v) / 3))}%)`;
-  const set = (group: keyof typeof draft, id: string, value: string) =>
-    setDraft({ ...draft, [group]: { ...draft[group], [id]: value } });
   return (
     <section
-      className="graph-workspace scalar-workspace"
+      className={`graph-workspace scalar-workspace ${domain.vertices.length === 1 ? 'scalar-single-site' : ''}`}
       aria-label="Interactive real scalar graph"
     >
       <div className="section-heading">
@@ -119,8 +60,10 @@ export function ScalarWorkspace({
           <h2>{domain.name}</h2>
         </div>
         <span className="parameter-chip">
-          {domain.vertices.length} sites · {domain.edges.length} bonds ·{' '}
-          {domain.faces.length} faces
+          {domain.vertices.length}{' '}
+          {domain.vertices.length === 1 ? 'site' : 'sites'} ·{' '}
+          {domain.edges.length} {domain.edges.length === 1 ? 'bond' : 'bonds'} ·{' '}
+          {domain.faces.length} {domain.faces.length === 1 ? 'face' : 'faces'}
         </span>
       </div>
       <svg
@@ -153,11 +96,11 @@ export function ScalarWorkspace({
               role="button"
               tabIndex={0}
               aria-label={`Select bond ${e.id}, ${e.tail} to ${e.head}`}
-              onClick={() => setEdge(e.id)}
+              onClick={() => setSelectedEdge(e.id)}
               onKeyDown={(ev) => {
                 if (ev.key === 'Enter' || ev.key === ' ') {
                   ev.preventDefault();
-                  setEdge(e.id);
+                  setSelectedEdge(e.id);
                 }
               }}
             >
@@ -169,7 +112,7 @@ export function ScalarWorkspace({
               />
               <path
                 d={path}
-                className={`graph-edge ${edge === e.id || e.tail === selected || e.head === selected ? 'selected-interaction' : ''} ${trace?.edges.some((c) => c.edgeId === e.id) ? 'updated-interaction' : ''}`}
+                className={`graph-edge ${selectedEdge === e.id || e.tail === selected || e.head === selected ? 'selected-interaction' : ''} ${trace?.edges.some((c) => c.edgeId === e.id) ? 'updated-interaction' : ''}`}
                 stroke="#14625a"
                 strokeWidth={1 + Math.min(4, model.parameters.kappa[e.id]!)}
                 strokeDasharray={e.wraps ? '5 4' : undefined}
@@ -229,22 +172,18 @@ export function ScalarWorkspace({
           );
         })}
       </svg>
-      <p className="plot-note">
-        Numbers are the current real values. Fixed color scale uses tanh(|x|/3):
-        teal positive, ochre negative; values are never hidden. Dark outlines
-        mark selection; gold rings mark the latest update. Dashed bonds wrap.
-        Each parallel bond keeps its ID.
-      </p>
       <div className="graph-form-row">
         <label>
           Selected site
           <select
             aria-label="Selected site"
             value={selected}
-            onChange={(e) => setSelected(e.target.value)}
+            onChange={(event) => setSelected(event.target.value)}
           >
-            {domain.vertices.map((v) => (
-              <option key={v.id}>{v.id}</option>
+            {domain.vertices.map((vertex) => (
+              <option key={vertex.id} value={vertex.id}>
+                {vertex.id}
+              </option>
             ))}
           </select>
         </label>
@@ -252,14 +191,115 @@ export function ScalarWorkspace({
           Selected bond
           <select
             aria-label="Selected bond"
-            value={edge}
-            onChange={(e) => setEdge(e.target.value)}
+            value={selectedEdge}
+            onChange={(event) => setSelectedEdge(event.target.value)}
           >
             {domain.edges.length ? (
-              domain.edges.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.id}: {e.tail} → {e.head}
-                  {e.wraps ? ' (wrap)' : ''}
+              domain.edges.map((bond) => (
+                <option key={bond.id} value={bond.id}>
+                  {bond.id}: {bond.tail} → {bond.head}
+                  {bond.wraps ? ' (wrap)' : ''}
+                </option>
+              ))
+            ) : (
+              <option value="">No bonds</option>
+            )}
+          </select>
+        </label>
+      </div>
+      <p className="plot-note">
+        Numbers are the current real values. Fixed color scale uses tanh(|x|/3):
+        teal positive, ochre negative; values are never hidden. Dark outlines
+        mark selection; gold rings mark the latest update. Dashed bonds wrap.
+        Each parallel bond keeps its ID.
+      </p>
+      {state && (
+        <p className="plot-note" data-testid="scalar-configuration">
+          Configuration: [{state.map((v) => formatNumber(v)).join(', ')}];
+          action S={formatNumber(scalarAction(model, state))}.
+        </p>
+      )}
+    </section>
+  );
+}
+
+/** Local, conditional inspection is a separate read-only view of one vector.
+ * Its edit action opens the shared sidebar form without changing the target. */
+export function ScalarGraphInspection({
+  model,
+  state,
+  selected,
+  setSelected,
+  selectedEdge,
+  setSelectedEdge,
+  editCoupling,
+}: {
+  model: ScalarModel;
+  state: number[] | null;
+  editCoupling: RefObject<((edge: string) => void) | null>;
+} & Selection) {
+  const { domain } = model.parameters;
+  const i = domain.vertices.findIndex((v) => v.id === selected);
+  const bond = domain.edges.find((e) => e.id === selectedEdge);
+  const neighbor =
+    state &&
+    domain.edges
+      .filter(
+        (e) =>
+          e.tail !== e.head && (e.tail === selected || e.head === selected),
+      )
+      .map((e) => {
+        const other = e.tail === selected ? e.head : e.tail;
+        const j = domain.vertices.findIndex((v) => v.id === other);
+        return {
+          edge: e.id,
+          other,
+          value: state[j]!,
+          k: model.parameters.kappa[e.id]!,
+        };
+      });
+  const cond =
+    state &&
+    (() => {
+      let A = model.parameters.a[selected]!,
+        H = model.parameters.h[selected]!;
+      for (const item of neighbor!) {
+        A += item.k;
+        H += item.k * item.value;
+      }
+      return quarticReference(A, model.parameters.lambda[selected]!, H);
+    })();
+  return (
+    <section
+      className="scalar-workspace"
+      aria-label="Local real scalar inspection"
+    >
+      <div className="graph-form-row">
+        <label>
+          Inspect site
+          <select
+            aria-label="Inspect site"
+            value={selected}
+            onChange={(event) => setSelected(event.target.value)}
+          >
+            {domain.vertices.map((vertex) => (
+              <option key={vertex.id} value={vertex.id}>
+                {vertex.id}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Inspect bond
+          <select
+            aria-label="Inspect bond"
+            value={selectedEdge}
+            onChange={(event) => setSelectedEdge(event.target.value)}
+          >
+            {domain.edges.length ? (
+              domain.edges.map((edge) => (
+                <option key={edge.id} value={edge.id}>
+                  {edge.id}: {edge.tail} → {edge.head}
                 </option>
               ))
             ) : (
@@ -365,8 +405,7 @@ export function ScalarWorkspace({
             <button
               className="button"
               onClick={() => {
-                if (editor.current) editor.current.open = true;
-                input.current[bond.id]?.focus();
+                editCoupling.current?.(bond.id);
               }}
             >
               Edit coupling {bond.id}
@@ -378,156 +417,196 @@ export function ScalarWorkspace({
           </details>
         )}
       </div>
-      <details className="graph-editor" ref={editor}>
-        <summary>Geometry & scalar parameters</summary>
-        <label>
-          Experiment preset
-          <select
-            aria-label="Scalar preset"
-            value=""
-            disabled={disabled}
-            onChange={(e) =>
-              apply(scalarPreset(e.target.value as ScalarPreset))
-            }
-          >
-            <option value="">Choose a preset…</option>
-            {Object.entries(examples).map(([key, label]) => (
-              <option value={key} key={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Geometry preset
-          <select
-            aria-label="Scalar geometry"
-            value={domain.id === 'pair' ? 'pair' : domain.id}
-            disabled={disabled}
-            onChange={(e) => {
-              const kind = e.target.value as GraphPreset | 'pair';
-              const next =
-                kind === 'site'
-                  ? scalarPreset('baseline')
-                  : kind === 'pair'
-                    ? scalarPreset('pair')
-                    : (() => {
-                        const domain = graphPreset(kind);
-                        return {
-                          kind: 'scalar' as const,
-                          parameters: {
-                            domain,
-                            a: Object.fromEntries(
-                              domain.vertices.map((v) => [v.id, 1]),
-                            ),
-                            lambda: Object.fromEntries(
-                              domain.vertices.map((v) => [v.id, 0]),
-                            ),
-                            h: Object.fromEntries(
-                              domain.vertices.map((v) => [v.id, 0]),
-                            ),
-                            kappa: Object.fromEntries(
-                              domain.edges.map((e) => [e.id, 0.7]),
-                            ),
-                          },
-                        };
-                      })();
-              apply(next);
-            }}
-          >
-            <option value="pair">Coupled pair</option>
-            {Object.entries(presetNames).map(([key, label]) => (
-              <option value={key} key={key}>
-                {label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p className="plot-note">
-          Changing topology starts a new session. Numerical edits keep
-          compatible vector state and RNG, start new measurements and restart
-          warm-up.
-        </p>
-        <form
-          noValidate
-          onSubmit={(e) => {
-            e.preventDefault();
-            const read = (key: keyof typeof draft) =>
-              Object.fromEntries(
-                Object.entries(draft[key]).map(([id, v]) => [
-                  id,
-                  v.trim() ? Number(v) : NaN,
-                ]),
-              );
-            apply({
-              ...model,
-              parameters: {
-                ...model.parameters,
-                a: read('a'),
-                lambda: read('lambda'),
-                h: read('h'),
-                kappa: read('kappa'),
-              },
-            });
+    </section>
+  );
+}
+
+type Draft = Record<'a' | 'lambda' | 'h' | 'kappa', Record<string, string>>;
+function appliedDraft(model: ScalarModel): Draft {
+  return Object.fromEntries(
+    (['a', 'lambda', 'h', 'kappa'] as const).map((key) => [
+      key,
+      Object.fromEntries(
+        Object.entries(model.parameters[key]).map(([id, v]) => [id, String(v)]),
+      ),
+    ]),
+  ) as Draft;
+}
+
+/** Draft numbers live only here. Apply invokes the existing segment/topology
+ * protocol in SmallSystemsApp; the sidebar owns no sampler state. */
+export function ScalarParameterEditor({
+  model,
+  apply,
+  disabled,
+  editCoupling,
+}: {
+  model: ScalarModel;
+  apply: (model: ScalarModel) => void;
+  disabled: boolean;
+  editCoupling: RefObject<((edge: string) => void) | null>;
+}) {
+  const { domain } = model.parameters;
+  const [draft, setDraft] = useState(() => appliedDraft(model));
+  const editor = useRef<HTMLDetailsElement>(null);
+  const input = useRef<Record<string, HTMLInputElement | null>>({});
+  const key = JSON.stringify(model.parameters);
+  useEffect(() => {
+    setDraft(appliedDraft(model));
+  }, [key]);
+  useEffect(() => {
+    editCoupling.current = (edge) => {
+      if (editor.current) editor.current.open = true;
+      // Opening details makes the input focusable before the next paint.
+      requestAnimationFrame(() => input.current[edge]?.focus());
+    };
+    return () => {
+      editCoupling.current = null;
+    };
+  }, [editCoupling]);
+  const set = (group: keyof Draft, id: string, value: string) =>
+    setDraft((old) => ({ ...old, [group]: { ...old[group], [id]: value } }));
+  return (
+    <details className="graph-editor" ref={editor}>
+      <summary>Geometry & scalar parameters</summary>
+      <label>
+        Scalar example
+        <select
+          aria-label="Scalar preset"
+          value=""
+          disabled={disabled}
+          onChange={(e) => apply(scalarPreset(e.target.value as ScalarPreset))}
+        >
+          <option value="">Choose a preset…</option>
+          {Object.entries(examples).map(([key, label]) => (
+            <option value={key} key={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label>
+        Geometry preset
+        <select
+          aria-label="Scalar geometry"
+          value={domain.id === 'pair' ? 'pair' : domain.id}
+          disabled={disabled}
+          onChange={(e) => {
+            const kind = e.target.value as GraphPreset | 'pair';
+            const next =
+              kind === 'site'
+                ? scalarPreset('baseline')
+                : kind === 'pair'
+                  ? scalarPreset('pair')
+                  : (() => {
+                      const domain = graphPreset(kind);
+                      return {
+                        kind: 'scalar' as const,
+                        parameters: {
+                          domain,
+                          a: Object.fromEntries(
+                            domain.vertices.map((v) => [v.id, 1]),
+                          ),
+                          lambda: Object.fromEntries(
+                            domain.vertices.map((v) => [v.id, 0]),
+                          ),
+                          h: Object.fromEntries(
+                            domain.vertices.map((v) => [v.id, 0]),
+                          ),
+                          kappa: Object.fromEntries(
+                            domain.edges.map((e) => [e.id, 0.7]),
+                          ),
+                        },
+                      };
+                    })();
+            apply(next);
           }}
         >
-          <div className="graph-fields">
-            {domain.vertices.flatMap((v) =>
-              (
-                [
-                  ['a', 'Quadratic a'],
-                  ['lambda', 'Quartic λ'],
-                  ['h', 'Source h'],
-                ] as const
-              ).map(([key, label]) => (
-                <label key={`${key}:${v.id}`}>
-                  {label} at {v.id}
-                  <input
-                    aria-label={`${label} ${v.id}`}
-                    type="number"
-                    step="any"
-                    value={draft[key][v.id] ?? ''}
-                    onChange={(e) => set(key, v.id, e.target.value)}
-                  />
-                </label>
-              )),
-            )}
-          </div>
-          <div className="graph-fields">
-            {domain.edges.map((e) => (
-              <label key={e.id}>
-                κ {e.id} · {e.tail} → {e.head}
+          <option value="pair">Coupled pair</option>
+          {Object.entries(presetNames).map(([key, label]) => (
+            <option value={key} key={key}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <p className="plot-note">
+        Changing topology starts a new session. Numerical edits keep compatible
+        vector state and RNG, start new measurements and restart warm-up.
+      </p>
+      <form
+        noValidate
+        onSubmit={(e) => {
+          e.preventDefault();
+          const read = (key: keyof typeof draft) =>
+            Object.fromEntries(
+              Object.entries(draft[key]).map(([id, v]) => [
+                id,
+                v.trim() ? Number(v) : NaN,
+              ]),
+            );
+          apply({
+            ...model,
+            parameters: {
+              ...model.parameters,
+              a: read('a'),
+              lambda: read('lambda'),
+              h: read('h'),
+              kappa: read('kappa'),
+            },
+          });
+        }}
+      >
+        <div className="graph-fields">
+          {domain.vertices.flatMap((v) =>
+            (
+              [
+                ['a', 'Quadratic a'],
+                ['lambda', 'Quartic λ'],
+                ['h', 'Source h'],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={`${key}:${v.id}`}>
+                {label} at {v.id}
                 <input
-                  ref={(node) => {
-                    input.current[e.id] = node;
-                  }}
-                  aria-label={`Coupling ${e.id}`}
+                  aria-label={`${label} ${v.id}`}
                   type="number"
                   step="any"
-                  min="0"
-                  max="10"
-                  value={draft.kappa[e.id] ?? ''}
-                  onChange={(ev) => set('kappa', e.id, ev.target.value)}
+                  value={draft[key][v.id] ?? ''}
+                  onChange={(e) => set(key, v.id, e.target.value)}
                 />
               </label>
-            ))}
-          </div>
-          <button className="button primary" disabled={disabled}>
-            Apply scalar parameters
-          </button>
-          <p className="plot-note">
-            λ=0 requires a≥0.05; λ&gt;0 permits negative a. κ≥0. Bounds are
-            sufficient for normalizability. Apply preserves compatible
-            configuration and RNG.
-          </p>
-        </form>
-      </details>
-      {state && (
-        <p className="plot-note" data-testid="scalar-configuration">
-          Configuration: [{state.map((v) => formatNumber(v)).join(', ')}];
-          action S={formatNumber(scalarAction(model, state))}.
+            )),
+          )}
+        </div>
+        <div className="graph-fields">
+          {domain.edges.map((e) => (
+            <label key={e.id}>
+              κ {e.id} · {e.tail} → {e.head}
+              <input
+                ref={(node) => {
+                  input.current[e.id] = node;
+                }}
+                aria-label={`Coupling ${e.id}`}
+                type="number"
+                step="any"
+                min="0"
+                max="10"
+                value={draft.kappa[e.id] ?? ''}
+                onChange={(ev) => set('kappa', e.id, ev.target.value)}
+              />
+            </label>
+          ))}
+        </div>
+        <button className="button primary" disabled={disabled}>
+          Apply scalar parameters
+        </button>
+        <p className="plot-note">
+          λ=0 requires a≥0.05; λ&gt;0 permits negative a. κ≥0. Bounds are
+          sufficient for normalizability. Apply preserves compatible
+          configuration and RNG.
         </p>
-      )}
-    </section>
+      </form>
+    </details>
   );
 }

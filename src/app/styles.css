@@ -1588,6 +1588,9 @@ footer {
 .tool-body .graph-diagram {
   max-width: 600px;
 }
+.tool-body .scalar-single-site .graph-diagram {
+  max-height: 180px;
+}
 .small-plot-options {
   display: flex;
   flex-wrap: wrap;

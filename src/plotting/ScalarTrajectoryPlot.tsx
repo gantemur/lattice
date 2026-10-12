@@ -11,15 +11,37 @@ export function ScalarTrajectoryPlot({
   bounds,
   runId,
   fitVersion,
+  windowLength: controlledLength,
+  end: controlledEnd,
+  setWindowLength: changeLength,
+  setEnd: changeEnd,
+  viewportMemory,
+  viewportKey,
 }: {
   segments: SegmentSnapshot[];
   target: string;
   bounds: Range;
   runId: number;
   fitVersion: number;
+  windowLength?: 100 | 500 | 1000;
+  end?: number | null;
+  setWindowLength?: (length: 100 | 500 | 1000) => void;
+  setEnd?: (end: number | null) => void;
+  viewportMemory?: Map<
+    string,
+    {
+      runId: number;
+      bounds: { min: number; max: number; ymax?: number; nmax?: number };
+    }
+  >;
+  viewportKey?: string;
 }) {
-  const [windowLength, setWindowLength] = useState<100 | 500 | 1000>(100);
-  const [end, setEnd] = useState<number | null>(null);
+  const [localLength, setLocalLength] = useState<100 | 500 | 1000>(100);
+  const [localEnd, setLocalEnd] = useState<number | null>(null);
+  const windowLength = controlledLength ?? localLength;
+  const end = controlledEnd === undefined ? localEnd : controlledEnd;
+  const setWindowLength = changeLength ?? setLocalLength;
+  const setEnd = changeEnd ?? setLocalEnd;
   const window = scalarTrajectoryWindow(segments, target, windowLength, end);
   const values = window.visible.flatMap((s) =>
     s.records.flatMap((r) =>
@@ -33,7 +55,10 @@ export function ScalarTrajectoryPlot({
   const [saved, setSaved] = useState<{
     runId: number;
     range: Range;
-  } | null>(null);
+  } | null>(() => {
+    const old = viewportKey ? viewportMemory?.get(viewportKey) : null;
+    return old ? { runId: old.runId, range: old.bounds } : null;
+  });
   const range =
     saved?.runId === runId
       ? {
@@ -43,10 +68,16 @@ export function ScalarTrajectoryPlot({
       : needed;
   const key = JSON.stringify(range);
   useEffect(() => {
+    const next = { runId, bounds: range };
     setSaved({ runId, range });
+    if (viewportKey) viewportMemory?.set(viewportKey, next);
   }, [key, runId]);
   useEffect(() => {
-    if (fitVersion > 0) setSaved({ runId, range: needed });
+    if (fitVersion > 0) {
+      setSaved({ runId, range: needed });
+      if (viewportKey)
+        viewportMemory?.set(viewportKey, { runId, bounds: needed });
+    }
   }, [fitVersion]);
   const padding = Math.max(0.01, (range.max - range.min) * 0.04);
   const min = range.min - padding,

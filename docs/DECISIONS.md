@@ -294,6 +294,14 @@ The Gaussian, single-spin, binomial and finite graph-Ising pages use the same on
 
 Graph visualization/selection and local inspection are separate from the sidebar's numerical coupling, field and topology editor. The selected site and edge belong to the mounted Small Systems workspace, so remounting the graph visualization never selects a new numerical state. Draft parameters still apply through the established `applyGraph`/topology-key path: compatible values begin isolated segments while topology changes start seeded sessions. The worker, RNG, exact calculations, capture/archive formats, periodic multigraph edges and faces remain unchanged. Existing graph presets remain accessible; the named-example catalog and edge-presence editing wait for Stage D3.
 
+## Accepted Small Systems real scalar model-page Stage D2 convention — 2026-10-12
+
+### D-049 — Keep real scalar numerics independent of the teaching-tool layout
+
+The existing real scalar graph becomes the default featured visualization, with an empirical marginal-histogram card and a scatter card for two or more sites, or a bare-potential card for one site. The six-card `ToolDeck` exposes all ten established scalar plot types. The graph drawing reads applied worker snapshots; its selected site and edge belong to Small Systems workspace state. A separate sidebar editor owns draft geometry and coefficients and continues to invoke the established parameter-segment or topology-reset path. Moving, replacing or removing the graph visualization never removes physical settings or changes the numerical vector.
+
+Each plot assignment owns its applicable target, histogram visibility, display viewport and trajectory window/end update. Bare and conditional views accept only individual sites; scatter explicitly displays the first two sites; covariance and acceptance have no arbitrary target. A feature/gallery exchange preserves assignment choices even if React remounts the renderer. Refit axes changes only graphical limits. Conditional potential and density continue to use current neighbors and every non-self incident edge; neither is presented as an equilibrium marginal. Exact multivariate Gaussian, independent-site quartic quadrature and coupled-quartic sampled-only cases retain distinct labels. Worker kernels, RNG order, segment accumulators, bounded trajectories, archive captures and scalar configuration URL schema v1 are unchanged. The named-example catalog and new topologies remain Stage D3 work.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

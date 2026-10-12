@@ -14,12 +14,32 @@ async function openParameters(page: import('@playwright/test').Page) {
       .getByText('Geometry & scalar parameters', { exact: true })
       .click();
 }
+async function openLocalInspection(page: import('@playwright/test').Page) {
+  const section = page.getByText('Local scalar inspection', { exact: true });
+  if (!(await page.getByTestId('scalar-site-panel').isVisible()))
+    await section.click();
+}
+async function openReferences(page: import('@playwright/test').Page) {
+  const section = page.getByTestId('small-scalar-references');
+  if (!(await section.locator('.moments-panel').isVisible()))
+    await section.locator('summary').first().click();
+}
+async function showTool(page: import('@playwright/test').Page, index: number) {
+  const selector = page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel(`Tool ${index} type`);
+  if (!(await selector.isVisible()))
+    await page
+      .getByLabel('Real scalar tools detail tool')
+      .selectOption(String(index));
+}
 test('coupled Gaussian graph, exact reference, direct vector draw and conditional distinction', async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await start(page);
+  await openReferences(page);
   await expect(
     page.getByText('Analytic exact multivariate Gaussian', { exact: false }),
   ).toBeVisible();
@@ -34,6 +54,7 @@ test('coupled Gaussian graph, exact reference, direct vector draw and conditiona
   await expect(page.getByLabel('Selected site', { exact: true })).toHaveValue(
     'v1',
   );
+  await openLocalInspection(page);
   await page.getByTestId('scalar-site-panel').locator('summary').click();
   await expect(page.getByTestId('scalar-site-panel')).toContainText(
     'This is not the equilibrium marginal',
@@ -66,6 +87,7 @@ test('double wells, quartic reference, local Metropolis and segment isolation', 
   await expect(
     page.getByRole('heading', { name: 'Single site', exact: true }),
   ).toBeVisible();
+  await openReferences(page);
   await expect(
     page.getByText('Numerical quadrature reference', { exact: true }).last(),
   ).toBeVisible();
@@ -81,21 +103,26 @@ test('double wells, quartic reference, local Metropolis and segment isolation', 
     .click();
   await expect(page.getByTestId('active-segment')).toHaveText('Segment 2');
   await expect(page.getByTestId('sample-count')).toHaveText('0');
-  const plotTwo = page.getByRole('button', { name: 'Plot 2', exact: true });
-  if (await plotTwo.isVisible()) await plotTwo.click();
-  await page.getByLabel('View for plot 2').selectOption('bare');
+  await showTool(page, 2);
+  await page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('bare');
   await expect(
     page.getByRole('img', { name: 'Bare local potential' }),
   ).toBeVisible();
-  await page.getByLabel('View for plot 2').selectOption('conditional-density');
+  await page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('conditional-density');
   await expect(
     page
-      .getByRole('region', { name: 'Real scalar plots' })
+      .getByRole('region', { name: 'Real scalar tools' })
       .getByText('This is not the equilibrium marginal.', { exact: false })
       .last(),
   ).toBeVisible();
   const before = await page.getByTestId('scalar-configuration').textContent();
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect(page.getByTestId('scalar-configuration')).toHaveText(before!);
   expect(
     await page.evaluate(
@@ -117,9 +144,13 @@ test('torus retains eight gradient bonds and display edits preserve seeded updat
     .getByTestId('scalar-transition-details')
     .textContent();
   await page.getByLabel('Selected bond', { exact: true }).selectOption('e6');
-  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
-  await page.getByLabel('View for plot 3').selectOption('covariance');
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Add tool', exact: true }).click();
+  await showTool(page, 3);
+  await page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel('Tool 3 type')
+    .selectOption('covariance');
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect(page.getByTestId('total-updates')).toHaveText('1');
   await page.getByRole('button', { name: 'Reset', exact: true }).click();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
@@ -180,21 +211,28 @@ test('four coupled quartic sites expose sampled marginals, conditionals and phon
   await expect(
     page.getByRole('heading', { name: 'Open 2×2 square', exact: true }),
   ).toBeVisible();
+  await openReferences(page);
   await expect(
-    page.getByText('Sampled only', { exact: true }).first(),
+    page
+      .getByTestId('small-scalar-references')
+      .getByText('Sampled only', { exact: true })
+      .first(),
   ).toBeVisible();
   await page.getByRole('button', { name: 'Step', exact: true }).click();
+  await openLocalInspection(page);
   await page.getByTestId('scalar-site-panel').locator('summary').click();
   await expect(page.getByTestId('scalar-site-panel')).toContainText(
     'This is not the equilibrium marginal',
   );
-  const overview = page.getByRole('button', {
-    name: 'Compact overview',
-    exact: true,
-  });
-  if (await overview.isVisible()) await overview.click();
-  await page.getByLabel('Variable for plot 1').selectOption('v0·v1');
-  await page.getByLabel('View for plot 2').selectOption('covariance');
+  await page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel('Observable for tool 1')
+    .selectOption('v0·v1');
+  await showTool(page, 2);
+  await page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('covariance');
   await expect(
     page.getByText('no exact coupled-quartic reference', { exact: false }),
   ).toBeVisible();
@@ -212,9 +250,11 @@ test('running means keep separately labeled parameter-segment histories', async 
   await start(page);
   await page.getByRole('button', { name: 'Step', exact: true }).click();
   await expect(page.getByTestId('sample-count')).toHaveText('1');
-  const plotTwo = page.getByRole('button', { name: 'Plot 2', exact: true });
-  if (await plotTwo.isVisible()) await plotTwo.click();
-  await page.getByLabel('View for plot 2').selectOption('mean');
+  await showTool(page, 2);
+  await page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('mean');
   await openParameters(page);
   await page.getByLabel('Source h v0').fill('0.8');
   await page
@@ -228,7 +268,7 @@ test('running means keep separately labeled parameter-segment histories', async 
   await expect(running).toBeVisible();
   await expect(running.locator('[aria-label="Segment 1"]')).toHaveCount(1);
   await expect(running.locator('[aria-label="Segment 2"]')).toHaveCount(1);
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect(page.getByTestId('total-updates')).toHaveText('2');
 });
 
@@ -253,7 +293,7 @@ test('long direct run keeps 100 recent points spread across a browsable update w
     page.getByRole('button', { name: 'Step', exact: true }),
   ).toBeEnabled();
   const total = Number(await page.getByTestId('total-updates').textContent());
-  await page.getByRole('button', { name: 'Add Plot', exact: true }).click();
+  await page.getByRole('button', { name: 'Add tool', exact: true }).click();
   const chart = page.getByRole('img', {
     name: 'Scalar sample trajectory by elementary update',
   });
@@ -270,9 +310,9 @@ test('long direct run keeps 100 recent points spread across a browsable update w
   const firstX = Number(await points[0]!.getAttribute('cx'));
   const lastX = Number(await points.at(-1)!.getAttribute('cx'));
   expect(lastX - firstX).toBeGreaterThan(100);
-  const plot = page.getByRole('article').filter({
-    has: page.getByLabel('View for plot 3'),
-  });
+  const plot = page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .locator('[data-testid="teaching-tool"][data-assignment-key="3"]');
   await plot.getByText('Window & history', { exact: true }).click();
   await plot.getByLabel('Scalar trajectory window').selectOption('500');
   await expect(chart.getByTestId('scalar-point')).toHaveCount(500);
@@ -299,7 +339,7 @@ test('long direct run keeps 100 recent points spread across a browsable update w
     String(total),
   );
   await expect(page.getByTestId('total-updates')).toHaveText(String(total));
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect(page.getByTestId('total-updates')).toHaveText(String(total));
   expect(
     await page.evaluate(
@@ -317,9 +357,11 @@ test('scalar acceptance bars separate Metropolis from direct and heat-bath N/A',
   page,
 }) => {
   await start(page);
-  const plotTwo = page.getByRole('button', { name: 'Plot 2', exact: true });
-  if (await plotTwo.isVisible()) await plotTwo.click();
-  await page.getByLabel('View for plot 2').selectOption('acceptance');
+  await showTool(page, 2);
+  await page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('acceptance');
   const diagnostics = page.getByRole('group', {
     name: 'Real scalar acceptance diagnostics',
   });
@@ -351,7 +393,10 @@ test('scalar acceptance bars separate Metropolis from direct and heat-bath N/A',
   await expect(diagnostics).toContainText('S1');
   await expect(diagnostics).toContainText('S2');
   await expect(diagnostics).toContainText('S3');
-  await page.getByLabel('View for plot 2').selectOption('trajectory');
+  await page
+    .getByRole('region', { name: 'Real scalar tools' })
+    .getByLabel('Tool 2 type')
+    .selectOption('trajectory');
   const chart = page.getByRole('img', {
     name: 'Scalar sample trajectory by elementary update',
   });
@@ -362,7 +407,7 @@ test('scalar acceptance bars separate Metropolis from direct and heat-bath N/A',
     .poll(async () => chart.getByTestId('scalar-rejection').count())
     .toBeGreaterThan(0);
   const total = await page.getByTestId('total-updates').textContent();
-  await page.getByRole('button', { name: 'Fit All', exact: true }).click();
+  await page.getByRole('button', { name: 'Refit axes', exact: true }).click();
   await expect(page.getByTestId('total-updates')).toHaveText(total!);
   expect(
     await page.evaluate(

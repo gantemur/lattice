@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { Snapshot } from '../engine/protocol';
 import {
-  scalarTargets,
   scalarReference,
   localPotential,
   conditionalPotential,
@@ -13,7 +12,7 @@ import { PlotFrame, formatNumber, tick } from '../plotting/PlotFrame';
 import { segmentColor } from '../plotting/viewport';
 import { ScalarTrajectoryPlot } from '../plotting/ScalarTrajectoryPlot';
 import { ScalarAcceptancePlot } from '../plotting/ScalarAcceptancePlot';
-type View =
+export type ScalarView =
   | 'histogram'
   | 'trajectory'
   | 'mean'
@@ -24,8 +23,14 @@ type View =
   | 'scatter'
   | 'covariance'
   | 'acceptance';
-type Slot = { id: number; target: string; view: View; collapsed: boolean };
-const names: Record<View, string> = {
+export type ScalarViewportMemory = Map<
+  string,
+  {
+    runId: number;
+    bounds: { min: number; max: number; ymax?: number; nmax?: number };
+  }
+>;
+export const scalarPlotNames: Record<ScalarView, string> = {
   histogram: 'Marginal histogram',
   trajectory: 'Sample trajectory',
   mean: 'Running mean',
@@ -72,16 +77,30 @@ function referenceDensity(
   }
   return null;
 }
-function ScalarPlot({
+export function ScalarPlot({
   snapshot,
   target,
   view,
   fitVersion,
+  showHistogram = true,
+  viewportMemory,
+  viewportKey,
+  trajectoryWindow,
+  trajectoryEnd,
+  setTrajectoryWindow,
+  setTrajectoryEnd,
 }: {
   snapshot: Snapshot;
   target: string;
-  view: View;
+  view: ScalarView;
   fitVersion: number;
+  showHistogram?: boolean;
+  viewportMemory?: ScalarViewportMemory;
+  viewportKey?: string;
+  trajectoryWindow?: 100 | 500 | 1000;
+  trajectoryEnd?: number | null;
+  setTrajectoryWindow?: (length: 100 | 500 | 1000) => void;
+  setTrajectoryEnd?: (end: number | null) => void;
 }) {
   const segments = snapshot.segments.filter(
       (s) => s.model.kind === 'scalar' && s.scalar?.targets[target],
@@ -128,7 +147,19 @@ function ScalarPlot({
   const [saved, setSaved] = useState<{
     runId: number;
     bounds: typeof needed;
-  } | null>(null);
+  } | null>(() => {
+    const old = viewportKey ? viewportMemory?.get(viewportKey) : null;
+    return old?.bounds.ymax !== undefined && old.bounds.nmax !== undefined
+      ? {
+          runId: old.runId,
+          bounds: {
+            ...old.bounds,
+            ymax: old.bounds.ymax,
+            nmax: old.bounds.nmax,
+          },
+        }
+      : null;
+  });
   const bounds =
     saved?.runId === snapshot.runId
       ? {
@@ -140,10 +171,16 @@ function ScalarPlot({
       : needed;
   const key = JSON.stringify(bounds);
   useEffect(() => {
-    setSaved({ runId: snapshot.runId, bounds });
+    const next = { runId: snapshot.runId, bounds };
+    setSaved(next);
+    if (viewportKey) viewportMemory?.set(viewportKey, next);
   }, [key, snapshot.runId]);
   useEffect(() => {
-    if (fitVersion > 0) setSaved({ runId: snapshot.runId, bounds: needed });
+    if (fitVersion > 0) {
+      const next = { runId: snapshot.runId, bounds: needed };
+      setSaved(next);
+      if (viewportKey) viewportMemory?.set(viewportKey, next);
+    }
   }, [fitVersion]);
   if (!model || !current) return null;
   if (view === 'covariance') {
@@ -204,6 +241,12 @@ function ScalarPlot({
         bounds={{ min: bounds.min, max: bounds.max }}
         runId={snapshot.runId}
         fitVersion={fitVersion}
+        windowLength={trajectoryWindow}
+        end={trajectoryEnd}
+        setWindowLength={setTrajectoryWindow}
+        setEnd={setTrajectoryEnd}
+        viewportMemory={viewportMemory}
+        viewportKey={viewportKey ? `${viewportKey}:trajectory` : undefined}
       />
     );
   if (view === 'scatter') {
@@ -216,6 +259,13 @@ function ScalarPlot({
     const points = current.scalar!.scatter,
       a = model.parameters.domain.vertices[0]!.id,
       b = model.parameters.domain.vertices[1]!.id;
+    if (!points.length)
+      return (
+        <p className="plot-note">
+          No retained configuration pairs yet. Warm-up transitions are excluded;
+          this view uses only the latest bounded sampled pairs.
+        </p>
+      );
     const hA = current.scalar!.targets[a]!.histogram,
       hB = current.scalar!.targets[b]!.histogram;
     return (
@@ -266,7 +316,7 @@ function ScalarPlot({
     view === 'conditional-potential' ||
     view === 'conditional-density'
   ) {
-    const id = target.endsWith('²') ? target.slice(0, -1) : target,
+    const id = target,
       i = model.parameters.domain.vertices.findIndex((v) => v.id === id),
       state = snapshot.scalarState;
     if (i < 0)
@@ -318,13 +368,13 @@ function ScalarPlot({
     return (
       <>
         <PlotFrame
-          label={names[view]}
+          label={scalarPlotNames[view]}
           viewport={JSON.stringify({ lo, hi, ymin, ymax })}
         >
           {({ left, right, top, bottom, width, height }) => (
             <>
               <text x="0" y="16">
-                {names[view]}
+                {scalarPlotNames[view]}
               </text>
               <path
                 d={values
@@ -359,6 +409,32 @@ function ScalarPlot({
       </>
     );
   }
+  if (
+    view === 'histogram' &&
+    !showHistogram &&
+    !allowed.some(
+      (s) => referenceDensity(s.model as ScalarModel, target, 0) !== null,
+    )
+  )
+    return (
+      <p className="plot-note">
+        Empirical histogram hidden. No analytic Gaussian or independent-site
+        quadrature density is available for this observable.
+      </p>
+    );
+  if (
+    view === 'histogram' &&
+    !allowed.some((s) => s.scalar!.targets[target]!.moments.count > 0) &&
+    !allowed.some(
+      (s) => referenceDensity(s.model as ScalarModel, target, 0) !== null,
+    )
+  )
+    return (
+      <p className="plot-note">
+        No retained samples or applicable reference density yet. Warm-up
+        transitions do not enter the marginal histogram.
+      </p>
+    );
   if (view === 'histogram')
     return (
       <>
@@ -399,7 +475,7 @@ function ScalarPlot({
                         : null;
                   return (
                     <g key={s.id}>
-                      {d.moments.count > 0 && (
+                      {showHistogram && d.moments.count > 0 && (
                         <path
                           d={path}
                           fill="none"
@@ -447,6 +523,8 @@ function ScalarPlot({
       target={target}
       view={view as 'mean' | 'error'}
       fitVersion={fitVersion}
+      viewportMemory={viewportMemory}
+      viewportKey={viewportKey ? `${viewportKey}:series` : undefined}
     />
   );
 }
@@ -456,12 +534,16 @@ function ScalarSeries({
   target,
   view,
   fitVersion,
+  viewportMemory,
+  viewportKey,
 }: {
   snapshot: Snapshot;
   segments: Snapshot['segments'];
   target: string;
   view: 'mean' | 'error';
   fitVersion: number;
+  viewportMemory?: ScalarViewportMemory;
+  viewportKey?: string;
 }) {
   const series = segments
     .filter((s) => s.scalar)
@@ -511,7 +593,10 @@ function ScalarSeries({
     runId: number;
     view: string;
     range: typeof needed;
-  } | null>(null);
+  } | null>(() => {
+    const old = viewportKey ? viewportMemory?.get(viewportKey) : null;
+    return old ? { runId: old.runId, view, range: old.bounds } : null;
+  });
   const range =
     saved?.runId === snapshot.runId && saved.view === view
       ? {
@@ -522,10 +607,21 @@ function ScalarSeries({
   const key = JSON.stringify(range);
   useEffect(() => {
     setSaved({ runId: snapshot.runId, view, range });
+    if (viewportKey)
+      viewportMemory?.set(viewportKey, {
+        runId: snapshot.runId,
+        bounds: { ...range, ymax: 0, nmax: 0 },
+      });
   }, [key, snapshot.runId, view]);
   useEffect(() => {
-    if (fitVersion > 0)
+    if (fitVersion > 0) {
       setSaved({ runId: snapshot.runId, view, range: needed });
+      if (viewportKey)
+        viewportMemory?.set(viewportKey, {
+          runId: snapshot.runId,
+          bounds: { ...needed, ymax: 0, nmax: 0 },
+        });
+    }
   }, [fitVersion]);
   if (!series.length)
     return (
@@ -548,7 +644,7 @@ function ScalarSeries({
   return (
     <>
       <PlotFrame
-        label={names[view]}
+        label={scalarPlotNames[view]}
         viewport={JSON.stringify({ min: range.min, max: hi, nMax })}
       >
         {({ left, right, top, bottom, width, height }) => {
@@ -564,7 +660,7 @@ function ScalarSeries({
           return (
             <>
               <text x="0" y="16">
-                {names[view]}
+                {scalarPlotNames[view]}
               </text>
               {series.map((s) => {
                 let pen = false;
@@ -628,187 +724,5 @@ function ScalarSeries({
           </p>
         ))}
     </>
-  );
-}
-export function ScalarInspector({
-  snapshot,
-  selected,
-}: {
-  snapshot: Snapshot;
-  selected: string;
-}) {
-  const model = snapshot.configuration.model as ScalarModel,
-    targets = scalarTargets(model),
-    [slots, setSlots] = useState<Slot[]>(() => [
-      { id: 1, target: targets[0]!, view: 'histogram', collapsed: false },
-      {
-        id: 2,
-        target: targets[0]!,
-        view:
-          model.parameters.domain.vertices.length >= 2
-            ? 'scatter'
-            : 'conditional-density',
-        collapsed: false,
-      },
-    ]);
-  const [active, setActive] = useState(1),
-    [overview, setOverview] = useState(false),
-    [expanded, setExpanded] = useState<number | null>(null),
-    [fitVersion, setFitVersion] = useState(0);
-  const update = (id: number, changes: Partial<Slot>) =>
-    setSlots((p) => p.map((s) => (s.id === id ? { ...s, ...changes } : s)));
-  const add = (target = targets[0]!) => {
-    if (slots.length >= 6) return;
-    const id = Math.max(0, ...slots.map((s) => s.id)) + 1;
-    setSlots([...slots, { id, target, view: 'trajectory', collapsed: false }]);
-    setActive(id);
-  };
-  return (
-    <section
-      className={`inspector ${overview ? 'show-overview' : ''}`}
-      aria-label="Real scalar plots"
-    >
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Real-variable inspector</p>
-          <h2>Your views. One field.</h2>
-        </div>
-        <div className="plot-controls">
-          <button
-            className="button"
-            onClick={() => setFitVersion((v) => v + 1)}
-          >
-            Fit All
-          </button>
-          <button
-            className="button primary"
-            disabled={slots.length >= 6}
-            onClick={() => add()}
-          >
-            Add Plot
-          </button>
-        </div>
-      </div>
-      <p className="plot-note">
-        {slots.length} / 6 plots · Display choices never alter numerical
-        updates.
-      </p>
-      <button
-        className="text-button"
-        disabled={slots.length >= 6}
-        onClick={() => add(selected)}
-      >
-        Plot selected field {selected}
-      </button>
-      <div className="mobile-plot-controls">
-        <div aria-label="Choose detail plot">
-          {slots.map((s, i) => (
-            <button
-              key={s.id}
-              className="slot-button"
-              aria-pressed={active === s.id}
-              onClick={() => setActive(s.id)}
-            >
-              Plot {i + 1}
-            </button>
-          ))}
-        </div>
-        <button className="button" onClick={() => setOverview(!overview)}>
-          {overview ? 'Single detail' : 'Compact overview'}
-        </button>
-      </div>
-      <div className="plot-grid">
-        {slots.map((s, i) => (
-          <article
-            key={s.id}
-            className={`plot-card ${s.collapsed ? 'compact-slot' : ''} ${active === s.id ? 'active-detail' : ''} ${expanded === s.id ? 'expanded-plot' : ''}`}
-          >
-            <div className="plot-card-heading">
-              <span className="slot-number">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              <label>
-                Variable for plot {i + 1}
-                <select
-                  aria-label={`Variable for plot ${i + 1}`}
-                  value={s.target}
-                  onChange={(e) => update(s.id, { target: e.target.value })}
-                >
-                  {targets.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label>
-              View for plot {i + 1}
-              <select
-                aria-label={`View for plot ${i + 1}`}
-                value={s.view}
-                onChange={(e) => update(s.id, { view: e.target.value as View })}
-              >
-                {(Object.keys(names) as View[]).map((v) => (
-                  <option key={v} value={v}>
-                    {names[v]}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="slot-actions">
-              <button
-                className="text-button"
-                onClick={() => update(s.id, { collapsed: !s.collapsed })}
-              >
-                {s.collapsed ? 'Open' : 'Collapse'} plot {i + 1}
-              </button>
-              <button
-                className="text-button"
-                onClick={() => setSlots(slots.filter((x) => x.id !== s.id))}
-              >
-                Remove plot {i + 1}
-              </button>
-              <button
-                className="text-button"
-                onClick={() => setExpanded(expanded === s.id ? null : s.id)}
-              >
-                Expand plot {i + 1}
-              </button>
-              <button
-                className="text-button"
-                disabled={i === 0}
-                onClick={() => {
-                  const v = slots.slice();
-                  [v[i - 1], v[i]] = [v[i]!, v[i - 1]!];
-                  setSlots(v);
-                }}
-              >
-                ↑
-              </button>
-              <button
-                className="text-button"
-                disabled={i === slots.length - 1}
-                onClick={() => {
-                  const v = slots.slice();
-                  [v[i], v[i + 1]] = [v[i + 1]!, v[i]!];
-                  setSlots(v);
-                }}
-              >
-                ↓
-              </button>
-            </div>
-            {!s.collapsed && (
-              <ScalarPlot
-                snapshot={snapshot}
-                target={s.target}
-                view={s.view}
-                fitVersion={fitVersion}
-              />
-            )}
-          </article>
-        ))}
-      </div>
-    </section>
   );
 }

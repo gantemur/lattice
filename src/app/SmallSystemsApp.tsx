@@ -1,8 +1,11 @@
 import { SiteHeader } from './SiteHeader';
 import { ScalarShare } from './ScalarShare';
 import { decodeScalarConfiguration } from './shareConfiguration';
-import { ScalarWorkspace } from './ScalarWorkspace';
-import { ScalarInspector } from './ScalarInspector';
+import {
+  ScalarGraphInspection,
+  ScalarParameterEditor,
+} from './ScalarWorkspace';
+import { ScalarToolDeck } from './ScalarToolDeck';
 import { ScalarStepInspector } from './ScalarStepInspector';
 import { ScalarReferences } from './ScalarReferences';
 import type { ScalarModel } from '../models/scalarField';
@@ -62,6 +65,9 @@ export function SmallSystemsApp({
   const [notice, setNotice] = useState('Draw one sample or start a run.');
   const [selectedSite, setSelectedSite] = useState('v0');
   const [selectedEdge, setSelectedEdge] = useState('');
+  // The featured graph can be remounted or swapped; the sidebar editor remains
+  // the sole owner of draft parameters and exposes only its focus action.
+  const editScalarCoupling = useRef<((edge: string) => void) | null>(null);
   const [inspectOpen, setInspectOpen] = useState(false);
   const reference = model.kind === 'scalar' ? null : modelReference(model),
     variable = variableName(model);
@@ -113,6 +119,7 @@ export function SmallSystemsApp({
       apply({ model: next, sampler });
     else {
       setSelectedSite('v0');
+      setSelectedEdge('');
       setSelectedEdge('');
       attempt(
         () =>
@@ -259,6 +266,15 @@ export function SmallSystemsApp({
               </small>
               <a href="#model-notes">Model notes & experiments ↓</a>
             </section>
+            {model.kind === 'scalar' && (
+              <ScalarParameterEditor
+                key={topologyKey(model.parameters.domain)}
+                model={model}
+                apply={applyScalar}
+                disabled={!snapshot || !!view.error}
+                editCoupling={editScalarCoupling}
+              />
+            )}
             <SettingsPanel
               key={model.kind}
               settings={configuration}
@@ -466,16 +482,17 @@ export function SmallSystemsApp({
                 />
               )}
             </section>
-            {model.kind === 'scalar' && (
-              <ScalarWorkspace
-                key={`scalar:${topologyKey(model.parameters.domain)}`}
-                model={model}
-                state={snapshot?.scalarState ?? null}
+            {model.kind === 'scalar' && snapshot && (
+              <ScalarToolDeck
+                key={`scalar-tools:${topologyKey(model.parameters.domain)}`}
+                snapshot={snapshot}
+                selectedSite={selectedSite}
+                setSelectedSite={setSelectedSite}
+                selectedEdge={
+                  selectedEdge || model.parameters.domain.edges[0]?.id || ''
+                }
+                setSelectedEdge={setSelectedEdge}
                 trace={current?.scalar?.trajectory.at(-1)}
-                selected={selectedSite}
-                setSelected={setSelectedSite}
-                apply={applyScalar}
-                disabled={!snapshot || !!view.error}
               />
             )}
             {model.kind !== 'scalar' && snapshot && (
@@ -569,12 +586,21 @@ export function SmallSystemsApp({
                 </p>
               )}
             </section>
-            {model.kind === 'scalar' && snapshot && (
-              <ScalarInspector
-                key={`scalar-plots:${topologyKey(model.parameters.domain)}`}
-                snapshot={snapshot}
-                selected={selectedSite}
-              />
+            {model.kind === 'scalar' && (
+              <details className="small-technical-details">
+                <summary>Local scalar inspection</summary>
+                <ScalarGraphInspection
+                  model={model}
+                  state={snapshot?.scalarState ?? null}
+                  selected={selectedSite}
+                  setSelected={setSelectedSite}
+                  selectedEdge={
+                    selectedEdge || model.parameters.domain.edges[0]?.id || ''
+                  }
+                  setSelectedEdge={setSelectedEdge}
+                  editCoupling={editScalarCoupling}
+                />
+              </details>
             )}
             {model.kind === 'ising' && (
               <details className="small-technical-details">
@@ -591,7 +617,13 @@ export function SmallSystemsApp({
             )}
             {model.kind === 'scalar' ? (
               current ? (
-                <ScalarReferences segment={current} />
+                <details
+                  className="small-technical-details"
+                  data-testid="small-scalar-references"
+                >
+                  <summary>Exact references &amp; numerical methods</summary>
+                  <ScalarReferences segment={current} />
+                </details>
               ) : null
             ) : (
               <details

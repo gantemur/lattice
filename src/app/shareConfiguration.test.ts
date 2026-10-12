@@ -29,6 +29,10 @@ it('rejects bad versions and nonnormalizable or incompatible imports', () => {
   };
   const url = new URL(encodeScalarConfiguration(c, base));
   const v = JSON.parse(url.searchParams.get('config')!);
+  url.searchParams.set('config', '{malformed');
+  expect(() => decodeScalarConfiguration(url.toString())).toThrow(
+    /Invalid configuration JSON/,
+  );
   v.version = 9;
   url.searchParams.set('config', JSON.stringify(v));
   expect(() => decodeScalarConfiguration(url.toString())).toThrow(/version/);
