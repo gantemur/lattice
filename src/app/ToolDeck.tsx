@@ -1,44 +1,50 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
+import {
+  addGalleryTool,
+  editTool,
+  featureGalleryTool,
+  initialToolLayout,
+  MAX_GALLERY_TOOLS,
+  moveGalleryTool,
+  removeGalleryTool,
+  replaceFeaturedTool,
+} from './toolAssignments';
 
 export type ToolDefinition<Id extends string> = {
   id: Id;
   title: string;
   kind: 'Visualization' | 'Plot' | 'Analysis';
   description: string;
-};
-type Assignment<Id extends string> = {
-  key: number;
-  tool: Id;
-  collapsed: boolean;
-  expanded: boolean;
+  /** Omitted means suitable for the full-width stage. */
+  featureable?: boolean;
 };
 
-/** A bounded presentation deck. It owns assignments only: renderTool reads
- * existing snapshots, and no deck action can call a simulation client. */
+/** Assignment operations own presentation only; renderTool reads existing snapshots. */
 export function ToolDeck<Id extends string>({
   title,
   tools,
+  featuredDefault,
   defaults,
   renderTool,
+  onRemove,
 }: {
   title: string;
   tools: readonly ToolDefinition<Id>[];
+  featuredDefault: Id;
   defaults: readonly Id[];
-  renderTool: (id: Id) => ReactNode;
+  renderTool: (id: Id, assignmentKey: number) => ReactNode;
+  onRemove?: (assignmentKey: number) => void;
 }) {
-  const nextKey = useRef(defaults.length);
-  const [assignments, setAssignments] = useState<Assignment<Id>[]>(() =>
-    defaults.map((tool, key) => ({
-      key,
-      tool,
-      collapsed: false,
-      expanded: false,
-    })),
+  const eligible = tools.filter((tool) => tool.featureable !== false);
+  const eligibleIds = eligible.map((tool) => tool.id);
+  const nextKey = useRef(defaults.length + 1);
+  const [layout, setLayout] = useState(() =>
+    initialToolLayout(featuredDefault, defaults),
   );
   const [choice, setChoice] = useState<Id>(tools[0]!.id);
   const [overview, setOverview] = useState(false);
-  const [detailKey, setDetailKey] = useState(defaults.length ? 0 : -1);
+  const [detailKey, setDetailKey] = useState(defaults.length ? 1 : -1);
   const [phone, setPhone] = useState(() =>
     typeof window !== 'undefined'
       ? window.matchMedia('(max-width: 700px)').matches
@@ -51,33 +57,61 @@ export function ToolDeck<Id extends string>({
     changed();
     return () => query.removeEventListener('change', changed);
   }, []);
-  const detail = assignments.some((item) => item.key === detailKey)
+  const detail = layout.gallery.some((item) => item.key === detailKey)
     ? detailKey
-    : (assignments[0]?.key ?? -1);
+    : (layout.gallery[0]?.key ?? -1);
+  const featuredDefinition = tools.find(
+    (tool) => tool.id === layout.featured.tool,
+  )!;
 
-  function edit(key: number, change: Partial<Assignment<Id>>) {
-    setAssignments((current) =>
-      current.map((item) => (item.key === key ? { ...item, ...change } : item)),
-    );
-  }
-  function move(key: number, direction: -1 | 1) {
-    setAssignments((current) => {
-      const index = current.findIndex((item) => item.key === key);
-      const destination = index + direction;
-      if (index < 0 || destination < 0 || destination >= current.length)
-        return current;
-      const next = [...current];
-      [next[index], next[destination]] = [next[destination]!, next[index]!];
-      return next;
-    });
-  }
   return (
     <section
       className={`tool-deck ${overview ? 'tool-overview' : ''}`}
       aria-label={title}
     >
+      <div className="tool-featured" data-testid="featured-tool">
+        <div className="tool-featured-heading">
+          <div>
+            <small>FEATURED DISPLAY · FULL WIDTH</small>
+            <h2>{featuredDefinition.title}</h2>
+            <p>{featuredDefinition.description}</p>
+          </div>
+          <label>
+            Replace featured tool
+            <select
+              aria-label={`${title} featured tool`}
+              value={layout.featured.tool}
+              onChange={(event) =>
+                setLayout((current) =>
+                  replaceFeaturedTool(
+                    current,
+                    event.target.value as Id,
+                    eligibleIds,
+                  ),
+                )
+              }
+            >
+              {eligible.map((tool) => (
+                <option key={tool.id} value={tool.id}>
+                  {tool.kind}: {tool.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p className="plot-note">
+          Choosing here replaces this featured assignment. Feature a gallery
+          card below to exchange the two placements instead.
+        </p>
+        {/* Swapping containers can remount a renderer. Persistent local selections
+            belong to its keyed assignment in the parent workspace. */}
+        <div className="tool-body">
+          {renderTool(layout.featured.tool, layout.featured.key)}
+        </div>
+      </div>
+
       <div className="tool-deck-controls">
-        <h2>{title}</h2>
+        <h2>{title} · gallery</h2>
         <label>
           Add tool
           <select
@@ -95,13 +129,10 @@ export function ToolDeck<Id extends string>({
         <button
           type="button"
           className="button"
-          disabled={assignments.length >= 6}
+          disabled={layout.gallery.length >= MAX_GALLERY_TOOLS}
           onClick={() => {
             const key = nextKey.current++;
-            setAssignments((current) => [
-              ...current,
-              { key, tool: choice, collapsed: false, expanded: false },
-            ]);
+            setLayout((current) => addGalleryTool(current, key, choice));
             setDetailKey(key);
           }}
         >
@@ -122,7 +153,7 @@ export function ToolDeck<Id extends string>({
             value={detail}
             onChange={(event) => setDetailKey(Number(event.target.value))}
           >
-            {assignments.map((item, index) => (
+            {layout.gallery.map((item, index) => (
               <option key={item.key} value={item.key}>
                 {index + 1}.{' '}
                 {tools.find((tool) => tool.id === item.tool)?.title}
@@ -130,22 +161,26 @@ export function ToolDeck<Id extends string>({
             ))}
           </select>
         </label>
-        <span className="plot-note">{assignments.length}/6 tools</span>
+        <span className="plot-note">
+          {layout.gallery.length}/6 gallery tools
+        </span>
       </div>
-      {assignments.length === 0 ? (
+      {layout.gallery.length === 0 ? (
         <p className="tool-empty">
-          No tools are open. Choose a tool and Add tool.
+          No gallery tools are open. Choose a tool and Add tool.
         </p>
       ) : (
         <div className="tool-grid">
-          {assignments.map((item, index) => {
+          {layout.gallery.map((item, index) => {
             const definition = tools.find((tool) => tool.id === item.tool)!;
+            const canFeature = definition.featureable !== false;
             return (
               <section
                 key={item.key}
                 className={`tool-card ${item.expanded ? 'tool-expanded' : ''} ${item.key === detail ? 'tool-detail' : ''}`}
                 aria-label={`${definition.title} tool`}
                 data-testid="teaching-tool"
+                data-assignment-key={item.key}
               >
                 <div className="tool-card-heading">
                   <div>
@@ -168,9 +203,32 @@ export function ToolDeck<Id extends string>({
                   <div className="tool-card-actions">
                     <button
                       type="button"
+                      aria-label={`${definition.title}: Feature`}
+                      disabled={!canFeature}
+                      title={
+                        canFeature
+                          ? 'Exchange with featured display'
+                          : 'Gallery only'
+                      }
+                      onClick={() => {
+                        const oldFeatureKey = layout.featured.key;
+                        setLayout((current) =>
+                          featureGalleryTool(current, item.key, eligibleIds),
+                        );
+                        setDetailKey(oldFeatureKey);
+                      }}
+                    >
+                      Feature
+                    </button>
+                    <button
+                      type="button"
                       aria-label={`${definition.title}: ${item.collapsed ? 'Open' : 'Collapse'}`}
                       onClick={() =>
-                        edit(item.key, { collapsed: !item.collapsed })
+                        setLayout((current) =>
+                          editTool(current, item.key, {
+                            collapsed: !item.collapsed,
+                          }),
+                        )
                       }
                     >
                       {item.collapsed ? 'Open' : 'Collapse'}
@@ -179,7 +237,11 @@ export function ToolDeck<Id extends string>({
                       type="button"
                       aria-label={`${definition.title}: ${item.expanded ? 'Normal width' : 'Expand'}`}
                       onClick={() =>
-                        edit(item.key, { expanded: !item.expanded })
+                        setLayout((current) =>
+                          editTool(current, item.key, {
+                            expanded: !item.expanded,
+                          }),
+                        )
                       }
                     >
                       {item.expanded ? 'Normal' : 'Expand'}
@@ -188,26 +250,35 @@ export function ToolDeck<Id extends string>({
                       type="button"
                       aria-label={`${definition.title}: Move earlier`}
                       disabled={index === 0}
-                      onClick={() => move(item.key, -1)}
+                      onClick={() =>
+                        setLayout((current) =>
+                          moveGalleryTool(current, item.key, -1),
+                        )
+                      }
                     >
                       ↑
                     </button>
                     <button
                       type="button"
                       aria-label={`${definition.title}: Move later`}
-                      disabled={index === assignments.length - 1}
-                      onClick={() => move(item.key, 1)}
+                      disabled={index === layout.gallery.length - 1}
+                      onClick={() =>
+                        setLayout((current) =>
+                          moveGalleryTool(current, item.key, 1),
+                        )
+                      }
                     >
                       ↓
                     </button>
                     <button
                       type="button"
                       aria-label={`${definition.title}: Remove`}
-                      onClick={() =>
-                        setAssignments((current) =>
-                          current.filter((other) => other.key !== item.key),
-                        )
-                      }
+                      onClick={() => {
+                        setLayout((current) =>
+                          removeGalleryTool(current, item.key),
+                        );
+                        onRemove?.(item.key);
+                      }}
                     >
                       Remove
                     </button>
@@ -219,7 +290,11 @@ export function ToolDeck<Id extends string>({
                     aria-label={`Tool ${index + 1} type`}
                     value={item.tool}
                     onChange={(event) =>
-                      edit(item.key, { tool: event.target.value as Id })
+                      setLayout((current) =>
+                        editTool(current, item.key, {
+                          tool: event.target.value as Id,
+                        }),
+                      )
                     }
                   >
                     {tools.map((tool) => (
@@ -229,10 +304,12 @@ export function ToolDeck<Id extends string>({
                     ))}
                   </select>
                 </label>
-                {/* A hidden phone detail is not an activated analysis tool. */}
+                {/* An inactive phone detail is not an activated analysis. */}
                 {!item.collapsed &&
                   (!phone || (!overview && item.key === detail)) && (
-                    <div className="tool-body">{renderTool(item.tool)}</div>
+                    <div className="tool-body">
+                      {renderTool(item.tool, item.key)}
+                    </div>
                   )}
               </section>
             );

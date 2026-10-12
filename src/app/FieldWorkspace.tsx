@@ -47,6 +47,7 @@ const fieldTools: ToolDefinition<FieldTool>[] = [
     title: 'Latest update',
     kind: 'Analysis',
     description: 'The actual latest draw or local transition.',
+    featureable: false,
   },
 ];
 
@@ -61,6 +62,11 @@ export function FieldWorkspace() {
   const [selected, setSelected] = useState(0);
   const [partner, setPartner] = useState(1);
   const [displayLimit, setDisplayLimit] = useState(3);
+  // React remounts a tool when it moves between gallery and feature containers.
+  // Momentum is presentation state tied to the assignment key, not the worker.
+  const [spectrumModes, setSpectrumModes] = useState<Record<number, number>>(
+    {},
+  );
   const [notice, setNotice] = useState(
     'Draw a field or Step an elementary update.',
   );
@@ -303,8 +309,16 @@ export function FieldWorkspace() {
             <ToolDeck
               title="Lattice Fields tools"
               tools={fieldTools}
-              defaults={['profile', 'inspection']}
-              renderTool={(tool) => {
+              featuredDefault="profile"
+              defaults={['inspection']}
+              onRemove={(key) =>
+                setSpectrumModes((current) => {
+                  const next = { ...current };
+                  delete next[key];
+                  return next;
+                })
+              }
+              renderTool={(tool, assignmentKey) => {
                 switch (tool) {
                   case 'profile':
                     return (
@@ -328,7 +342,16 @@ export function FieldWorkspace() {
                     );
                   case 'spectrum':
                     return current ? (
-                      <FieldSpectrum segment={current} />
+                      <FieldSpectrum
+                        segment={current}
+                        selected={spectrumModes[assignmentKey] ?? 0}
+                        onSelect={(mode) =>
+                          setSpectrumModes((previous) => ({
+                            ...previous,
+                            [assignmentKey]: mode,
+                          }))
+                        }
+                      />
                     ) : (
                       <p>Wait for a field segment.</p>
                     );

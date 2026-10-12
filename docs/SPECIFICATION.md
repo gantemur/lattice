@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.15 (M4c0 workspace architecture, 2026-10-11)
+**Version:** 0.16 (featured-tool Stage A, 2026-10-11)
 
-**Status:** M0–M4b are merged. M4c0 is implemented on a feature branch; interacting fields remain planned.
+**Status:** M0–M4c0 and the architecture audit are merged. Featured-tool Stage A is implemented on a feature branch; interacting fields remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -89,7 +89,9 @@ Purpose: analysis of saved runs, reproducible parameter sweeps, side-by-side com
 
 The five top-level workspaces are Small Systems, Lattice Systems, Lattice QM, Lattice Fields, and Experiments, in that order. `#lattice-qm` opens periodic Euclidean-time oscillator paths. The legacy `#fields-paths` route opens spatial Gaussian fields on 1D chains and 2D rectangles. Euclidean time and spatial domains are conceptual categories, not restrictions to one coordinate per site. QM and Fields have separate mounted FieldClient/worker sessions; navigation does not reset or implicitly pause either. Model or geometry changes retain their existing session and segment semantics.
 
-QM defaults to the current path and two-point correlator. Optional views show exact gap references, sampled effective gap and correlator table, finite-grid transfer analysis, reflection positivity, and bounded recent path-average history. Fields defaults to configuration profile/heatmap and selected-site/covariance inspection. Optional views show Fourier spectrum, retained history and latest update inspection. Nonperiodic Fourier analysis states why it is unavailable. Both decks hold at most six independently assigned visualization, plot or analysis cards. Add/change, collapse/open, expand/normal width, reorder and remove affect presentation only; phone layout offers single detail or compact overview. An empty deck explains how to add a tool. Optional transfer quadrature is computed lazily when opened and cached by physical parameters. No tool change alters RNG, measurement cadence or worker-side collection. The main Run/Pause button is unified while Step and Reset remain separate; Pause permits an already posted batch to finish.
+QM features the current path above a gallery defaulting to the two-point correlator. Optional views show exact gap references, sampled effective gap and correlator table, finite-grid transfer analysis, reflection positivity, and bounded recent path-average history. Fields features the current configuration profile/heatmap above a gallery defaulting to selected-site/covariance inspection. Optional views show Fourier spectrum, retained history and latest update inspection. Nonperiodic Fourier analysis states why it is unavailable.
+
+Each page has one full-width featured assignment, independent of a zero-to-six-card gallery. Stable tool IDs name renderers; unique assignment keys name placements, including repeated tool types. A gallery **Feature** action swaps whole assignments with the stage; the featured selector explicitly replaces its current tool without discarding a gallery card. Summary analyses that do not benefit from the stage are gallery-only. A swap may remount React renderers, so persistent presentation choices such as Fourier momentum remain keyed above them. Add/change, collapse/open, expand/normal width, reorder, remove, feature and replace affect presentation only; phone layout keeps the feature visible above single-detail or compact-overview gallery modes. An empty gallery explains how to add a tool. Optional transfer quadrature is computed lazily only when its active body renders and is cached by physical parameters. No tool change alters RNG, measurement cadence or worker-side collection. The main Run/Pause button is unified while Step and Reset remain separate; Pause permits an already posted batch to finish.
 
 ### 2.5 Navigation contract
 

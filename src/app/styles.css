@@ -1938,11 +1938,50 @@ footer {
   min-width: 105px;
 }
 
-/* M4c0 teaching tools own display state only; nested scientific views retain
+/* Teaching tools own display state only; nested scientific views retain
    their original markup, equations and accessibility labels. */
 .tool-deck {
   min-width: 0;
   margin: 18px 0;
+}
+.tool-featured {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 22px;
+  background: #fdfdf9;
+}
+.tool-featured-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.tool-featured-heading h2 {
+  margin: 3px 0;
+}
+.tool-featured-heading p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 13px;
+}
+.tool-featured-heading small {
+  color: var(--teal);
+  font-weight: 700;
+}
+.tool-featured-heading label {
+  min-width: min(100%, 230px);
+  font-size: 12px;
+}
+.tool-featured-heading select {
+  margin-top: 4px;
+}
+.tool-featured > .plot-note {
+  margin: 8px 0 14px;
 }
 .tool-deck-controls {
   display: flex;
@@ -2024,6 +2063,7 @@ footer {
 }
 .tool-body {
   min-width: 0;
+  overflow-x: auto;
 }
 .tool-body > .field-results,
 .tool-body > .field-visual,

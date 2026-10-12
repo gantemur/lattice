@@ -41,3 +41,7 @@ Do not build infrastructure for hypothetical 3D or production-scale lattice QCD 
 ## Documentation maintenance
 
 A feature PR should state: user-visible change, relevant specification section, numerical validation, UI/mobile validation, and remaining limits. If architecture changes substantially, add a dated decision to `docs/DECISIONS.md`. Keep the main specification readable; move long implementation details to focused docs only when needed.
+
+## Release workflow
+
+Validate the intended diff and run the full check pipeline before publishing a feature branch. Open a PR and wait for required checks and reviews; merge only when authorized and repository rules permit it. A merge to `main` triggers the existing GitHub Pages workflow. Confirm its validation and deployment jobs, then open the published `/lattice/` site and verify the changed behavior and asset paths. Record the PR, merge commit, workflow result and any limitations in the release report.
