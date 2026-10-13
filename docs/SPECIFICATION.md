@@ -213,7 +213,7 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 ### 4.3 Next models (not initial release)
 
 - M4a1: merged massive Gaussian fields in 1D/2D with dense finite-volume covariance and exact Gaussian sampling. M4a2 adds periodic Fourier sampling and constrained massless zero-mode handling below.
-- M4b harmonic Euclidean oscillator paths are implemented below; M4c1 adds a separate interacting double-well path family on its feature branch.
+- M4b harmonic Euclidean oscillator paths and the separate M4c1 interacting double-well path family are implemented below.
 - Continuous-spin lattice `φ⁴` in 1D/2D; local Metropolis and HMC; mass and correlation-length diagnostics.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
@@ -243,7 +243,7 @@ The finite precision modes are `λ_k=aω²+4sin²(πk/N)/a`; exact `C_a(ℓ)=N�
 
 The symmetric Trotter kernel is `T_a(x,y)=(2πa)^(-1/2) exp[−(x−y)²/(2a)−a(V(x)+V(y))/2]`. Its leading levels are `(n+1/2)Ω_a`. The physical trace includes the kinetic factor: `Z_QM=(2πa)^(-N/2) Z_raw=1/[2sinh(βΩ_a/2)]`. A bounded positive-weight Nyström quadrature gives an approximate two-level gap with disclosed coordinate cutoff; analytic Ω_a remains authoritative. Classify the fixed-grid result as usable, under-resolved (over 5% relative gap discrepancy or a violated leading-eigenvalue bound), or unavailable, showing the reason and discrepancy without replacing its numerical value. Exact `G_ij=C_a(i+j)` at selected positive half-circle indices illustrates reflection positivity up to roundoff, not a proof of all Osterwalder–Schrader axioms. One spectral path consumes `2N` uniforms and is independent; random-site heat bath and Metropolis reuse the same quadratic action, with N elementary updates per nominal sweep and segment-local warm-up/stride. Run/Step share kernels; Euclidean time is never an algorithmic update count. See [the mathematical walkthrough](math/euclidean-oscillator.md) and [M4b review](M4B_REVIEW.md).
 
-#### M4c1 interacting Euclidean oscillator (feature branch)
+#### M4c1 interacting Euclidean oscillator (released)
 
 Lattice QM separately selects a quartic path with `V(x)=r x²/2+λ x⁴/4−h x`, `a=β/N`, periodic `x_N=x_0`, and `S_a=Σ_j[(x_(j+1)−x_j)²/(2a)+aV(x_j)]` under ordinary `∏_j dx_j`. Supported finite teaching ranges are integer N=4–64, β=2–16, r=−4–16, |h|≤2, and λ=0 only for r≥0.0625 or λ=0.05–4 otherwise. The constant path mode remains present. A separate, pure quartic action and local ΔS feed random-site Metropolis; every attempt consumes site/proposal/decision uniforms, including rejection. N attempts with replacement make one nominal sweep. Local warm-up/stride follow the field worker's complete-sweep rules. Compatible parameter changes preserve path/RNG in separate segments; N/model changes and Reset start seeded sessions. No Gaussian analytic reference is attached to an interacting segment. Harmonic sampling and references are unchanged.
 
