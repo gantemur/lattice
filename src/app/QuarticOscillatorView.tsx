@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { defaultQuarticConfiguration } from '../engine/fieldRun';
 import type {
-  QuarticConfiguration,
   QuarticFieldSettings,
   FieldSegmentSnapshot,
 } from '../engine/fieldRun';
+import type { QuarticDraft } from './QuarticOscillatorControls';
 import {
   potentialMinimum,
   quarticPotential,
@@ -26,6 +26,7 @@ import { OscillatorHistory } from './OscillatorHistory';
 import { useField } from './useField';
 import { Chart, TransferTool } from './QuarticPlots';
 import { QuarticOscillatorControls } from './QuarticOscillatorControls';
+import { QuarticHmcDiagnostics } from './QuarticHmcDiagnostics';
 
 type QuarticTool =
   | 'path'
@@ -34,6 +35,7 @@ type QuarticTool =
   | 'transfer'
   | 'effective'
   | 'history'
+  | 'hmc'
   | 'transition';
 const tools: ToolDefinition<QuarticTool>[] = [
   {
@@ -74,24 +76,41 @@ const tools: ToolDefinition<QuarticTool>[] = [
     description: 'Algorithmic update coordinates and sector changes.',
   },
   {
+    id: 'hmc',
+    title: 'HMC trajectory diagnostics',
+    kind: 'Analysis',
+    description: 'Acceptance, auxiliary energy error and gradient work.',
+    featureable: false,
+  },
+  {
     id: 'transition',
-    title: 'Local Metropolis inspection',
+    title: 'Latest transition inspection',
     kind: 'Analysis',
     description: 'Actual latest proposal and decision.',
     featureable: false,
   },
 ];
 type QuarticSegment = FieldSegmentSnapshot & { settings: QuarticFieldSettings };
-function quarticSettings(draft: QuarticConfiguration): QuarticFieldSettings {
+function quarticSettings(draft: QuarticDraft): QuarticFieldSettings {
   validateQuarticOscillator(draft.quartic);
-  return {
+  const physical = {
     model: 'quartic-oscillator',
     quartic: { ...draft.quartic },
     parameters: quarticQuadraticPart(draft.quartic),
-    sampler: { ...draft.sampler },
-    warmupSweeps: draft.warmupSweeps,
-    strideSweeps: draft.strideSweeps,
-  };
+  } as const;
+  return draft.sampler.kind === 'hmc'
+    ? {
+        ...physical,
+        sampler: { ...draft.sampler },
+        warmupTrajectories: draft.warmupTrajectories,
+        strideTrajectories: draft.strideTrajectories,
+      }
+    : {
+        ...physical,
+        sampler: { ...draft.sampler },
+        warmupSweeps: draft.warmupSweeps,
+        strideSweeps: draft.strideSweeps,
+      };
 }
 
 export function QuarticOscillatorView({
@@ -100,9 +119,14 @@ export function QuarticOscillatorView({
   chooseHarmonic: () => void;
 }) {
   const { view, client } = useField(defaultQuarticConfiguration);
-  const [draft, setDraft] = useState<QuarticConfiguration>(
-    defaultQuarticConfiguration,
-  );
+  const [draft, setDraft] = useState<QuarticDraft>({
+    quartic: defaultQuarticConfiguration.quartic,
+    sampler: defaultQuarticConfiguration.sampler,
+    warmupSweeps: defaultQuarticConfiguration.warmupSweeps,
+    strideSweeps: defaultQuarticConfiguration.strideSweeps,
+    warmupTrajectories: 20,
+    strideTrajectories: 1,
+  });
   const [seed, setSeed] = useState(String(defaultQuarticConfiguration.seed));
   const [notice, setNotice] = useState(
     'The zero path is an initial configuration, not an equilibrium draw.',
@@ -184,12 +208,13 @@ export function QuarticOscillatorView({
               Euclidean paths. <span>Quartic oscillator.</span>
             </h1>
             <p className="intro-copy">
-              Explore a single or double well with local Metropolis paths,
-              full-segment correlations and independent transfer spectroscopy.
+              Explore a single or double well with local Metropolis or HMC
+              paths, full-segment correlations and independent transfer
+              spectroscopy.
             </p>
           </div>
           <span className="milestone">
-            M4c1 · Interacting quantum mechanics
+            M4c2 · Interacting quantum mechanics
           </span>
         </section>
         <div className="qm-model-choice">
@@ -211,6 +236,7 @@ export function QuarticOscillatorView({
         <div className="lab-layout field-layout">
           <QuarticOscillatorControls
             p={p}
+            appliedSettings={current?.settings ?? null}
             draft={draft}
             setDraft={setDraft}
             seed={seed}
@@ -281,9 +307,12 @@ export function QuarticOscillatorView({
                 {error || view.error || notice}
               </p>
               <p className="plot-note">
-                Horizontal path coordinate t is Euclidean time; updates count
-                Monte Carlo attempts, not physical time. One nominal sweep is{' '}
-                {p.sites} random-site attempts. Acceptance includes warm-up.
+                Horizontal path coordinate t is Euclidean time. The global
+                transition count is algorithmic, not physical time:{' '}
+                {current?.settings.sampler.kind === 'hmc'
+                  ? 'one transition is one complete HMC trajectory; leapfrog steps are not measurements.'
+                  : `one transition is a local site attempt; ${p.sites} attempts make one nominal sweep.`}{' '}
+                Acceptance counts include warm-up.
               </p>
             </section>
             <ToolDeck
@@ -291,6 +320,11 @@ export function QuarticOscillatorView({
               tools={tools}
               featuredDefault="path"
               defaults={['correlator', 'potential']}
+              addPreference={
+                current?.settings.sampler.kind === 'hmc'
+                  ? ['hmc', 'transfer', 'history', 'effective', 'transition']
+                  : undefined
+              }
               onRemove={(key) => {
                 setPathRanges((old) => {
                   const next = { ...old };
@@ -516,6 +550,13 @@ export function QuarticOscillatorView({
                   );
                 }
                 if (tool === 'transfer') return <TransferTool p={p} />;
+                if (tool === 'hmc')
+                  return (
+                    <QuarticHmcDiagnostics
+                      segments={segments}
+                      lastTrace={last ?? null}
+                    />
+                  );
                 if (tool === 'history')
                   return snapshot ? (
                     <>
@@ -528,10 +569,12 @@ export function QuarticOscillatorView({
                           {current.zeroAveragePaths} zero;{' '}
                           {current.observedSignChanges} observed sign changes
                           between retained paths. Cadence: one path per{' '}
-                          {current.settings.strideSweeps} nominal sweeps after
-                          warm-up. Intermediate changes may be missed. This is
-                          an algorithmic sector diagnostic, not a physical
-                          tunneling rate.
+                          {current.settings.sampler.kind === 'hmc'
+                            ? `${current.settings.strideTrajectories} HMC trajectories`
+                            : `${current.settings.strideSweeps} nominal sweeps`}{' '}
+                          after warm-up. Intermediate changes may be missed.
+                          This is an algorithmic sector diagnostic, not a
+                          physical tunneling rate.
                         </p>
                       )}
                       <p>
@@ -595,8 +638,36 @@ export function QuarticOscillatorView({
                 }
                 return (
                   <section className="field-results">
-                    <h2>Latest Metropolis update</h2>
-                    {last ? (
+                    <h2>Latest algorithmic transition</h2>
+                    {last?.kind === 'hmc' ? (
+                      <>
+                        <p>
+                          Transition {last.update}, segment {last.segmentId},{' '}
+                          {last.warmup ? 'warm-up' : 'post-warm-up'}: whole-path
+                          HMC trajectory ε={last.stepSize}, L=
+                          {last.leapfrogSteps}, auxiliary duration{' '}
+                          {formatNumber(last.trajectoryDuration)};
+                          <strong> {last.outcome}</strong>.
+                        </p>
+                        <p>
+                          Start S={formatNumber(last.startAction)}, K=
+                          {formatNumber(last.startKinetic)}, H=
+                          {formatNumber(last.startHamiltonian)}. Proposed S=
+                          {formatNumber(last.proposedAction)}, K=
+                          {formatNumber(last.proposedKinetic)}, H=
+                          {formatNumber(last.proposedHamiltonian)}. Signed ΔH=
+                          {formatNumber(last.deltaH)}; α=
+                          {formatNumber(last.acceptanceProbability)}, decision
+                          u=
+                          {formatNumber(last.decisionUniform)}.
+                        </p>
+                        <p>
+                          {last.gradientEvaluations} actual force evaluations;
+                          {last.completedLeapfrogSteps} complete leapfrog steps.
+                          {last.divergenceReason && ` ${last.divergenceReason}`}
+                        </p>
+                      </>
+                    ) : last?.kind === 'metropolis' ? (
                       <p>
                         Update {last.update}, segment {last.segmentId},{' '}
                         {last.warmup ? 'warm-up' : 'post-warm-up'}: site{' '}
@@ -612,9 +683,10 @@ export function QuarticOscillatorView({
                       <p>Step or Run to inspect an actual proposal.</p>
                     )}
                     <p className="plot-note">
-                      A rejected proposal leaves the path unchanged. The three
-                      seeded uniforms select site, proposal and decision in that
-                      order.
+                      Rejection preserves the entire old path. Local Metropolis
+                      uses three uniforms; HMC uses 2N+1 for fresh auxiliary
+                      momenta and the decision. Auxiliary MD time is distinct
+                      from Euclidean coordinate and Monte Carlo time.
                     </p>
                   </section>
                 );
@@ -634,8 +706,10 @@ export function QuarticOscillatorView({
               </p>
               <p>
                 Local measurements are correlated. A fixed warm-up budget does
-                not prove equilibrium. Transfer quadrature is independent of the
-                MC worker and has separate resolution checks.
+                not prove equilibrium. A global transition may be one local
+                attempt or one full HMC trajectory, depending on its segment.
+                Transfer quadrature is independent of the MC worker and has
+                separate resolution checks.
               </p>
             </details>
             <details className="model-page-details">

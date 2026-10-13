@@ -1,6 +1,6 @@
 # Lattice Lab
 
-**Status:** M0–M4c1 and the model-interface architecture audit are released. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
+**Status:** M0–M4c1 and the model-interface architecture audit are released; M4c2 HMC is implemented on its release branch. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
@@ -17,6 +17,10 @@ In **Lattice Systems**, choose **1D Ising chain** to run an open chain of 2–64
 ## M4c1 interacting Euclidean QM
 
 Lattice QM can select a separate periodic quartic/double-well oscillator with editable N, β, r, λ, h and local Metropolis settings. Presets cover the Gaussian limit, single-well quartic, symmetric double well and tilted double well. A full-width periodic path and optional potential, full-segment correlator, transfer spectrum, effective-energy, path-average history and transition tools distinguish Euclidean time from algorithmic updates. The independent transfer analysis runs lazily in another worker, compares three coordinate quadratures, and withholds a trusted gap when resolution checks fail. Local-chain warm-up is only a budget; sign changes of whole-path averages diagnose possible sampling metastability, not physical tunneling. See [mathematics](docs/math/interacting-oscillator.md) and [M4c1 review](docs/M4C1_REVIEW.md).
+
+## M4c2 Hamiltonian Monte Carlo
+
+The quartic oscillator also offers identity-mass HMC with fresh Gaussian auxiliary momenta, reversible leapfrog trajectories and a Metropolis correction using the complete auxiliary Hamiltonian. Its Step, warm-up and measurement stride count whole trajectories; local Metropolis continues to count site attempts and nominal sweeps. A selectable diagnostic shows acceptance, numerical divergences, signed Hamiltonian defects and force-evaluation work, while the latest-transition tool inspects the actual proposal. Compatible sampler or tuning changes begin isolated segments and preserve the current path and RNG. The auxiliary integration time is unrelated to Euclidean coordinate time or physical dynamics. See [HMC mathematics](docs/math/hmc-euclidean-qm.md) and the [M4c2 review](docs/M4C2_REVIEW.md).
 
 ## M4c0 (merged)
 

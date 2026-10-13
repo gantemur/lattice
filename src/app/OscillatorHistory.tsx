@@ -8,6 +8,7 @@ import { segmentColor } from '../plotting/viewport';
 export function OscillatorHistory({ snapshot }: { snapshot: FieldSnapshot }) {
   const segments = snapshot.segments.map((segment) => ({
     id: segment.id,
+    sampler: segment.settings.sampler.kind,
     measurements: segment.measurements,
     evicted: segment.discardedMeasurements,
     points: segment.recent.map((record) => ({
@@ -76,15 +77,23 @@ export function OscillatorHistory({ snapshot }: { snapshot: FieldSnapshot }) {
       <div className="field-segment-legend">
         {segments.map((segment) => (
           <span key={segment.id} style={{ color: segmentColor(segment.id) }}>
-            ● segment {segment.id}: {segment.measurements} retained paths,{' '}
-            {segment.evicted} recent vectors evicted
+            ● segment {segment.id} (
+            {segment.sampler === 'hmc'
+              ? 'whole-path HMC trajectories'
+              : segment.sampler === 'metropolis'
+                ? 'local site attempts'
+                : segment.sampler}
+            ): {segment.measurements} retained paths, {segment.evicted} recent
+            vectors evicted
           </span>
         ))}
       </div>
       <p className="plot-note">
-        The horizontal axis is global algorithmic updates, not Euclidean or
-        physical time. Only the latest 256 retained vectors per segment have
-        individual path averages here; full-segment aggregates remain separate.
+        The horizontal axis is a global algorithmic transition index, not
+        Euclidean or physical time. A local site attempt and an HMC trajectory
+        each increment it once but have different computational cost. Only the
+        latest 256 retained vectors per segment have individual path averages
+        here; full-segment aggregates remain separate.
       </p>
     </section>
   );

@@ -241,6 +241,9 @@ test('trajectory history and target survive feature exchange; controls leave upd
 }, info) => {
   await scalar(page);
   for (let i = 0; i < 12; i++) await step(page).click();
+  // The final click posts a worker command; capture the baseline only after
+  // its acknowledgment has updated the displayed configuration.
+  await expect(page.getByTestId('total-updates')).toHaveText('12');
   const before = await page.getByTestId('scalar-configuration').textContent();
   await showCard(page, 2);
   await card(page, 2).getByLabel('Tool 2 type').selectOption('trajectory');

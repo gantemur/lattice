@@ -86,7 +86,16 @@ export class FieldClient {
   start() {
     if (!this.ready() || this.view.running) return;
     this.view.running = true;
-    this.advance(128);
+    this.advance(this.batchSize());
+  }
+  private batchSize() {
+    const settings = this.view.snapshot?.segments.at(-1)?.settings;
+    // HMC performs L full-path force evaluations per transition. Existing
+    // samplers retain their original 128-update scheduling and RNG streams.
+    return settings?.model === 'quartic-oscillator' &&
+      settings.sampler.kind === 'hmc'
+      ? 16
+      : 128;
   }
   pause() {
     this.cancelTimer();
@@ -135,7 +144,7 @@ export class FieldClient {
     else if (this.view.running)
       this.timer = setTimeout(() => {
         this.timer = null;
-        if (this.view.running && this.ready()) this.advance(128);
+        if (this.view.running && this.ready()) this.advance(this.batchSize());
       }, 16);
   }
   private fail(message: string) {

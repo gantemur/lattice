@@ -89,6 +89,24 @@ export function quarticPathAction(
   return action;
 }
 
+/** ∂S/∂x_j includes both periodic kinetic bonds and the full quartic force.
+ * It is the force for auxiliary HMC dynamics, not a physical-time equation. */
+export function quarticPathGradient(
+  p: QuarticOscillatorParameters,
+  path: readonly number[],
+) {
+  const a = quarticSpacing(p);
+  validatePath(p, path);
+  const gradient = path.map((x, j) => {
+    const left = path[(j + p.sites - 1) % p.sites]!;
+    const right = path[(j + 1) % p.sites]!;
+    return (2 * x - left - right) / a + a * quarticPotentialDerivative(p, x);
+  });
+  if (gradient.some((value) => !Number.isFinite(value)))
+    throw new Error('Quartic gradient overflowed.');
+  return gradient;
+}
+
 /** Only two time bonds and one potential term change. N≥4 makes the two
  * neighboring sites distinct, including j=0 and j=N−1. */
 export function quarticLocalDifference(

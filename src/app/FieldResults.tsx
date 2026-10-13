@@ -141,6 +141,8 @@ export function FieldStepInspection({ snapshot }: { snapshot: FieldSnapshot }) {
           {trace.kind === 'spectral' ? 'spectral' : 'Gaussian'} draw.
           Acceptance: N/A. This update is not physical time.
         </p>
+      ) : trace.kind === 'hmc' ? (
+        <p>HMC trajectory inspection belongs to Lattice QM.</p>
       ) : (
         <>
           <p>

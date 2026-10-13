@@ -29,6 +29,14 @@ import type { OscillatorParameters } from '../models/oscillator';
 import { isFullyPeriodic } from '../models/fieldFourier';
 import { quarticTransition } from '../algorithms/quarticOscillatorSampler';
 import {
+  hmcQuarticTransition,
+  validateQuarticHmcSampler,
+} from '../algorithms/quarticHmc';
+import type {
+  QuarticHmcSampler,
+  QuarticHmcTrace,
+} from '../algorithms/quarticHmc';
+import {
   defaultQuarticOscillator,
   quarticPathAction,
   quarticQuadraticPart,
@@ -57,19 +65,49 @@ export type OscillatorFieldSettings = CommonFieldSettings & {
   model: 'oscillator';
   oscillator: OscillatorParameters;
 };
-export type QuarticFieldSettings = CommonFieldSettings & {
+type QuarticPhysicalSettings = {
   model: 'quartic-oscillator';
   quartic: QuarticOscillatorParameters;
+  parameters: GaussianFieldParameters;
   oscillator?: never;
 };
+export type QuarticMetropolisSettings = QuarticPhysicalSettings & {
+  sampler: { kind: 'metropolis'; width: number };
+  warmupSweeps: number;
+  strideSweeps: number;
+  warmupTrajectories?: never;
+  strideTrajectories?: never;
+};
+export type QuarticHmcSettings = QuarticPhysicalSettings & {
+  sampler: QuarticHmcSampler;
+  warmupTrajectories: number;
+  strideTrajectories: number;
+  warmupSweeps?: never;
+  strideSweeps?: never;
+};
+export type QuarticFieldSettings =
+  QuarticMetropolisSettings | QuarticHmcSettings;
 export type FieldSettings =
   GaussianFieldSettings | OscillatorFieldSettings | QuarticFieldSettings;
+export function isQuarticHmcSettings(
+  settings: FieldSettings,
+): settings is QuarticHmcSettings {
+  return (
+    settings.model === 'quartic-oscillator' && settings.sampler.kind === 'hmc'
+  );
+}
 export type FieldConfiguration = FieldSettings & { seed: number };
+export type GaussianFieldConfiguration = GaussianFieldSettings & {
+  seed: number;
+};
 export type OscillatorConfiguration = OscillatorFieldSettings & {
   seed: number;
 };
 export type QuarticConfiguration = QuarticFieldSettings & { seed: number };
-export const defaultFieldConfiguration: FieldConfiguration = {
+export type QuarticMetropolisConfiguration = QuarticMetropolisSettings & {
+  seed: number;
+};
+export const defaultFieldConfiguration: GaussianFieldConfiguration = {
   parameters: {
     shape: { kind: 'chain', length: 8, periodic: false },
     r: 1,
@@ -91,7 +129,7 @@ export const defaultOscillatorConfiguration: OscillatorConfiguration = {
   strideSweeps: 1,
   seed: 12345,
 };
-export const defaultQuarticConfiguration: QuarticConfiguration = {
+export const defaultQuarticConfiguration: QuarticMetropolisConfiguration = {
   model: 'quartic-oscillator',
   quartic: defaultQuarticOscillator,
   parameters: quarticQuadraticPart(defaultQuarticOscillator),
@@ -110,6 +148,8 @@ export type FieldMeasurement = {
 export type FieldSegmentSnapshot = {
   id: number;
   settings: FieldSettings;
+  /** Original seeded session; compatible segment changes retain its RNG. */
+  seed: number;
   startUpdate: number;
   updates: number;
   warmupUpdates: number;
@@ -126,6 +166,20 @@ export type FieldSegmentSnapshot = {
   negativeAveragePaths: number;
   zeroAveragePaths: number;
   observedSignChanges: number;
+  hmc: {
+    divergences: number;
+    gradientEvaluations: number;
+    leapfrogSteps: number;
+    finiteDeltaCount: number;
+    meanDeltaH: number | null;
+    rmsDeltaH: number | null;
+    maxAbsDeltaH: number | null;
+    recent: {
+      update: number;
+      deltaH: number | null;
+      outcome: QuarticHmcTrace['outcome'];
+    }[];
+  } | null;
   reference: {
     method: 'dense' | 'spectral';
     measure: 'ordinary' | 'mean-zero';
@@ -146,7 +200,11 @@ export type FieldSnapshot = {
   droppedSegments: number;
   segments: FieldSegmentSnapshot[];
   lastTrace:
-    | (FieldTrace & { update: number; segmentId: number; warmup: boolean })
+    | ((FieldTrace | QuarticHmcTrace) & {
+        update: number;
+        segmentId: number;
+        warmup: boolean;
+      })
     | null;
 };
 export type FieldRequest =
@@ -176,8 +234,30 @@ export function validateFieldSettings(settings: FieldSettings) {
       throw new Error(
         'Quartic quadratic coefficients disagree with physical parameters.',
       );
+    if (settings.sampler.kind === 'hmc') {
+      validateQuarticHmcSampler(settings.sampler);
+      if ('warmupSweeps' in settings || 'strideSweeps' in settings)
+        throw new Error('HMC cadence uses trajectories, not nominal sweeps.');
+      if (
+        !Number.isInteger(settings.warmupTrajectories) ||
+        settings.warmupTrajectories < 0 ||
+        settings.warmupTrajectories > 1000
+      )
+        throw new Error('HMC warm-up must be 0–1000 trajectories.');
+      if (
+        !Number.isInteger(settings.strideTrajectories) ||
+        settings.strideTrajectories < 1 ||
+        settings.strideTrajectories > 100
+      )
+        throw new Error('HMC measurement stride must be 1–100 trajectories.');
+      return;
+    }
     if (settings.sampler.kind !== 'metropolis')
-      throw new Error('Quartic paths require local Metropolis sampling.');
+      throw new Error(
+        'Quartic paths require local Metropolis or HMC sampling.',
+      );
+    if ('warmupTrajectories' in settings || 'strideTrajectories' in settings)
+      throw new Error('Local Metropolis cadence uses nominal sweeps.');
   } else if (settings.model === 'oscillator') {
     if (!settings.oscillator)
       throw new Error('Oscillator physical parameters are required.');
@@ -245,11 +325,13 @@ function newSegment(
   settings: FieldSettings,
   startUpdate: number,
   size: number,
+  seed: number,
 ) {
   const copied = structuredClone(settings);
   return {
     id,
     settings: copied,
+    seed,
     startUpdate,
     updates: 0,
     warmupUpdates: 0,
@@ -266,6 +348,23 @@ function newSegment(
     zeroAveragePaths: 0,
     observedSignChanges: 0,
     previousAverageSign: 0,
+    hmc:
+      copied.model === 'quartic-oscillator' && copied.sampler.kind === 'hmc'
+        ? {
+            divergences: 0,
+            gradientEvaluations: 0,
+            leapfrogSteps: 0,
+            finiteDeltaCount: 0,
+            deltaScale: 0,
+            scaledDeltaSum: 0,
+            scaledDeltaSquares: 0,
+            recent: [] as {
+              update: number;
+              deltaH: number | null;
+              outcome: QuarticHmcTrace['outcome'];
+            }[],
+          }
+        : null,
     reference:
       copied.model === 'quartic-oscillator'
         ? null
@@ -304,7 +403,9 @@ export class FieldRun {
       configuration.sampler.kind === 'spectral'
         ? null
         : Array<number>(this.lattice.size).fill(0);
-    this.segments = [newSegment(1, configuration, 0, this.lattice.size)];
+    this.segments = [
+      newSegment(1, configuration, 0, this.lattice.size, this.seed),
+    ];
   }
   private get current() {
     return this.segments.at(-1)!;
@@ -343,6 +444,7 @@ export class FieldRun {
         settings,
         this.updates,
         this.lattice.size,
+        this.seed,
       ),
     );
     if (this.segments.length > 8) {
@@ -356,29 +458,50 @@ export class FieldRun {
   advance(count: number) {
     if (!Number.isInteger(count) || count < 1 || count > 1024)
       throw new Error('Field batch must contain 1–1024 updates.');
+    if (
+      this.current.settings.model === 'quartic-oscillator' &&
+      this.current.settings.sampler.kind === 'hmc' &&
+      count > 32
+    )
+      throw new Error('HMC batch must contain at most 32 trajectories.');
     if (!Number.isSafeInteger(this.updates + count))
       throw new Error('Update count limit reached; Reset.');
     const segment = this.current;
     const settings = segment.settings;
     const size = this.lattice.size;
-    const warmupTarget =
-      settings.sampler.kind === 'direct' || settings.sampler.kind === 'spectral'
-        ? 0
-        : settings.warmupSweeps * size;
-    const stride =
-      settings.sampler.kind === 'direct' || settings.sampler.kind === 'spectral'
-        ? 1
-        : settings.strideSweeps * size;
+    let warmupTarget: number;
+    let stride: number;
+    if (isQuarticHmcSettings(settings)) {
+      warmupTarget = settings.warmupTrajectories;
+      stride = settings.strideTrajectories;
+    } else if (
+      settings.sampler.kind === 'direct' ||
+      settings.sampler.kind === 'spectral'
+    ) {
+      warmupTarget = 0;
+      stride = 1;
+    } else {
+      warmupTarget = settings.warmupSweeps;
+      stride = settings.strideSweeps;
+      warmupTarget *= size;
+      stride *= size;
+    }
     for (let n = 0; n < count; n++) {
       const result =
-        settings.model === 'quartic-oscillator' &&
-        settings.sampler.kind === 'metropolis'
-          ? quarticTransition(
-              settings.quartic,
-              this.field ?? Array<number>(size).fill(0),
-              settings.sampler.width,
-              this.rng,
-            )
+        settings.model === 'quartic-oscillator'
+          ? settings.sampler.kind === 'hmc'
+            ? hmcQuarticTransition(
+                settings.quartic,
+                this.field ?? Array<number>(size).fill(0),
+                settings.sampler,
+                this.rng,
+              )
+            : quarticTransition(
+                settings.quartic,
+                this.field ?? Array<number>(size).fill(0),
+                settings.sampler.width,
+                this.rng,
+              )
           : fieldTransition(
               this.lattice,
               settings.parameters,
@@ -392,8 +515,37 @@ export class FieldRun {
       segment.updates++;
       const warmup = segment.updates <= warmupTarget;
       if (warmup) segment.warmupUpdates++;
-      if (result.trace.kind === 'metropolis')
+      if (result.trace.kind === 'metropolis' || result.trace.kind === 'hmc')
         segment[result.trace.accepted ? 'accepted' : 'rejected']++;
+      if (result.trace.kind === 'hmc' && segment.hmc) {
+        const record = segment.hmc;
+        record.gradientEvaluations += result.trace.gradientEvaluations;
+        record.leapfrogSteps += result.trace.completedLeapfrogSteps;
+        if (result.trace.outcome === 'divergence') record.divergences++;
+        const delta = result.trace.deltaH;
+        if (delta !== null) {
+          const magnitude = Math.abs(delta);
+          if (magnitude > record.deltaScale) {
+            const ratio = record.deltaScale / magnitude;
+            record.scaledDeltaSum *= ratio;
+            record.scaledDeltaSquares *= ratio * ratio;
+            record.deltaScale = magnitude;
+          }
+          record.scaledDeltaSum += record.deltaScale
+            ? delta / record.deltaScale
+            : 0;
+          record.scaledDeltaSquares += record.deltaScale
+            ? (delta / record.deltaScale) ** 2
+            : 0;
+          record.finiteDeltaCount++;
+        }
+        record.recent.push({
+          update: this.updates,
+          deltaH: delta,
+          outcome: result.trace.outcome,
+        });
+        if (record.recent.length > 256) record.recent.shift();
+      }
       this.lastTrace = {
         ...result.trace,
         update: this.updates,
@@ -455,12 +607,20 @@ export class FieldRun {
       updates: this.updates,
       activeSegmentId: this.current.id,
       droppedSegments: this.droppedSegments,
-      lastTrace: this.lastTrace ? { ...this.lastTrace } : null,
+      lastTrace: this.lastTrace
+        ? this.lastTrace.kind === 'hmc'
+          ? {
+              ...this.lastTrace,
+              energyErrors: [...this.lastTrace.energyErrors],
+            }
+          : { ...this.lastTrace }
+        : null,
       segments: this.segments.map((segment) => {
         const count = segment.average.count;
         return {
           id: segment.id,
           settings: structuredClone(segment.settings),
+          seed: segment.seed,
           startUpdate: segment.startUpdate,
           updates: segment.updates,
           warmupUpdates: segment.warmupUpdates,
@@ -482,6 +642,29 @@ export class FieldRun {
           negativeAveragePaths: segment.negativeAveragePaths,
           zeroAveragePaths: segment.zeroAveragePaths,
           observedSignChanges: segment.observedSignChanges,
+          hmc: segment.hmc
+            ? {
+                divergences: segment.hmc.divergences,
+                gradientEvaluations: segment.hmc.gradientEvaluations,
+                leapfrogSteps: segment.hmc.leapfrogSteps,
+                finiteDeltaCount: segment.hmc.finiteDeltaCount,
+                meanDeltaH: segment.hmc.finiteDeltaCount
+                  ? segment.hmc.deltaScale *
+                    (segment.hmc.scaledDeltaSum / segment.hmc.finiteDeltaCount)
+                  : null,
+                rmsDeltaH: segment.hmc.finiteDeltaCount
+                  ? segment.hmc.deltaScale *
+                    Math.sqrt(
+                      segment.hmc.scaledDeltaSquares /
+                        segment.hmc.finiteDeltaCount,
+                    )
+                  : null,
+                maxAbsDeltaH: segment.hmc.finiteDeltaCount
+                  ? segment.hmc.deltaScale
+                  : null,
+                recent: segment.hmc.recent.map((entry) => ({ ...entry })),
+              }
+            : null,
           reference:
             segment.reference === null
               ? null

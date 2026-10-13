@@ -2501,6 +2501,35 @@ footer {
 .field-covariance th:first-child {
   min-width: 110px;
 }
+.hmc-segment-list {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0;
+}
+.hmc-segment {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.hmc-segment h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.hmc-segment dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 10px;
+  margin: 0;
+}
+.hmc-segment dt {
+  font-size: 11px;
+  font-weight: 700;
+}
+.hmc-segment dd {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+}
 @media (max-width: 560px) {
   nav[aria-label='Workspaces'] {
     flex-wrap: wrap;

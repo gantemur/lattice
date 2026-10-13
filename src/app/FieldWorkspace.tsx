@@ -1,7 +1,10 @@
 import { SiteHeader } from './SiteHeader';
 import { useState } from 'react';
 import { defaultFieldConfiguration } from '../engine/fieldRun';
-import type { FieldConfiguration, FieldSettings } from '../engine/fieldRun';
+import type {
+  GaussianFieldConfiguration,
+  FieldSettings,
+} from '../engine/fieldRun';
 import { createFieldLattice } from '../domain/fieldLattice';
 import { formatNumber } from '../plotting/PlotFrame';
 import { DisplayMath, InlineMath } from '../ui/Math';
@@ -55,7 +58,7 @@ export function FieldWorkspace() {
   const { view, client } = useField(defaultFieldConfiguration);
   const snapshot = view.snapshot;
   const current = snapshot?.segments.at(-1);
-  const [draft, setDraft] = useState<FieldConfiguration>(
+  const [draft, setDraft] = useState<GaussianFieldConfiguration>(
     defaultFieldConfiguration,
   );
   const [seed, setSeed] = useState(String(defaultFieldConfiguration.seed));

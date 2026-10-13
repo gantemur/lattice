@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.21 (Ising local-neighborhood teaching tool, 2026-10-12)
+**Version:** 0.22 (quartic-path HMC, 2026-10-13)
 
-**Status:** M0–M4c0 and the architecture audit are merged. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. Interacting fields remain planned.
+**Status:** M0–M4c1 and the architecture audit are merged; M4c2 quartic-path HMC is implemented on its release branch. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. Spatial interacting fields remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -213,7 +213,7 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 ### 4.3 Next models (not initial release)
 
 - M4a1: merged massive Gaussian fields in 1D/2D with dense finite-volume covariance and exact Gaussian sampling. M4a2 adds periodic Fourier sampling and constrained massless zero-mode handling below.
-- M4b harmonic Euclidean oscillator paths and the separate M4c1 interacting double-well path family are implemented below.
+- M4b harmonic Euclidean oscillator paths, the separate M4c1 interacting double-well path family and its M4c2 HMC sampler are implemented below.
 - Continuous-spin lattice `φ⁴` in 1D/2D; local Metropolis and HMC; mass and correlation-length diagnostics.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
@@ -250,6 +250,12 @@ Lattice QM separately selects a quartic path with `V(x)=r x²/2+λ x⁴/4−h x`
 All retained paths in a segment contribute translation-averaged raw pair products `C_raw(ℓ)=N⁻¹Σ_j〈x_jx_(j+ℓ)〉`, even when only 256 recent full paths remain. At h=0, exact reflection symmetry makes raw C the connected equilibrium quantity; no per-path or sample-mean subtraction is applied. For h≠0, the separately labeled connected plug-in estimate subtracts the square of the full-segment translational sample mean. A local cosh effective-energy indicator appears after 64 retained paths only if its real positive ratio is numerically usable; neither that threshold nor warm-up certifies mixing. Symmetric-well whole-path-average sign counts and sign changes are sampling-algorithm metastability diagnostics, not physical tunneling rates.
 
 The optional independent transfer tool uses the symmetric Trotter kernel with physical V, internally shifted by its global minimum. A positive-weight symmetric Nyström matrix is solved on 49, 97 and enlarged-cutoff 121-node grids, with eigenpair residuals, coordinate and cutoff refinement, near-degeneracy and shifted-leading-eigenvalue checks. Only a well-resolved leading ratio is a headline approximate finite-a excitation gap; under-resolved values remain diagnostic. The finite-β thermal transfer correlator sums all numerical eigenpairs and is separately checked at representative lags. These are **numerical finite-spacing transfer references**, distinct from analytic λ=0 expressions, the continuum Hamiltonian and the Monte Carlo update spectrum. The transfer analysis runs lazily in a separate worker without RNG. See [interacting-oscillator mathematics](math/interacting-oscillator.md) and [M4c1 review](M4C1_REVIEW.md).
+
+#### M4c2 HMC for the interacting Euclidean oscillator (implemented on release branch)
+
+The quartic path alone may select local Metropolis or identity-mass Hamiltonian Monte Carlo. HMC refreshes N independent standard-normal auxiliary momenta and proposes a whole-path move using L kick-drift-kick leapfrog steps at ε, followed by a momentum flip and Metropolis correction with `H_HMC=S_a(x)+Σp_j²/2`. The full force is `(2x_j−x_(j−1)−x_(j+1))/a+a(r x_j+λx_j³−h)`. Supported teaching controls are `0.002≤ε≤0.25`, integer `1≤L≤32`, warm-up 0–1000 complete trajectories and measurement stride 1–100 complete trajectories. The initial defaults are ε=0.1, L=12. One HMC attempt consumes exactly `2N+1` seeded uniforms even when rejected or numerically divergent; a divergence preserves the old path. No intermediate MD configuration is measured. Auxiliary trajectory duration `Lε` is neither Euclidean coordinate time nor Monte Carlo time.
+
+One HMC Step is one complete trajectory; Run batches at most 16 and a direct worker advance at most 32. Existing local Metropolis cadence remains in nominal sweeps of N site attempts. Fixed-N physical, sampler, tuning or cadence changes preserve path/RNG while starting isolated segments with their own warm-up. N/model changes and Reset seed a fresh session. Segment metadata retains physical parameters, algorithm, tuning, cadence, session seed and update boundaries. The global transition index is monotone but its units differ across algorithms. Full-segment moments and pair-product correlations retain their previous physical meaning, with at most 256 recent paths per segment. HMC adds full-segment accepted/rejected/divergence and finite-ΔH mean/RMS/max plus gradient-work counts, with at most 256 individual recent defects; acceptance includes warm-up. The selectable HMC and latest-transition tools display these worker-owned results without advancing the RNG. Small `|ΔH|` is an integration-quality check, not an equilibrium or physical-energy assertion. See [HMC mathematics](math/hmc-euclidean-qm.md) and [M4c2 review](M4C2_REVIEW.md).
 
 #### M2 indexed 2D Ising
 
@@ -345,7 +351,7 @@ Do not force a generic user-defined formula parser into the first version. Reusa
 
 **Run mode:** batched updates executed in a Web Worker. Throttle configuration rendering to a browser-friendly cadence (not one frame per update); accumulate observables separately. Provide Pause/Resume, Reset, and parameter-controlled speed or budget. The UI must never become unresponsive because the simulation is busy.
 
-**Step/Inspect mode:** execute one well-defined algorithmic transition, wait for the worker's acknowledgment, then present a trace. For Metropolis, display selected degree of freedom, old and proposed states, energy difference, acceptance rule/probability, RNG draw, and accept/reject. For heat bath, display conditional probabilities and the selected draw. HMC inspection can later show the leapfrog trajectory, Hamiltonian drift, and accept/reject event.
+**Step/Inspect mode:** execute one well-defined algorithmic transition, wait for the worker's acknowledgment, then present a trace. For Metropolis, display selected degree of freedom, old and proposed states, energy difference, acceptance rule/probability, RNG draw, and accept/reject. For heat bath, display conditional probabilities and the selected draw. Quartic HMC inspection displays one whole-path proposal, start/proposed action and kinetic terms, auxiliary ΔH, actual accept/reject/divergence and bounded per-step energy defects; spatial-field HMC remains future work.
 
 The RNG and sampler update sequence must not depend on how often the UI redraws. Going from Run to Step should pause at a precise state boundary without inventing missing updates.
 
@@ -357,14 +363,14 @@ The RNG and sampler update sequence must not depend on how often the UI redraws.
 - Direct binomial uses n Bernoulli uniforms, spin direct/heat bath uses one. Single-spin heat bath is a resampling kernel with identical rows and therefore independent equilibrium draws. Do not attach fictitious Metropolis acceptance fields to these updates.
 - Metropolis discards a configurable 0–10000 updates (default 200) per new segment. This is not a mixing guarantee. Direct and isolated single-spin heat-bath sampling need zero warm-up. Initial chain configurations are 0 (Gaussian), +1 (spin), round(np) (binomial), not measurements. Accepted, rejected and self states after warm-up all enter estimators at stride one.
 - M1a implements graph Ising random-site local Metropolis/heat bath and direct enumeration sampling. Graph Metropolis consumes site/proposal/acceptance uniforms (three), graph heat bath site/resampling uniforms (two), direct exact one uniform for a full configuration. A nominal sweep is N local updates with replacement. Both local samplers discard configurable 0–10000 warm-up updates (default 200); local Reset starts all +1. Single-spin M0.5 heat bath retains zero warm-up and its original stream. M1b's real-scalar local updates and whole-vector Gaussian direct draws follow their separate conventions in §4.2.
-- Later: Wolff or Swendsen–Wang/FK cluster updates for compatible models; HMC with reversible symplectic integrator and Metropolis correction for smooth continuous fields.
+- Later: Wolff or Swendsen–Wang/FK cluster updates for compatible models; extend the tested quartic-path HMC approach to suitable spatial continuous fields only after model-specific validation.
 - Advanced samplers should be exposed only on models for which their validity has been implemented and tested; no universal algorithm picker with invalid choices.
 
 ### 5.4 Worker messaging and event traces
 
 A minimal worker API can include `initialize`, `runBatch`, `step`, `pause`, `reset`, and `measure`, with acknowledgments carrying a run ID and monotonically increasing state version. Messages should reject stale run IDs. Use compact typed state arrays and transfer/copy strategies that do not accidentally detach the only authoritative state.
 
-M0.5 implements `initialize`, `advance(count)`, `changeSettings`, and read-only `snapshot`. Initialize creates a fresh run with an increasing run ID. Version counts completed updates plus accepted setting changes. Step advances once, Run schedules batches of 128 (protocol limit 1024), and Pause stops further scheduling and waits for any in-flight acknowledgment. Apply is ordered after the pending batch and before another is scheduled; Run then continues. Repeated queued settings edits use the latest requested values. Unchanged settings are a no-op. The worker has no autonomous timer. Reset uses Initialize; stale commands and stale/regressing replies are rejected or ignored. Rendering and snapshot reads consume no RNG draws. Worker failures stop scheduling and label displayed state as last confirmed; Reset can recreate the worker.
+M0.5 implements `initialize`, `advance(count)`, `changeSettings`, and read-only `snapshot`. Initialize creates a fresh run with an increasing run ID. Version counts completed updates plus accepted setting changes. Step advances once, Run schedules batches of 128 for prior field samplers (protocol limit 1024) or 16 complete quartic HMC trajectories (direct HMC limit 32), and Pause stops further scheduling and waits for any in-flight acknowledgment. Apply is ordered after the pending batch and before another is scheduled; Run then continues. Repeated queued settings edits use the latest requested values. Unchanged settings are a no-op. The worker has no autonomous timer. Reset uses Initialize; stale commands and stale/regressing replies are rejected or ignored. Rendering and snapshot reads consume no RNG draws. Worker failures stop scheduling and label displayed state as last confirmed; Reset can recreate the worker.
 
 One possible trace payload is:
 
@@ -619,7 +625,7 @@ See `ROADMAP.md` for implementation milestones. The following describes the init
 - Distinguish warm-up from measurement and show which values are sampled versus exact.
 - Pass numerical tests and a phone browser smoke test.
 
-Later milestones cover larger 2D Ising, robust statistics, continuous fields, HMC, and gauge models.
+Later milestones cover further lattice models, spatial interacting fields and their HMC extension, and gauge models.
 
 ## 12. Open questions / design flexibility
 

@@ -1,5 +1,5 @@
 import type { Dispatch, SetStateAction } from 'react';
-import type { FieldConfiguration } from '../engine/fieldRun';
+import type { GaussianFieldConfiguration } from '../engine/fieldRun';
 import { fieldMeasure } from '../models/gaussianField';
 
 export function FieldControls({
@@ -9,8 +9,8 @@ export function FieldControls({
   setSeed,
   onApply,
 }: {
-  draft: FieldConfiguration;
-  setDraft: Dispatch<SetStateAction<FieldConfiguration>>;
+  draft: GaussianFieldConfiguration;
+  setDraft: Dispatch<SetStateAction<GaussianFieldConfiguration>>;
   seed: string;
   setSeed: (seed: string) => void;
   onApply: () => void;
@@ -19,7 +19,9 @@ export function FieldControls({
   const constrained = fieldMeasure(p) === 'mean-zero';
   const local =
     draft.sampler.kind !== 'direct' && draft.sampler.kind !== 'spectral';
-  const updateParameters = (patch: Partial<FieldConfiguration['parameters']>) =>
+  const updateParameters = (
+    patch: Partial<GaussianFieldConfiguration['parameters']>,
+  ) =>
     setDraft((old) => ({
       ...old,
       parameters: { ...old.parameters, ...patch },
