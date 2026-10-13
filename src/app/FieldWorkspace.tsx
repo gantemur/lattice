@@ -1,3 +1,4 @@
+import { Phi4FieldView } from './Phi4FieldView';
 import { SiteHeader } from './SiteHeader';
 import { useState } from 'react';
 import { defaultFieldConfiguration } from '../engine/fieldRun';
@@ -55,6 +56,15 @@ const fieldTools: ToolDefinition<FieldTool>[] = [
 ];
 
 export function FieldWorkspace() {
+  const [model, setModel] = useState<'gaussian' | 'phi4'>('gaussian');
+  return model === 'gaussian' ? (
+    <GaussianFieldSession choosePhi4={() => setModel('phi4')} />
+  ) : (
+    <Phi4FieldView chooseGaussian={() => setModel('gaussian')} />
+  );
+}
+
+function GaussianFieldSession({ choosePhi4 }: { choosePhi4: () => void }) {
   const { view, client } = useField(defaultFieldConfiguration);
   const snapshot = view.snapshot;
   const current = snapshot?.segments.at(-1);
@@ -165,6 +175,22 @@ export function FieldWorkspace() {
           </div>
           <span className="milestone">M4a2 · Fourier Gaussian fields</span>
         </section>
+        <div className="qm-model-choice">
+          <label>
+            Field model{' '}
+            <select
+              aria-label="Field model"
+              value="gaussian"
+              onChange={choosePhi4}
+            >
+              <option value="gaussian">Gaussian field / mean-zero GFF</option>
+              <option value="phi4">Interacting φ⁴ field</option>
+            </select>
+          </label>
+          <span className="plot-note">
+            Changing model starts a new seeded session.
+          </span>
+        </div>
         <div className="lab-layout field-layout">
           <aside className="sidebar" aria-label="Field settings">
             <section className="model-card">

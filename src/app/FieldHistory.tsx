@@ -30,6 +30,7 @@ export function FieldHistory({
   const clippedReferences = snapshot.segments.filter(
     (segment) =>
       segment.recent.length > 0 &&
+      segment.reference !== null &&
       Math.abs(segment.reference!.mean[site]!) > limit,
   ).length;
   return (
@@ -57,7 +58,7 @@ export function FieldHistory({
           −{limit}
         </text>
         {snapshot.segments.map((segment) => {
-          if (!segment.recent.length) return null;
+          if (!segment.recent.length || !segment.reference) return null;
           const start = segment.recent[0]!.update;
           const end = segment.recent.at(-1)!.update;
           return (
@@ -99,10 +100,11 @@ export function FieldHistory({
       </div>
       <p className="plot-note">
         Points are recorded post-warm-up measurements; dashed lines are each
-        segment’s exact finite-volume site mean. Gaps and evicted measurements
-        are not reconstructed or joined. Horizontal position is update count,
-        not physical time. {clipped} displayed point{clipped === 1 ? '' : 's'}{' '}
-        clipped. {clippedReferences} exact mean line
+        segment’s exact finite-volume site mean when an analytic reference
+        exists. Gaps and evicted measurements are not reconstructed or joined.
+        Horizontal position is update count, not physical time. {clipped}{' '}
+        displayed point{clipped === 1 ? '' : 's'} clipped. {clippedReferences}{' '}
+        exact mean line
         {clippedReferences === 1 ? '' : 's'} clipped.
       </p>
     </section>

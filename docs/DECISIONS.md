@@ -352,6 +352,18 @@ M4c2 adds HMC only to the existing periodic quartic Euclidean path family. The p
 
 The quartic sampler settings are discriminated: local Metropolis retains nominal-sweep warm-up/stride and its original three-uniform transition, while HMC has trajectory warm-up/stride, explicit ε and L, and one trajectory per Step. Compatible changes preserve path/RNG but isolate measurements in a new segment; N/model changes and Reset retain seeded-session semantics. One global transition counter remains for protocol compatibility, although a local attempt and an HMC trajectory are incomparable work units. HMC Run batches at most 16 trajectories and a direct worker advance at most 32. Segment diagnostics include full-attempt acceptance, divergence, finite auxiliary-energy-defect and gradient-work aggregates plus bounded recent details. No independent-sample error bar or physical tunneling rate follows from these diagnostics. Spatial HMC, mass-matrix tuning, automatic adaptation and archive changes remain outside this decision.
 
+## Accepted spatial φ⁴ convention — 2026-10-13
+
+### D-055 — Distinct ordinary spatial measure, shared field worker and conditional reference capabilities
+
+M4d1 introduces `phi4-field` with a single authoritative physical-parameter object over existing 1D/2D field geometry. Its dimensionless ordinary product-Lebesgue action uses λφ⁴/4, a fluctuating constant mode, signed r when λ>0, and every positive-axis bond including periodic parallel records. λ=0 requires r≥0.05; it is never replaced by constrained massless Gaussian support. The pure full gradient is a tested primitive for later spatial HMC, not permission to expose that sampler now.
+
+The existing field worker owns its local Metropolis state/RNG, three uniforms per attempt, sweep cadence, isolated parameter segments and bounded vector histories. Only spatial φ⁴ adds an m⁴ accumulator; legacy numerical kernels and RNG streams remain unchanged. Gaussian-only visualizations stay in a separate session view. Spatial tools read snapshots and do not sample; the selected site is shared presentation state, while ranges follow assignment keys. Families/geometry reset the seeded session; compatible parameter and width changes retain field/RNG in fresh measurement segments. Archive and sweep formats do not change.
+
+Reference capability is conditional: λ=0 admits the exact Gaussian reduction; κ=0 admits controlled cached one-site quadrature; a periodic positive-κ chain can map exactly to the existing QM action with a=1/κ and physical potential coefficients divided by a. The converted configuration must satisfy existing QM bounds. The independent lazy transfer worker keeps its original refinement/residual/near-degeneracy policy. Finite-ring correlation resolution is distinct from leading-ratio resolution; a trusted ratio yields a bulk 1D length in lattice spacings, not a spatial quantum energy or MCMC timescale. Other interacting configurations have no fabricated exact covariance.
+
+Spatial correlation projections average actual admissible origins and retain x/y distinction. Reflection symmetry at zero source gives raw=connected equilibrium correlation without erasing a finite chain's nonzero sample mean. With source, connected plug-in values use site-dependent full-segment means, including on open/mixed lattices. No per-configuration demeaning, independent-chain uncertainty, phase-transition claim or automatic 2D mass fit is inferred.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

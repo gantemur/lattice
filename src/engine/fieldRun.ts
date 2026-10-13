@@ -1,3 +1,11 @@
+import { phi4Transition } from '../algorithms/phi4FieldSampler';
+import {
+  defaultPhi4Field,
+  phi4Action,
+  phi4GaussianParameters,
+  validatePhi4Field,
+} from '../models/phi4Field';
+import type { Phi4FieldParameters } from '../models/phi4Field';
 import { createRng, validateSeed } from '../algorithms/rng';
 import {
   fieldTransition,
@@ -87,8 +95,28 @@ export type QuarticHmcSettings = QuarticPhysicalSettings & {
 };
 export type QuarticFieldSettings =
   QuarticMetropolisSettings | QuarticHmcSettings;
+export type Phi4FieldSettings = {
+  model: 'phi4-field';
+  parameters: Phi4FieldParameters;
+  sampler: { kind: 'metropolis'; width: number };
+  warmupSweeps: number;
+  strideSweeps: number;
+  oscillator?: never;
+};
+export type Phi4FieldConfiguration = Phi4FieldSettings & { seed: number };
+export const defaultPhi4Configuration: Phi4FieldConfiguration = {
+  model: 'phi4-field',
+  parameters: defaultPhi4Field,
+  sampler: { kind: 'metropolis', width: 1 },
+  warmupSweeps: 20,
+  strideSweeps: 1,
+  seed: 12345,
+};
 export type FieldSettings =
-  GaussianFieldSettings | OscillatorFieldSettings | QuarticFieldSettings;
+  | Phi4FieldSettings
+  | GaussianFieldSettings
+  | OscillatorFieldSettings
+  | QuarticFieldSettings;
 export function isQuarticHmcSettings(
   settings: FieldSettings,
 ): settings is QuarticHmcSettings {
@@ -159,6 +187,8 @@ export type FieldSegmentSnapshot = {
   sites: MomentSummary[];
   average: MomentSummary;
   actionDensity: MomentSummary;
+  /** Full-segment fourth moment, only collected for spatial φ⁴. */
+  averageFourthMoment: number | null;
   pairProducts: number[][];
   recent: FieldMeasurement[];
   discardedMeasurements: number;
@@ -216,7 +246,13 @@ export type FieldResponse =
   | { type: 'error'; runId: number; message: string };
 
 export function validateFieldSettings(settings: FieldSettings) {
-  if (settings.model === 'quartic-oscillator') {
+  if (settings.model === 'phi4-field') {
+    validatePhi4Field(settings.parameters);
+    if (settings.sampler.kind !== 'metropolis')
+      throw new Error('Spatial φ⁴ requires local Metropolis.');
+    if ('warmupTrajectories' in settings || 'strideTrajectories' in settings)
+      throw new Error('Spatial local cadence uses nominal sweeps.');
+  } else if (settings.model === 'quartic-oscillator') {
     validateQuarticOscillator(settings.quartic);
     const expected = quarticQuadraticPart(settings.quartic);
     const actual = settings.parameters;
@@ -340,6 +376,7 @@ function newSegment(
     sites: Array.from({ length: size }, emptyMoments),
     average: emptyMoments(),
     actionDensity: emptyMoments(),
+    averageFourth: emptyMoments(),
     pairSums: Array.from({ length: size }, () => Array<number>(size).fill(0)),
     recent: [] as FieldMeasurement[],
     discardedMeasurements: 0,
@@ -366,13 +403,17 @@ function newSegment(
           }
         : null,
     reference:
-      copied.model === 'quartic-oscillator'
-        ? null
-        : copied.model === 'oscillator'
-          ? spectralQuadraticField(copied.parameters)
-          : copied.sampler.kind === 'spectral'
-            ? spectralGaussianField(copied.parameters)
-            : exactGaussianField(copied.parameters),
+      copied.model === 'phi4-field'
+        ? copied.parameters.lambda === 0
+          ? exactGaussianField(phi4GaussianParameters(copied.parameters))
+          : null
+        : copied.model === 'quartic-oscillator'
+          ? null
+          : copied.model === 'oscillator'
+            ? spectralQuadraticField(copied.parameters)
+            : copied.sampler.kind === 'spectral'
+              ? spectralGaussianField(copied.parameters)
+              : exactGaussianField(copied.parameters),
   };
 }
 type Segment = ReturnType<typeof newSegment>;
@@ -488,28 +529,36 @@ export class FieldRun {
     }
     for (let n = 0; n < count; n++) {
       const result =
-        settings.model === 'quartic-oscillator'
-          ? settings.sampler.kind === 'hmc'
-            ? hmcQuarticTransition(
-                settings.quartic,
-                this.field ?? Array<number>(size).fill(0),
-                settings.sampler,
-                this.rng,
-              )
-            : quarticTransition(
-                settings.quartic,
-                this.field ?? Array<number>(size).fill(0),
-                settings.sampler.width,
-                this.rng,
-              )
-          : fieldTransition(
+        settings.model === 'phi4-field'
+          ? phi4Transition(
               this.lattice,
               settings.parameters,
-              settings.sampler,
-              this.field ?? Array<number>(size).fill(0),
+              this.field!,
+              settings.sampler.width,
               this.rng,
-              segment.reference,
-            );
+            )
+          : settings.model === 'quartic-oscillator'
+            ? settings.sampler.kind === 'hmc'
+              ? hmcQuarticTransition(
+                  settings.quartic,
+                  this.field ?? Array<number>(size).fill(0),
+                  settings.sampler,
+                  this.rng,
+                )
+              : quarticTransition(
+                  settings.quartic,
+                  this.field ?? Array<number>(size).fill(0),
+                  settings.sampler.width,
+                  this.rng,
+                )
+            : fieldTransition(
+                this.lattice,
+                settings.parameters,
+                settings.sampler,
+                this.field ?? Array<number>(size).fill(0),
+                this.rng,
+                segment.reference,
+              );
       this.field = result.field;
       this.updates++;
       segment.updates++;
@@ -574,6 +623,8 @@ export class FieldRun {
           segment.pairSums[i]![j]! += this.field[i]! * this.field[j]!;
       }
       recordMoment(segment.average, average);
+      if (settings.model === 'phi4-field')
+        recordMoment(segment.averageFourth, average ** 4);
       recordMoment(segment.actionDensity, actionDensity);
       segment.recent.push({
         update: this.updates,
@@ -590,9 +641,11 @@ export class FieldRun {
   }
 
   private action(settings: FieldSettings, path: readonly number[]) {
-    return settings.model === 'quartic-oscillator'
-      ? quarticPathAction(settings.quartic, path)
-      : fieldAction(this.lattice, settings.parameters, path);
+    return settings.model === 'phi4-field'
+      ? phi4Action(this.lattice, settings.parameters, path)
+      : settings.model === 'quartic-oscillator'
+        ? quarticPathAction(settings.quartic, path)
+        : fieldAction(this.lattice, settings.parameters, path);
   }
 
   snapshot(): FieldSnapshot {
@@ -630,6 +683,9 @@ export class FieldRun {
           sites: segment.sites.map(summarizeMoments),
           average: summarizeMoments(segment.average),
           actionDensity: summarizeMoments(segment.actionDensity),
+          averageFourthMoment: segment.averageFourth.count
+            ? segment.averageFourth.mean
+            : null,
           pairProducts: segment.pairSums.map((row) =>
             row.map((sum) => (count ? sum / count : 0)),
           ),

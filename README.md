@@ -1,6 +1,6 @@
 # Lattice Lab
 
-**Status:** M0–M4c2 and the model-interface architecture audit are released. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
+**Status:** M0–M4c2 and the model-interface architecture audit are released; M4d1 spatial φ⁴ is implemented on its feature branch. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
@@ -17,6 +17,10 @@ In **Lattice Systems**, choose **1D Ising chain** to run an open chain of 2–64
 ## M4c1 interacting Euclidean QM
 
 Lattice QM can select a separate periodic quartic/double-well oscillator with editable N, β, r, λ, h and local Metropolis settings. Presets cover the Gaussian limit, single-well quartic, symmetric double well and tilted double well. A full-width periodic path and optional potential, full-segment correlator, transfer spectrum, effective-energy, path-average history and transition tools distinguish Euclidean time from algorithmic updates. The independent transfer analysis runs lazily in another worker, compares three coordinate quadratures, and withholds a trusted gap when resolution checks fail. Local-chain warm-up is only a budget; sign changes of whole-path averages diagnose possible sampling metastability, not physical tunneling. See [mathematics](docs/math/interacting-oscillator.md) and [M4c1 review](docs/M4C1_REVIEW.md).
+
+## M4d1 interacting spatial φ⁴
+
+**Lattice Fields** now separately selects an interacting φ⁴ measure on open/periodic 1D chains and 2D rectangles. Local Metropolis preserves every geometric bond, including length-two periodic parallels. Configurable tools show spatial x/y correlations, fixed-neighbor quartic inspection, retained history, actual proposals and full-segment scalar moments. Reference tools distinguish the analytic Gaussian limit, independent-site quadrature, and a lazy finite-ring transfer computation through the exact periodic-chain/QM action correspondence. The ordinary constant mode fluctuates; this is separate from the constrained Gaussian GFF. No spatial HMC or field archive schema is added. See [spatial mathematics](docs/math/spatial-phi4.md) and [M4d1 review](docs/M4D1_REVIEW.md).
 
 ## M4c2 Hamiltonian Monte Carlo
 
