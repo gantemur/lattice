@@ -2,7 +2,7 @@
 
 **Version:** 0.12, 2026-10-13
 
-**Status:** M0–M4c1 and the architecture audit are released. M4c2 quartic HMC is implemented on its release branch. Model-page Stages A–E and the 1D Ising chain are implemented.
+**Status:** M0–M4c2 and the architecture audit are released. Model-page Stages A–E and the 1D Ising chain are implemented.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -24,7 +24,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
-| **M4: Continuous lattice fields and paths** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–E model pages, M4c1 interacting QM, M4c2 quartic-path HMC; spatial interactions later | Tiny-matrix covariance, Fourier/oscillator invariants; full-force HMC validation | Through M4c1 released; M4c2 on release branch |
+| **M4: Continuous lattice fields and paths** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–E model pages, M4c1 interacting QM, M4c2 quartic-path HMC; spatial interactions later | Tiny-matrix covariance, Fourier/oscillator invariants; full-force HMC validation | Through M4c2 released; spatial interactions planned |
 | **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
@@ -236,8 +236,8 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 12. **Custom simple-graph editing Stage E (implemented).** Directly select a custom two-to-four-spin Ising graph and edit site count, each possible simple-pair presence, signed active coupling and site field in a draft sidebar form. Canonical `pair:v0:v1`-style IDs survive edge additions. Present K=0 bonds remain in the domain; absent pairs do not. Apply starts a seeded session for topology changes or an isolated parameter segment for K/b changes. The existing Ising exact/sampling/diagnostic kernels and archive schema are reused; periodic multigraph and cell-complex presets remain distinct. See the [Stage E review](CUSTOM_ISING_GRAPH_STAGE_E_REVIEW.md).
 13. **1D classical Ising chain (implemented).** Extend the indexed Ising worker with a one-row chain: open N=2–64 or periodic N=3–64, no transverse bond or fabricated y observable. Reuse local Metropolis/heat bath, segment and archive semantics. A pure, scaled 2×2 transfer reference provides finite-N log Z, site means, energy, susceptibility and pair correlations; its signed eigenvalue ratio gives the separately labeled bulk spatial correlation length. The chain-specific ToolDeck features a readable spin chain and defaults to exact-versus-sampled spatial correlations plus magnetization history. See [mathematics](math/ising-chain-transfer.md) and [review](ISING_CHAIN_REVIEW.md).
 14. **M4c1 interacting Euclidean QM (released).** A separate quartic/double-well path model uses pure periodic action and local Metropolis kernels, full-segment correlations, metastability counts and a lazy worker-owned three-grid transfer study. Resolved and under-resolved finite-spacing spectrum/correlator statuses are explicit; the harmonic model's analytic references and RNG are unchanged. Independent harmonic, finite-difference, quadrature-refinement, seeded-worker and desktop/phone browser checks passed. See [mathematics](math/interacting-oscillator.md) and [review](M4C1_REVIEW.md).
-15. **Spatial lattice φ⁴ (future).** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
-16. **M4c2 quartic HMC (implemented on release branch).** Identity-mass auxiliary momenta, full quartic force, reversible/volume-preserving leapfrog, complete-ΔH correction, trajectory-based warm-up/stride, bounded energy-defect and effort diagnostics, and sampler-aware worker batches. Finite-difference, reversibility, Jacobian, refinement, multi-seed Gaussian/interacting and desktop/phone checks gate release. The [mathematics](math/hmc-euclidean-qm.md) and [review](M4C2_REVIEW.md) give the conventions and evidence. Spatial φ⁴ and spatial-field HMC remain future scope.
+15. **M4c2 quartic HMC (released).** Identity-mass auxiliary momenta, full quartic force, reversible/volume-preserving leapfrog, complete-ΔH correction, trajectory-based warm-up/stride, bounded energy-defect and effort diagnostics, and sampler-aware worker batches. Finite-difference, reversibility, Jacobian, refinement, multi-seed Gaussian/interacting and desktop/phone checks gate release. The [mathematics](math/hmc-euclidean-qm.md) and [review](M4C2_REVIEW.md) give the conventions and evidence. Spatial φ⁴ and spatial-field HMC remain future scope.
+16. **Spatial lattice φ⁴ (future).** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
 
 **Acceptance gate**
 
@@ -279,7 +279,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4c1, the readability pass and the architecture audit are released; M4c2 quartic HMC is implemented on its release branch. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. Spatial φ⁴, spatial-field HMC, gauge and later archive stages remain future scope.
+M0–M4c2, the readability pass and the architecture audit are released. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. Spatial φ⁴, spatial-field HMC, gauge and later archive stages remain future scope.
 
 ## Definition of done for the initial public usable release
 

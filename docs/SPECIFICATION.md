@@ -2,7 +2,7 @@
 
 **Version:** 0.22 (quartic-path HMC, 2026-10-13)
 
-**Status:** M0–M4c1 and the architecture audit are merged; M4c2 quartic-path HMC is implemented on its release branch. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. Spatial interacting fields remain planned.
+**Status:** M0–M4c2 and the architecture audit are merged. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. Spatial interacting fields remain planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -251,7 +251,7 @@ All retained paths in a segment contribute translation-averaged raw pair product
 
 The optional independent transfer tool uses the symmetric Trotter kernel with physical V, internally shifted by its global minimum. A positive-weight symmetric Nyström matrix is solved on 49, 97 and enlarged-cutoff 121-node grids, with eigenpair residuals, coordinate and cutoff refinement, near-degeneracy and shifted-leading-eigenvalue checks. Only a well-resolved leading ratio is a headline approximate finite-a excitation gap; under-resolved values remain diagnostic. The finite-β thermal transfer correlator sums all numerical eigenpairs and is separately checked at representative lags. These are **numerical finite-spacing transfer references**, distinct from analytic λ=0 expressions, the continuum Hamiltonian and the Monte Carlo update spectrum. The transfer analysis runs lazily in a separate worker without RNG. See [interacting-oscillator mathematics](math/interacting-oscillator.md) and [M4c1 review](M4C1_REVIEW.md).
 
-#### M4c2 HMC for the interacting Euclidean oscillator (implemented on release branch)
+#### M4c2 HMC for the interacting Euclidean oscillator (released)
 
 The quartic path alone may select local Metropolis or identity-mass Hamiltonian Monte Carlo. HMC refreshes N independent standard-normal auxiliary momenta and proposes a whole-path move using L kick-drift-kick leapfrog steps at ε, followed by a momentum flip and Metropolis correction with `H_HMC=S_a(x)+Σp_j²/2`. The full force is `(2x_j−x_(j−1)−x_(j+1))/a+a(r x_j+λx_j³−h)`. Supported teaching controls are `0.002≤ε≤0.25`, integer `1≤L≤32`, warm-up 0–1000 complete trajectories and measurement stride 1–100 complete trajectories. The initial defaults are ε=0.1, L=12. One HMC attempt consumes exactly `2N+1` seeded uniforms even when rejected or numerically divergent; a divergence preserves the old path. No intermediate MD configuration is measured. Auxiliary trajectory duration `Lε` is neither Euclidean coordinate time nor Monte Carlo time.
 
