@@ -2,7 +2,7 @@
 
 **Version:** 0.23 (spatial φ⁴, 2026-10-13)
 
-**Status:** M0–M4c2 and the architecture audit are merged. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M4d1 spatial interacting fields are implemented on the feature branch; spatial HMC remains planned.
+**Status:** M0–M4d1 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M4d1 spatial interacting fields are implemented; spatial HMC remains planned.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)

@@ -1,6 +1,6 @@
 # M4d1 — Interacting spatial lattice φ⁴ review
 
-**Branch:** `codex/m4d1-spatial-phi4` · **Base:** `b58cb7dbd64f29722a7425d50c8ab5055c5d360c`. The remote base and clean working tree were verified before implementation. Release validation and deployment are recorded below only after completion.
+**Branch:** `codex/m4d1-spatial-phi4` · **Base:** `b58cb7dbd64f29722a7425d50c8ab5055c5d360c`. **Implementation/release:** `631f51c4dfc770c76e329770294e774333b22d9d`. The remote base and clean working tree were verified before implementation. GitHub PR creation returned `403 Resource not accessible by integration`; the expressly authorized ordinary non-force fast-forward advanced main after verifying ancestry, the exact M4d1 diff and all local checks. Remote main was confirmed equal to that commit. [The main workflow](https://github.com/gantemur/lattice/actions/runs/38432884781) records GitHub validation and Pages deployment; consult its jobs for the remote outcome. This documentation follow-up records release metadata without changing the validated implementation.
 
 ## Scientific contract and architecture
 
