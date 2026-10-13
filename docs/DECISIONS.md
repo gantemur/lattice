@@ -364,6 +364,14 @@ Reference capability is conditional: λ=0 admits the exact Gaussian reduction; �
 
 Spatial correlation projections average actual admissible origins and retain x/y distinction. Reflection symmetry at zero source gives raw=connected equilibrium correlation without erasing a finite chain's nonzero sample mean. With source, connected plug-in values use site-dependent full-segment means, including on open/mixed lattices. No per-configuration demeaning, independent-chain uncertainty, phase-transition claim or automatic 2D mass fit is inferred.
 
+## Accepted spatial HMC convention — 2026-10-13
+
+### D-056 — Share pure leapfrog arithmetic while keeping target measures and stochastic ownership explicit
+
+M4d2 extends only the existing spatial `phi4-field` sampler union. Identity auxiliary mass, independent normal momenta, the complete bond-based force, fixed kick-drift-kick leapfrog, final momentum flip and complete-ΔH correction target the unchanged ordinary spatial measure. The shared pure integrator preserves released QM arithmetic ordering; exact pre-refactor golden proposals, draw counts and full-worker hashes protect compatibility. Model wrappers own physical validation and overflow classification. Spatial arithmetic divergence rejects the whole proposal with all `2V+1` uniforms consumed; invalid starting states/settings remain errors. Spatial force-work counts include a failed force call; QM's historical failure-count convention remains unchanged.
+
+Local Metropolis stays the default. HMC uses explicit trajectory warm-up/stride and ε/L with no automatic retuning. Sampler and compatible settings changes retain field/RNG in new segments. Spatial Run batches are eight trajectories, direct HMC advances at most 32; QM remains 16 and local samplers 128. The existing one-in-flight acknowledgment order, measurements, pair products, m⁴, eight-segment/256-vector bounds and reference capabilities are reused. Only bounded real HMC traces and stable full-segment error/work aggregates are added. Display tools consume no randomness; no intermediate MD fields become physical measurements. Global update increments have sampler-dependent computational cost. HMC diagnostics do not imply physical dynamics, equilibration, superior mixing or a tunneling rate. No archive or sweep schema changes.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

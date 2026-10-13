@@ -1,8 +1,14 @@
+import { useRef } from 'react';
 import type {
   Phi4FieldConfiguration,
   Phi4FieldSettings,
+  Phi4HmcSettings,
+  Phi4MetropolisSettings,
 } from '../engine/fieldRun';
-import { defaultPhi4Configuration } from '../engine/fieldRun';
+import {
+  defaultPhi4Configuration,
+  isFieldHmcSettings,
+} from '../engine/fieldRun';
 import type { Phi4FieldParameters } from '../models/phi4Field';
 import { DisplayMath } from '../ui/Math';
 
@@ -79,6 +85,61 @@ export function Phi4FieldControls({
   setSeed: (seed: string) => void;
   apply: () => void;
 }) {
+  // Remember each algorithm's draft tuning without putting both cadence
+  // systems in the applied worker settings. Presets change physics only.
+  const localDraft = useRef({
+    sampler: defaultPhi4Configuration.sampler,
+    warmupSweeps: 20,
+    strideSweeps: 1,
+  });
+  const hmcDraft = useRef({
+    sampler: { kind: 'hmc' as const, stepSize: 0.06, leapfrogSteps: 12 },
+    warmupTrajectories: 20,
+    strideTrajectories: 1,
+  });
+  const hmc = isFieldHmcSettings(draft) ? draft : null;
+  const local = !isFieldHmcSettings(draft) ? draft : null;
+  if (hmc)
+    hmcDraft.current = {
+      sampler: hmc.sampler,
+      warmupTrajectories: hmc.warmupTrajectories,
+      strideTrajectories: hmc.strideTrajectories,
+    };
+  if (local)
+    localDraft.current = {
+      sampler: local.sampler,
+      warmupSweeps: local.warmupSweeps,
+      strideSweeps: local.strideSweeps,
+    };
+  function chooseSampler(kind: string) {
+    const base = {
+      model: 'phi4-field' as const,
+      parameters: draft.parameters,
+      seed: draft.seed,
+    };
+    setDraft(
+      kind === 'hmc'
+        ? { ...base, ...hmcDraft.current }
+        : { ...base, ...localDraft.current },
+    );
+  }
+  function hmcTuning(
+    patch: Partial<
+      Pick<
+        Phi4HmcSettings,
+        'sampler' | 'warmupTrajectories' | 'strideTrajectories'
+      >
+    >,
+  ) {
+    if (hmc) setDraft({ ...hmc, ...patch });
+  }
+  function localTuning(
+    patch: Partial<
+      Pick<Phi4MetropolisSettings, 'sampler' | 'warmupSweeps' | 'strideSweeps'>
+    >,
+  ) {
+    if (local) setDraft({ ...local, ...patch });
+  }
   const p = draft.parameters,
     shape = p.shape;
   function parameter(patch: Partial<Phi4FieldParameters>) {
@@ -122,9 +183,10 @@ export function Phi4FieldControls({
           {applied.parameters.kappaX}
           {applied.parameters.shape.kind === 'rectangle' &&
             `, κy=${applied.parameters.kappaY}`}
-          , j={applied.parameters.source}. Local Metropolis width{' '}
-          {applied.sampler.width}; warm-up {applied.warmupSweeps}, stride{' '}
-          {applied.strideSweeps} nominal sweeps.
+          , j={applied.parameters.source}.{' '}
+          {isFieldHmcSettings(applied)
+            ? `HMC ε=${applied.sampler.stepSize}, L=${applied.sampler.leapfrogSteps}; warm-up ${applied.warmupTrajectories}, stride ${applied.strideTrajectories} trajectories.`
+            : `Local Metropolis width ${applied.sampler.width}; warm-up ${applied.warmupSweeps}, stride ${applied.strideSweeps} nominal sweeps.`}
         </p>
       </section>
       <details className="settings" open>
@@ -260,29 +322,90 @@ export function Phi4FieldControls({
           {number('Spatial source j', p.source, -10, 10, (source) =>
             parameter({ source }),
           )}
-          {number(
-            'Spatial proposal width',
-            draft.sampler.width,
-            0.01,
-            10,
-            (width) =>
-              setDraft({ ...draft, sampler: { kind: 'metropolis', width } }),
-          )}
-          {number(
-            'Spatial warm-up sweeps',
-            draft.warmupSweeps,
-            0,
-            1000,
-            (warmupSweeps) => setDraft({ ...draft, warmupSweeps }),
-            1,
-          )}
-          {number(
-            'Spatial measurement stride',
-            draft.strideSweeps,
-            1,
-            100,
-            (strideSweeps) => setDraft({ ...draft, strideSweeps }),
-            1,
+          <label>
+            Sampling algorithm
+            <select
+              aria-label="Spatial sampler"
+              value={draft.sampler.kind}
+              onChange={(e) => chooseSampler(e.target.value)}
+            >
+              <option value="metropolis">Local Metropolis</option>
+              <option value="hmc">Hamiltonian Monte Carlo</option>
+            </select>
+          </label>
+          {hmc ? (
+            <>
+              {number(
+                'Spatial HMC step size',
+                hmc.sampler.stepSize,
+                0.002,
+                0.25,
+                (stepSize) =>
+                  hmcTuning({ sampler: { ...hmc.sampler, stepSize } }),
+              )}
+              {number(
+                'Spatial HMC leapfrog steps',
+                hmc.sampler.leapfrogSteps,
+                1,
+                32,
+                (leapfrogSteps) =>
+                  hmcTuning({ sampler: { ...hmc.sampler, leapfrogSteps } }),
+                1,
+              )}
+              <p className="plot-note">
+                Draft auxiliary duration Lε ={' '}
+                {(hmc.sampler.stepSize * hmc.sampler.leapfrogSteps).toPrecision(
+                  4,
+                )}
+                . Stiff fields may need a smaller ε; settings are never
+                automatically retuned.
+              </p>
+              {number(
+                'Spatial HMC warm-up trajectories',
+                hmc.warmupTrajectories,
+                0,
+                1000,
+                (warmupTrajectories) => hmcTuning({ warmupTrajectories }),
+                1,
+              )}
+              {number(
+                'Spatial HMC measurement stride',
+                hmc.strideTrajectories,
+                1,
+                100,
+                (strideTrajectories) => hmcTuning({ strideTrajectories }),
+                1,
+              )}
+            </>
+          ) : (
+            local && (
+              <>
+                {number(
+                  'Spatial proposal width',
+                  local.sampler.width,
+                  0.01,
+                  10,
+                  (width) =>
+                    localTuning({ sampler: { kind: 'metropolis', width } }),
+                )}
+                {number(
+                  'Spatial warm-up sweeps',
+                  local.warmupSweeps,
+                  0,
+                  1000,
+                  (warmupSweeps) => localTuning({ warmupSweeps }),
+                  1,
+                )}
+                {number(
+                  'Spatial measurement stride',
+                  local.strideSweeps,
+                  1,
+                  100,
+                  (strideSweeps) => localTuning({ strideSweeps }),
+                  1,
+                )}
+              </>
+            )
           )}
           <label>
             Seed on Reset

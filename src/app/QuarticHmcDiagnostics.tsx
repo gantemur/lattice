@@ -6,9 +6,11 @@ import { segmentColor } from '../plotting/viewport';
 export function QuarticHmcDiagnostics({
   segments,
   lastTrace,
+  target = 'qm',
 }: {
   segments: FieldSegmentSnapshot[];
   lastTrace: FieldSnapshot['lastTrace'];
+  target?: 'qm' | 'spatial';
 }) {
   const hmcSegments = segments.filter((segment) => segment.hmc !== null);
   if (!hmcSegments.length)
@@ -16,7 +18,8 @@ export function QuarticHmcDiagnostics({
       <section className="field-results" aria-label="HMC diagnostics">
         <h2>HMC trajectory diagnostics</h2>
         <p>
-          Apply Hamiltonian Monte Carlo to inspect whole-path trajectory
+          Apply Hamiltonian Monte Carlo to inspect{' '}
+          {target === 'spatial' ? 'whole-field' : 'whole-path'} trajectory
           outcomes and auxiliary Hamiltonian error.
         </p>
       </section>
@@ -50,9 +53,9 @@ export function QuarticHmcDiagnostics({
       <h2>HMC trajectory diagnostics</h2>
       <p>
         One attempt is a full auxiliary MD trajectory. Its ΔH is the signed
-        change in <em>S+Σp²/2</em>, not a physical quantum energy change or
-        cumulative Monte Carlo drift. Acceptance and work counts include
-        warm-up.
+        change in <em>S+Σp²/2</em>, not a physical{' '}
+        {target === 'spatial' ? 'field' : 'quantum'} energy change or cumulative
+        Monte Carlo drift. Acceptance and work counts include warm-up.
       </p>
       <div className="hmc-segment-list">
         {hmcSegments.map((segment) => {
@@ -161,9 +164,10 @@ export function QuarticHmcDiagnostics({
       )}
       <p className="plot-note">
         Small |ΔH| checks integration quality, not equilibrium. HMC trajectories
-        and local site attempts have different computational costs; path-average
-        sign changes depend on sampler and measurement cadence and are not a
-        physical tunneling rate.
+        and local site attempts have different computational costs;{' '}
+        {target === 'spatial' ? 'field-average' : 'path-average'} sign changes
+        depend on sampler and measurement cadence and are not a physical
+        tunneling rate.
       </p>
     </section>
   );

@@ -1,5 +1,10 @@
+import { QuarticHmcDiagnostics } from './QuarticHmcDiagnostics';
+import { SpatialHmcInspection } from './SpatialHmcInspection';
 import { useState } from 'react';
-import { defaultPhi4Configuration } from '../engine/fieldRun';
+import {
+  defaultPhi4Configuration,
+  isFieldHmcSettings,
+} from '../engine/fieldRun';
 import type {
   Phi4FieldConfiguration,
   Phi4FieldSettings,
@@ -30,8 +35,16 @@ type Tool =
   | 'history'
   | 'transition'
   | 'moments'
-  | 'reference';
+  | 'reference'
+  | 'hmc';
 const tools: ToolDefinition<Tool>[] = [
+  {
+    id: 'hmc',
+    title: 'HMC trajectory diagnostics',
+    kind: 'Analysis',
+    description: 'Worker-owned auxiliary energy errors, acceptance and work.',
+    featureable: false,
+  },
   {
     id: 'field',
     title: 'Current spatial field',
@@ -58,7 +71,7 @@ const tools: ToolDefinition<Tool>[] = [
   },
   {
     id: 'transition',
-    title: 'Local Metropolis inspection',
+    title: 'Latest transition inspection',
     kind: 'Analysis',
     description: 'Actual latest proposal and decision.',
     featureable: false,
@@ -121,13 +134,20 @@ export function Phi4FieldView({
   function apply() {
     const changed =
       JSON.stringify(draft.parameters.shape) !== JSON.stringify(p.shape);
-    const settings: Phi4FieldSettings = {
-      model: 'phi4-field',
-      parameters: draft.parameters,
-      sampler: draft.sampler,
-      warmupSweeps: draft.warmupSweeps,
-      strideSweeps: draft.strideSweeps,
-    };
+    const base = { model: 'phi4-field' as const, parameters: draft.parameters };
+    const settings: Phi4FieldSettings = isFieldHmcSettings(draft)
+      ? {
+          ...base,
+          sampler: draft.sampler,
+          warmupTrajectories: draft.warmupTrajectories,
+          strideTrajectories: draft.strideTrajectories,
+        }
+      : {
+          ...base,
+          sampler: draft.sampler,
+          warmupSweeps: draft.warmupSweeps,
+          strideSweeps: draft.strideSweeps,
+        };
     attempt(
       () => {
         if (changed) {
@@ -201,7 +221,7 @@ export function Phi4FieldView({
               independently checked references on small 1D and 2D lattices.
             </p>
           </div>
-          <span className="milestone">M4d1 · Spatial φ⁴</span>
+          <span className="milestone">M4d2 · Spatial φ⁴</span>
         </section>
         <div className="qm-model-choice">
           <label>
@@ -281,8 +301,15 @@ export function Phi4FieldView({
                   </strong>
                 </span>
                 <span>
-                  Nominal sweeps{' '}
-                  <strong>{f((snapshot?.updates ?? 0) / lattice.size)}</strong>
+                  {isFieldHmcSettings(applied)
+                    ? 'Segment trajectories'
+                    : 'Segment nominal sweeps'}{' '}
+                  <strong>
+                    {f(
+                      (current?.updates ?? 0) /
+                        (isFieldHmcSettings(applied) ? 1 : lattice.size),
+                    )}
+                  </strong>
                 </span>
                 <span>
                   Retained fields{' '}
@@ -317,9 +344,11 @@ export function Phi4FieldView({
                 {error || view.error || notice}
               </p>
               <p className="plot-note">
-                One Step attempts one site with replacement; {lattice.size}{' '}
-                attempts make a nominal sweep. Algorithmic updates are not
-                physical time. Fixed warm-up does not guarantee mixing.
+                {isFieldHmcSettings(applied)
+                  ? 'One Step is one whole-field HMC trajectory, including its accept/reject decision. Warm-up and stride count trajectories.'
+                  : `One Step attempts one site with replacement; ${lattice.size} attempts make a nominal sweep.`}{' '}
+                Algorithmic updates are not physical time. Fixed warm-up does
+                not guarantee mixing.
               </p>
             </section>
             <ToolDeck
@@ -363,8 +392,20 @@ export function Phi4FieldView({
                       />
                     </>
                   );
+                if (tool === 'hmc')
+                  return (
+                    <QuarticHmcDiagnostics
+                      segments={segments}
+                      lastTrace={snapshot.lastTrace}
+                      target="spatial"
+                    />
+                  );
                 if (tool === 'transition')
-                  return <FieldStepInspection snapshot={snapshot} />;
+                  return snapshot.lastTrace?.kind === 'hmc' ? (
+                    <SpatialHmcInspection trace={snapshot.lastTrace} />
+                  ) : (
+                    <FieldStepInspection snapshot={snapshot} />
+                  );
                 if (tool === 'reference')
                   return <Phi4Reference p={p} segment={current} />;
                 if (tool === 'moments')
@@ -397,8 +438,10 @@ export function Phi4FieldView({
                 {snapshot?.droppedSegments ?? 0} older segments dropped.
               </p>
               <p>
-                No archive or sweep format is changed. Local-chain estimates can
-                have long autocorrelation and metastability.
+                Global updates stay monotone across segments, but a local site
+                attempt and a whole-field HMC trajectory have different costs.
+                No archive or sweep format is changed. Both chains can have long
+                autocorrelation and metastability.
               </p>
             </details>
             <details className="model-page-details">
@@ -419,6 +462,20 @@ export function Phi4FieldView({
                 chain is not evidence of symmetry breaking or a 2D phase
                 transition.
               </p>
+              <p>
+                HMC refreshes fictitious Gaussian momenta, follows deterministic
+                leapfrog steps and accepts or rejects using the complete
+                auxiliary Hamiltonian change ΔH. Small errors or high acceptance
+                do not establish mixing or efficiency. Spatial distance,
+                auxiliary MD duration and Markov-chain update count are
+                different coordinates; none is the Euclidean time of Lattice QM.
+                Field-average sign changes diagnose sampler-dependent
+                exploration, not a physical tunneling rate.
+              </p>
+              <a href="https://github.com/gantemur/lattice/blob/main/docs/math/hmc-spatial-phi4.md">
+                Spatial HMC mathematics ↗
+              </a>
+              {' · '}
               <a href="https://github.com/gantemur/lattice/blob/main/docs/math/spatial-phi4.md">
                 Spatial φ⁴ mathematics ↗
               </a>

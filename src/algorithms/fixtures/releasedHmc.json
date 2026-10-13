@@ -1,0 +1,407 @@
+{
+  "transitions": [
+    [
+      {
+        "field": [
+          0.31832973079622434, 1.0481979114413498, -0.06800556169089016,
+          0.502991414156716
+        ],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.1,
+          "leapfrogSteps": 12,
+          "trajectoryDuration": 1.2000000000000002,
+          "startAction": 0.6880750000000001,
+          "startKinetic": 0.37725880742652623,
+          "startHamiltonian": 1.0653338074265264,
+          "proposedAction": -0.608383664665741,
+          "proposedKinetic": 1.6731670730728994,
+          "proposedHamiltonian": 1.0647834084071583,
+          "deltaH": -0.0005503990193680419,
+          "acceptanceProbability": 1,
+          "decisionUniform": 0.9968264395138249,
+          "accepted": true,
+          "outcome": "accepted",
+          "gradientEvaluations": 13,
+          "completedLeapfrogSteps": 12,
+          "energyErrors": [
+            -0.0008571947250435308, -0.0016279118105377854,
+            -0.0022463577648137445, -0.002683344350119299,
+            -0.0029407016705615963, -0.0030399965027245734,
+            -0.0030087888762648785, -0.002866157930548452,
+            -0.0026080847209342117, -0.0021943401640811544,
+            -0.0015434132756757535, -0.0005503990193680419
+          ],
+          "divergenceReason": null
+        },
+        "draws": 9
+      },
+      {
+        "field": [
+          0.5009473219909, 0.9193881435376089, 0.6355606248366112,
+          -0.9919906405992513
+        ],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.1,
+          "leapfrogSteps": 12,
+          "trajectoryDuration": 1.2000000000000002,
+          "startAction": -0.608383664665741,
+          "startKinetic": 1.5810712962362414,
+          "startHamiltonian": 0.9726876315705004,
+          "proposedAction": 0.24058539170166943,
+          "proposedKinetic": 0.7286163819198007,
+          "proposedHamiltonian": 0.9692017736214702,
+          "deltaH": -0.0034858579490302244,
+          "acceptanceProbability": 1,
+          "decisionUniform": 0.30504514824133366,
+          "accepted": true,
+          "outcome": "accepted",
+          "gradientEvaluations": 13,
+          "completedLeapfrogSteps": 12,
+          "energyErrors": [
+            -0.0000018194270879900998, -0.000458786775490605,
+            -0.0012904217298599363, -0.0024003368307126127,
+            -0.003664230197583107, -0.00492403753544024, -0.005991990074828979,
+            -0.006668330835636782, -0.006777672385740674, -0.006224708804317802,
+            -0.005054958584740699, -0.0034858579490302244
+          ],
+          "divergenceReason": null
+        },
+        "draws": 18
+      },
+      {
+        "field": [
+          1.461948349038721, 1.3982882318383956, 0.7901255233042381,
+          1.6134004132341986
+        ],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.1,
+          "leapfrogSteps": 12,
+          "trajectoryDuration": 1.2000000000000002,
+          "startAction": 0.24058539170166943,
+          "startKinetic": 0.8422479753676078,
+          "startHamiltonian": 1.0828333670692771,
+          "proposedAction": -4.472538624262734,
+          "proposedKinetic": 5.5115272496413965,
+          "proposedHamiltonian": 1.0389886253786624,
+          "deltaH": -0.0438447416906147,
+          "acceptanceProbability": 1,
+          "decisionUniform": 0.3263069143285975,
+          "accepted": true,
+          "outcome": "accepted",
+          "gradientEvaluations": 13,
+          "completedLeapfrogSteps": 12,
+          "energyErrors": [
+            -0.0008909900402642723, -0.0008574546911201963,
+            0.000014272195651532371, 0.0014606561508740956,
+            0.003110170741849272, 0.004459775328212956, 0.004758706161615223,
+            0.0028620034348074697, -0.0027633231269632574,
+            -0.013478484942596403, -0.02881378647965871, -0.0438447416906147
+          ],
+          "divergenceReason": null
+        },
+        "draws": 27
+      },
+      {
+        "field": [
+          1.3486322614729855, 1.1237049715856293, 0.870823471224152,
+          0.9283585982422959
+        ],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.1,
+          "leapfrogSteps": 12,
+          "trajectoryDuration": 1.2000000000000002,
+          "startAction": -4.472538624262734,
+          "startKinetic": 1.3932651845854525,
+          "startHamiltonian": -3.079273439677282,
+          "proposedAction": -4.280828925692224,
+          "proposedKinetic": 1.1987359167106648,
+          "proposedHamiltonian": -3.082093008981559,
+          "deltaH": -0.0028195693042771808,
+          "acceptanceProbability": 1,
+          "decisionUniform": 0.2119885141728446,
+          "accepted": true,
+          "outcome": "accepted",
+          "gradientEvaluations": 13,
+          "completedLeapfrogSteps": 12,
+          "energyErrors": [
+            0.0018996036912342085, 0.001905287238475939, 0.0010769126998053657,
+            0.00016636019093141385, -0.0004395920221220706,
+            -0.000653642300298074, -0.0005721064663561926,
+            -0.0003721543324362031, -0.00025689944573192847,
+            -0.0004491784949189892, -0.001207811575394846,
+            -0.0028195693042771808
+          ],
+          "divergenceReason": null
+        },
+        "draws": 36
+      }
+    ],
+    [
+      {
+        "field": [0, 0, 0, 0],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.25,
+          "leapfrogSteps": 32,
+          "trajectoryDuration": 8,
+          "startAction": 0,
+          "startKinetic": 0.37725880742652623,
+          "startHamiltonian": 0.37725880742652623,
+          "proposedAction": 0.2835135557142464,
+          "proposedKinetic": 0.16302906787101656,
+          "proposedHamiltonian": 0.446542623585263,
+          "deltaH": 0.06928381615873674,
+          "acceptanceProbability": 0.933061824471944,
+          "decisionUniform": 0.9968264395138249,
+          "accepted": false,
+          "outcome": "rejected",
+          "gradientEvaluations": 33,
+          "completedLeapfrogSteps": 32,
+          "energyErrors": [
+            0.08261560605711843, 0.09078108207416141, 0.004519170760416968,
+            0.07254264007903294, 0.09062737324923403, 0.01470252926665122,
+            0.06834965631272688, 0.08205564511265834, 0.022891950330515665,
+            0.07337700719840823, 0.0713567675480451, 0.02287433604587219,
+            0.0840815408899846, 0.06636244776342876, 0.014668157092587952,
+            0.09262314721260284, 0.07058292897919971, 0.004512312350288872,
+            0.09272833116452467, 0.08064908770388274, 0.00005769536455141333,
+            0.08452492491911107, 0.0887750798164928, 0.0046394993030853815,
+            0.07444762165230068, 0.08857381047664975, 0.014847949276492411,
+            0.07028206806563903, 0.079974005383396, 0.023020227142212524,
+            0.07533990141666208, 0.06928381615873674
+          ],
+          "divergenceReason": null
+        },
+        "draws": 9
+      },
+      {
+        "field": [
+          0.2528073301235077, -0.030822401263988775, 0.18382521018050874,
+          0.38084215945902977
+        ],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.25,
+          "leapfrogSteps": 32,
+          "trajectoryDuration": 8,
+          "startAction": 0,
+          "startKinetic": 1.5810712962362414,
+          "startHamiltonian": 1.5810712962362414,
+          "proposedAction": 1.1696362606031616,
+          "proposedKinetic": 0.5865689073493956,
+          "proposedHamiltonian": 1.7562051679525572,
+          "deltaH": 0.17513387171631578,
+          "acceptanceProbability": 0.8393446487389498,
+          "decisionUniform": 0.30504514824133366,
+          "accepted": true,
+          "outcome": "accepted",
+          "gradientEvaluations": 33,
+          "completedLeapfrogSteps": 32,
+          "energyErrors": [
+            0.17747090271508048, 0.30613295407209007, 0.07902166767090368,
+            0.06407477745333967, 0.24712171775088887, 0.19024586875104332,
+            0.07944025876692362, 0.17262973641536083, 0.20872178970643396,
+            0.0995537261497823, 0.14043817764460065, 0.24892480622029067,
+            0.12252088286694973, 0.05226372732891815, 0.24159964362794373,
+            0.25220116745173504, 0.024199026812493862, 0.09292042777127607,
+            0.3230497356918909, 0.14908073443550718, 0.018385233943144286,
+            0.20208980023809242, 0.25580132963318847, 0.07930168493302592,
+            0.12204493210300904, 0.23144893351971474, 0.13363176633612062,
+            0.1047550604298575, 0.22681134881359388, 0.1742862779452623,
+            0.05609962052939932, 0.17513387171631578
+          ],
+          "divergenceReason": null
+        },
+        "draws": 18
+      },
+      {
+        "field": [
+          -0.30821105908203283, 0.19833606890331268, -0.0938572753109917,
+          -0.35128810629718205
+        ],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.25,
+          "leapfrogSteps": 32,
+          "trajectoryDuration": 8,
+          "startAction": 1.1696362606031616,
+          "startKinetic": 0.8422479753676078,
+          "startHamiltonian": 2.0118842359707694,
+          "proposedAction": 1.489206942908241,
+          "proposedKinetic": 0.6167847133644742,
+          "proposedHamiltonian": 2.1059916562727152,
+          "deltaH": 0.09410742030194585,
+          "acceptanceProbability": 0.9101849846433345,
+          "decisionUniform": 0.3263069143285975,
+          "accepted": true,
+          "outcome": "accepted",
+          "gradientEvaluations": 33,
+          "completedLeapfrogSteps": 32,
+          "energyErrors": [
+            0.15977171755050312, -0.02718043356406019, -0.12967543688326355,
+            0.09170233626127233, 0.11144567567051666, -0.09153010232934866,
+            -0.01585892426668556, 0.09127376267154741, -0.028935728039443553,
+            0.00589667041672115, 0.06931176690156349, -0.04597162940279942,
+            -0.02765579337842139, 0.10386250597788127, 0.03115636943211264,
+            -0.08692617197006447, -0.006380880516425602, 0.1265063627784726,
+            0.019796067761121527, -0.10780445679332962, 0.0081384457949909,
+            0.15152078460781748, -0.03584046889489101, -0.08837522406064524,
+            0.08544341331306704, 0.04752830767863969, -0.05367990710213855,
+            0.04532576967121971, 0.03331469411259391, -0.0670823666494087,
+            0.05859705594561415, 0.09410742030194585
+          ],
+          "divergenceReason": null
+        },
+        "draws": 27
+      },
+      {
+        "field": [
+          0.13062524860485852, 0.04022962600999196, 0.32551950072679026,
+          0.30726326424338835
+        ],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.25,
+          "leapfrogSteps": 32,
+          "trajectoryDuration": 8,
+          "startAction": 1.489206942908241,
+          "startKinetic": 1.3932651845854525,
+          "startHamiltonian": 2.8824721274936937,
+          "proposedAction": 1.0075337552785846,
+          "proposedKinetic": 1.742159627221326,
+          "proposedHamiltonian": 2.7496933824999106,
+          "deltaH": -0.13277874499378317,
+          "acceptanceProbability": 1,
+          "decisionUniform": 0.2119885141728446,
+          "accepted": true,
+          "outcome": "accepted",
+          "gradientEvaluations": 33,
+          "completedLeapfrogSteps": 32,
+          "energyErrors": [
+            0.007066658442724361, 0.024305592415605037, 0.021825263568839404,
+            -0.06310261335987466, -0.030849171485435534, 0.1261160803130812,
+            0.010302083170004472, -0.17046043344234807, 0.050665482606470746,
+            0.1783147641003242, -0.12868453077848674, -0.08264027758869741,
+            0.11468737933583162, 0.016326291429032302, -0.050177792575266,
+            0.009687932184101022, -0.005610647354445497, -0.0016228901708466026,
+            0.054429594764693334, -0.02887977505853412, -0.03322934106434383,
+            0.0024816035111880907, 0.04772702573821874, 0.05066240313692827,
+            -0.11699742684649284, -0.04105483120194853, 0.1921778211799796,
+            -0.035434404499587124, -0.1803611624885093, 0.09609629746191395,
+            0.12839961544972756, -0.13277874499378317
+          ],
+          "divergenceReason": null
+        },
+        "draws": 36
+      }
+    ],
+    [
+      {
+        "field": [1e30, 0, 0, 0],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.25,
+          "leapfrogSteps": 32,
+          "trajectoryDuration": 8,
+          "startAction": 2.5000000000000003e119,
+          "startKinetic": 0.37725880742652623,
+          "startHamiltonian": 2.5000000000000003e119,
+          "proposedAction": null,
+          "proposedKinetic": null,
+          "proposedHamiltonian": null,
+          "deltaH": null,
+          "acceptanceProbability": 0,
+          "decisionUniform": 0.9968264395138249,
+          "accepted": false,
+          "outcome": "divergence",
+          "gradientEvaluations": 2,
+          "completedLeapfrogSteps": 0,
+          "energyErrors": [],
+          "divergenceReason": "Quartic action overflowed."
+        },
+        "draws": 9
+      },
+      {
+        "field": [1e30, 0, 0, 0],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.25,
+          "leapfrogSteps": 32,
+          "trajectoryDuration": 8,
+          "startAction": 2.5000000000000003e119,
+          "startKinetic": 1.5810712962362414,
+          "startHamiltonian": 2.5000000000000003e119,
+          "proposedAction": null,
+          "proposedKinetic": null,
+          "proposedHamiltonian": null,
+          "deltaH": null,
+          "acceptanceProbability": 0,
+          "decisionUniform": 0.30504514824133366,
+          "accepted": false,
+          "outcome": "divergence",
+          "gradientEvaluations": 2,
+          "completedLeapfrogSteps": 0,
+          "energyErrors": [],
+          "divergenceReason": "Quartic action overflowed."
+        },
+        "draws": 18
+      },
+      {
+        "field": [1e30, 0, 0, 0],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.25,
+          "leapfrogSteps": 32,
+          "trajectoryDuration": 8,
+          "startAction": 2.5000000000000003e119,
+          "startKinetic": 0.8422479753676078,
+          "startHamiltonian": 2.5000000000000003e119,
+          "proposedAction": null,
+          "proposedKinetic": null,
+          "proposedHamiltonian": null,
+          "deltaH": null,
+          "acceptanceProbability": 0,
+          "decisionUniform": 0.3263069143285975,
+          "accepted": false,
+          "outcome": "divergence",
+          "gradientEvaluations": 2,
+          "completedLeapfrogSteps": 0,
+          "energyErrors": [],
+          "divergenceReason": "Quartic action overflowed."
+        },
+        "draws": 27
+      },
+      {
+        "field": [1e30, 0, 0, 0],
+        "trace": {
+          "kind": "hmc",
+          "stepSize": 0.25,
+          "leapfrogSteps": 32,
+          "trajectoryDuration": 8,
+          "startAction": 2.5000000000000003e119,
+          "startKinetic": 1.3932651845854525,
+          "startHamiltonian": 2.5000000000000003e119,
+          "proposedAction": null,
+          "proposedKinetic": null,
+          "proposedHamiltonian": null,
+          "deltaH": null,
+          "acceptanceProbability": 0,
+          "decisionUniform": 0.2119885141728446,
+          "accepted": false,
+          "outcome": "divergence",
+          "gradientEvaluations": 2,
+          "completedLeapfrogSteps": 0,
+          "energyErrors": [],
+          "divergenceReason": "Quartic action overflowed."
+        },
+        "draws": 36
+      }
+    ]
+  ],
+  "qmSnapshotHash": "d8af3abe9a3002e3dfadd18c08452f92e51fd0859499c11b2c8162145cecab3c",
+  "spatialLocalHash": "6c5f760d074c0dfd8d7c9a4ba8d441022a4b90a5f8535ea1801b0c07d5179585"
+}

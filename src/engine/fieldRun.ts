@@ -1,3 +1,5 @@
+import type { HmcSampler } from '../algorithms/leapfrog';
+import { hmcPhi4Transition } from '../algorithms/phi4Hmc';
 import { phi4Transition } from '../algorithms/phi4FieldSampler';
 import {
   defaultPhi4Field,
@@ -95,16 +97,30 @@ export type QuarticHmcSettings = QuarticPhysicalSettings & {
 };
 export type QuarticFieldSettings =
   QuarticMetropolisSettings | QuarticHmcSettings;
-export type Phi4FieldSettings = {
+type Phi4PhysicalSettings = {
   model: 'phi4-field';
   parameters: Phi4FieldParameters;
+  oscillator?: never;
+};
+export type Phi4MetropolisSettings = Phi4PhysicalSettings & {
   sampler: { kind: 'metropolis'; width: number };
   warmupSweeps: number;
   strideSweeps: number;
-  oscillator?: never;
+  warmupTrajectories?: never;
+  strideTrajectories?: never;
 };
+export type Phi4HmcSettings = Phi4PhysicalSettings & {
+  sampler: HmcSampler;
+  warmupTrajectories: number;
+  strideTrajectories: number;
+  warmupSweeps?: never;
+  strideSweeps?: never;
+};
+export type Phi4FieldSettings = Phi4MetropolisSettings | Phi4HmcSettings;
 export type Phi4FieldConfiguration = Phi4FieldSettings & { seed: number };
-export const defaultPhi4Configuration: Phi4FieldConfiguration = {
+export const defaultPhi4Configuration: Phi4MetropolisSettings & {
+  seed: number;
+} = {
   model: 'phi4-field',
   parameters: defaultPhi4Field,
   sampler: { kind: 'metropolis', width: 1 },
@@ -123,6 +139,33 @@ export function isQuarticHmcSettings(
   return (
     settings.model === 'quartic-oscillator' && settings.sampler.kind === 'hmc'
   );
+}
+/** Both HMC models count whole trajectories; local cadences are unchanged. */
+export function isFieldHmcSettings(
+  settings: FieldSettings,
+): settings is QuarticHmcSettings | Phi4HmcSettings {
+  return (
+    (settings.model === 'quartic-oscillator' ||
+      settings.model === 'phi4-field') &&
+    settings.sampler.kind === 'hmc'
+  );
+}
+function validateHmcCadence(settings: QuarticHmcSettings | Phi4HmcSettings) {
+  validateQuarticHmcSampler(settings.sampler);
+  if ('warmupSweeps' in settings || 'strideSweeps' in settings)
+    throw new Error('HMC cadence uses trajectories, not nominal sweeps.');
+  if (
+    !Number.isInteger(settings.warmupTrajectories) ||
+    settings.warmupTrajectories < 0 ||
+    settings.warmupTrajectories > 1000
+  )
+    throw new Error('HMC warm-up must be 0–1000 trajectories.');
+  if (
+    !Number.isInteger(settings.strideTrajectories) ||
+    settings.strideTrajectories < 1 ||
+    settings.strideTrajectories > 100
+  )
+    throw new Error('HMC measurement stride must be 1–100 trajectories.');
 }
 export type FieldConfiguration = FieldSettings & { seed: number };
 export type GaussianFieldConfiguration = GaussianFieldSettings & {
@@ -248,8 +291,12 @@ export type FieldResponse =
 export function validateFieldSettings(settings: FieldSettings) {
   if (settings.model === 'phi4-field') {
     validatePhi4Field(settings.parameters);
+    if (isFieldHmcSettings(settings)) {
+      validateHmcCadence(settings);
+      return;
+    }
     if (settings.sampler.kind !== 'metropolis')
-      throw new Error('Spatial φ⁴ requires local Metropolis.');
+      throw new Error('Spatial φ⁴ requires local Metropolis or HMC.');
     if ('warmupTrajectories' in settings || 'strideTrajectories' in settings)
       throw new Error('Spatial local cadence uses nominal sweeps.');
   } else if (settings.model === 'quartic-oscillator') {
@@ -270,22 +317,8 @@ export function validateFieldSettings(settings: FieldSettings) {
       throw new Error(
         'Quartic quadratic coefficients disagree with physical parameters.',
       );
-    if (settings.sampler.kind === 'hmc') {
-      validateQuarticHmcSampler(settings.sampler);
-      if ('warmupSweeps' in settings || 'strideSweeps' in settings)
-        throw new Error('HMC cadence uses trajectories, not nominal sweeps.');
-      if (
-        !Number.isInteger(settings.warmupTrajectories) ||
-        settings.warmupTrajectories < 0 ||
-        settings.warmupTrajectories > 1000
-      )
-        throw new Error('HMC warm-up must be 0–1000 trajectories.');
-      if (
-        !Number.isInteger(settings.strideTrajectories) ||
-        settings.strideTrajectories < 1 ||
-        settings.strideTrajectories > 100
-      )
-        throw new Error('HMC measurement stride must be 1–100 trajectories.');
+    if (isFieldHmcSettings(settings)) {
+      validateHmcCadence(settings);
       return;
     }
     if (settings.sampler.kind !== 'metropolis')
@@ -385,23 +418,22 @@ function newSegment(
     zeroAveragePaths: 0,
     observedSignChanges: 0,
     previousAverageSign: 0,
-    hmc:
-      copied.model === 'quartic-oscillator' && copied.sampler.kind === 'hmc'
-        ? {
-            divergences: 0,
-            gradientEvaluations: 0,
-            leapfrogSteps: 0,
-            finiteDeltaCount: 0,
-            deltaScale: 0,
-            scaledDeltaSum: 0,
-            scaledDeltaSquares: 0,
-            recent: [] as {
-              update: number;
-              deltaH: number | null;
-              outcome: QuarticHmcTrace['outcome'];
-            }[],
-          }
-        : null,
+    hmc: isFieldHmcSettings(copied)
+      ? {
+          divergences: 0,
+          gradientEvaluations: 0,
+          leapfrogSteps: 0,
+          finiteDeltaCount: 0,
+          deltaScale: 0,
+          scaledDeltaSum: 0,
+          scaledDeltaSquares: 0,
+          recent: [] as {
+            update: number;
+            deltaH: number | null;
+            outcome: QuarticHmcTrace['outcome'];
+          }[],
+        }
+      : null,
     reference:
       copied.model === 'phi4-field'
         ? copied.parameters.lambda === 0
@@ -499,11 +531,7 @@ export class FieldRun {
   advance(count: number) {
     if (!Number.isInteger(count) || count < 1 || count > 1024)
       throw new Error('Field batch must contain 1–1024 updates.');
-    if (
-      this.current.settings.model === 'quartic-oscillator' &&
-      this.current.settings.sampler.kind === 'hmc' &&
-      count > 32
-    )
+    if (isFieldHmcSettings(this.current.settings) && count > 32)
       throw new Error('HMC batch must contain at most 32 trajectories.');
     if (!Number.isSafeInteger(this.updates + count))
       throw new Error('Update count limit reached; Reset.');
@@ -512,7 +540,7 @@ export class FieldRun {
     const size = this.lattice.size;
     let warmupTarget: number;
     let stride: number;
-    if (isQuarticHmcSettings(settings)) {
+    if (isFieldHmcSettings(settings)) {
       warmupTarget = settings.warmupTrajectories;
       stride = settings.strideTrajectories;
     } else if (
@@ -530,13 +558,21 @@ export class FieldRun {
     for (let n = 0; n < count; n++) {
       const result =
         settings.model === 'phi4-field'
-          ? phi4Transition(
-              this.lattice,
-              settings.parameters,
-              this.field!,
-              settings.sampler.width,
-              this.rng,
-            )
+          ? settings.sampler.kind === 'hmc'
+            ? hmcPhi4Transition(
+                this.lattice,
+                settings.parameters,
+                this.field!,
+                settings.sampler,
+                this.rng,
+              )
+            : phi4Transition(
+                this.lattice,
+                settings.parameters,
+                this.field!,
+                settings.sampler.width,
+                this.rng,
+              )
           : settings.model === 'quartic-oscillator'
             ? settings.sampler.kind === 'hmc'
               ? hmcQuarticTransition(

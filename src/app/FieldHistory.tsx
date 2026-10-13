@@ -102,9 +102,17 @@ export function FieldHistory({
         Points are recorded post-warm-up measurements; dashed lines are each
         segment’s exact finite-volume site mean when an analytic reference
         exists. Gaps and evicted measurements are not reconstructed or joined.
-        Horizontal position is update count, not physical time. {clipped}{' '}
-        displayed point{clipped === 1 ? '' : 's'} clipped. {clippedReferences}{' '}
-        exact mean line
+        Horizontal position is update count, not physical time.{' '}
+        {snapshot.segments.some(
+          (segment) => segment.settings.model === 'phi4-field',
+        ) && (
+          <>
+            Across sampler segments, one update can mean a local site attempt or
+            a whole-field HMC trajectory; these are not equal work.{' '}
+          </>
+        )}
+        {clipped} displayed point{clipped === 1 ? '' : 's'} clipped.{' '}
+        {clippedReferences} exact mean line
         {clippedReferences === 1 ? '' : 's'} clipped.
       </p>
     </section>

@@ -1,5 +1,5 @@
 import { validateSeed } from '../algorithms/rng';
-import { validateFieldSettings } from './fieldRun';
+import { isFieldHmcSettings, validateFieldSettings } from './fieldRun';
 import type {
   FieldConfiguration,
   FieldRequest,
@@ -90,13 +90,13 @@ export class FieldClient {
   }
   private batchSize() {
     const settings = this.view.snapshot?.segments.at(-1)?.settings;
-    // HMC performs L full-path force evaluations per transition. Existing
-    // samplers retain their original 128-update scheduling and RNG streams.
-    return settings?.model === 'quartic-oscillator' &&
-      settings.sampler.kind === 'hmc'
-      ? 16
-      : 128;
+    // Spatial forces visit all bonds; keep its Run batch at eight trajectories.
+    // QM HMC and local samplers retain their released batch sizes and streams.
+    if (settings && isFieldHmcSettings(settings))
+      return settings.model === 'phi4-field' ? 8 : 16;
+    return 128;
   }
+
   pause() {
     this.cancelTimer();
     this.view.running = false;

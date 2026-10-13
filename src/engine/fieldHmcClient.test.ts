@@ -3,6 +3,7 @@ import type { FieldWorkerPort, FieldView } from './fieldClient';
 import { FieldClient } from './fieldClient';
 import { FieldEngine, FieldRun, defaultQuarticConfiguration } from './fieldRun';
 import type { FieldRequest, FieldResponse } from './fieldRun';
+import { defaultPhi4Configuration } from './fieldRun';
 import { quarticQuadraticPart } from '../models/quarticOscillator';
 
 const p = { sites: 4, beta: 4, r: 1, lambda: 1, h: 0 };
@@ -105,6 +106,67 @@ describe('sampler-aware field client scheduling', () => {
     client.start();
     expect(port.requests.at(-1)).toMatchObject({ type: 'advance', count: 128 });
     client.pause();
+    await Promise.resolve();
+    client.dispose();
+  });
+});
+
+describe('spatial HMC scheduling and pending commands', () => {
+  const settings = {
+    model: 'phi4-field' as const,
+    parameters: defaultPhi4Configuration.parameters,
+    sampler: { kind: 'hmc' as const, stepSize: 0.06, leapfrogSteps: 12 },
+    warmupTrajectories: 0,
+    strideTrajectories: 1,
+  };
+  it('runs eight trajectories, queues parameter changes after acknowledgments and preserves pause/Step replay', async () => {
+    const port = new WorkerDouble();
+    const state: { view: FieldView | null } = { view: null };
+    const client = new FieldClient(
+      () => port,
+      (next) => {
+        state.view = next;
+      },
+    );
+    client.initialize({ ...settings, seed: 12345 });
+    await Promise.resolve();
+    client.start();
+    expect(port.requests.at(-1)).toMatchObject({ type: 'advance', count: 8 });
+    const changed = {
+      ...settings,
+      parameters: { ...settings.parameters, source: 0.2 },
+    };
+    client.change(changed);
+    client.pause();
+    client.step();
+    expect(port.requests.at(-1)).toMatchObject({ type: 'advance', count: 8 });
+    await Promise.resolve();
+    expect(port.requests.at(-1)?.type).toBe('change');
+    await Promise.resolve();
+    client.start();
+    client.pause();
+    await Promise.resolve();
+    client.step();
+    await Promise.resolve();
+    const direct = new FieldRun(1, { ...settings, seed: 12345 });
+    direct.advance(8);
+    direct.changeSettings(changed);
+    direct.advance(8);
+    direct.advance(1);
+    expect(state.view?.snapshot).toEqual(direct.snapshot());
+    client.dispose();
+  });
+  it('keeps spatial local Metropolis at 128 attempts', async () => {
+    const port = new WorkerDouble(),
+      client = new FieldClient(
+        () => port,
+        () => {},
+      );
+    client.initialize(defaultPhi4Configuration);
+    await Promise.resolve();
+    client.start();
+    client.pause();
+    expect(port.requests.at(-1)).toMatchObject({ type: 'advance', count: 128 });
     await Promise.resolve();
     client.dispose();
   });

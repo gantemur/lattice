@@ -1,6 +1,6 @@
 # Lattice Lab
 
-**Status:** M0–M4d1 and the model-interface architecture audit are released to main. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
+**Status:** M0–M4d1 and the model-interface architecture audit are released to main. M4d2 spatial HMC is implemented; the complete local validation pipeline has passed. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
@@ -20,7 +20,11 @@ Lattice QM can select a separate periodic quartic/double-well oscillator with ed
 
 ## M4d1 interacting spatial φ⁴
 
-**Lattice Fields** now separately selects an interacting φ⁴ measure on open/periodic 1D chains and 2D rectangles. Local Metropolis preserves every geometric bond, including length-two periodic parallels. Configurable tools show spatial x/y correlations, fixed-neighbor quartic inspection, retained history, actual proposals and full-segment scalar moments. Reference tools distinguish the analytic Gaussian limit, independent-site quadrature, and a lazy finite-ring transfer computation through the exact periodic-chain/QM action correspondence. The ordinary constant mode fluctuates; this is separate from the constrained Gaussian GFF. No spatial HMC or field archive schema is added. See [spatial mathematics](docs/math/spatial-phi4.md) and [M4d1 review](docs/M4D1_REVIEW.md).
+**Lattice Fields** now separately selects an interacting φ⁴ measure on open/periodic 1D chains and 2D rectangles. Local Metropolis preserves every geometric bond, including length-two periodic parallels. Configurable tools show spatial x/y correlations, fixed-neighbor quartic inspection, retained history, actual proposals and full-segment scalar moments. Reference tools distinguish the analytic Gaussian limit, independent-site quadrature, and a lazy finite-ring transfer computation through the exact periodic-chain/QM action correspondence. The ordinary constant mode fluctuates; this is separate from the constrained Gaussian GFF. M4d2 adds HMC below; field archive schemas remain unchanged. See [spatial mathematics](docs/math/spatial-phi4.md) and [M4d1 review](docs/M4D1_REVIEW.md).
+
+## M4d2 spatial Hamiltonian Monte Carlo
+
+The interacting spatial φ⁴ page can also select identity-mass HMC with a full bond-based quartic force, fixed leapfrog trajectory and complete auxiliary-Hamiltonian Metropolis correction. One Step, warm-up and stride count whole-field trajectories; local Metropolis remains the default and retains nominal-sweep cadence. Compatible sampler and tuning changes preserve field/RNG in isolated segments. A selectable diagnostic and latest-transition inspector show acceptance, signed ΔH, divergences and gradient work. Exact QM golden replay protects the small shared integrator extraction. Independent Gaussian, quartic quadrature, dimer and periodic-chain transfer benchmarks validate the target distribution. No adaptation, spatial archive or physical-dynamics claim is added. See [spatial HMC mathematics](docs/math/hmc-spatial-phi4.md) and [M4d2 review](docs/M4D2_REVIEW.md).
 
 ## M4c2 Hamiltonian Monte Carlo
 
