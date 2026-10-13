@@ -39,6 +39,14 @@ test('grouped examples are directly available and keyboard selectable', async ({
     await chooser(page).press('ArrowDown');
     await expect(chooser(page)).toBeFocused();
     await expect(chooser(page)).toHaveValue('spin');
+    // Model switches briefly clear the worker snapshot. Focus must survive
+    // both the pending state and its acknowledgment for continued navigation.
+    await expect(chooser(page)).toHaveAttribute('aria-disabled', 'false');
+    await expect(chooser(page)).toBeFocused();
+    await chooser(page).press('ArrowDown');
+    await expect(chooser(page)).toHaveValue('binomial');
+    await expect(chooser(page)).toHaveAttribute('aria-disabled', 'false');
+    await expect(chooser(page)).toBeFocused();
   }
   await choose(page, 'gaussian');
   expect(await noOverflow(page)).toBe(true);

@@ -292,13 +292,17 @@ export function SmallSystemsApp({
                 id="model"
                 className="model-select"
                 value={displayedExample ?? ''}
-                onChange={(e) => selectExample(e.target.value as ExampleId)}
+                onChange={(e) => {
+                  if (snapshot && !view.error)
+                    selectExample(e.target.value as ExampleId);
+                }}
                 onKeyDown={(event) => {
                   if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
                     return;
                   // A worker response can replace the selected option while a
                   // native popup is open. Commit arrow navigation immediately.
                   event.preventDefault();
+                  if (!snapshot || view.error) return;
                   const ids = examples.map(([id]) => id);
                   const index = ids.indexOf(displayedExample ?? 'gaussian');
                   const next = Math.max(
@@ -310,7 +314,11 @@ export function SmallSystemsApp({
                   );
                   if (ids[next] !== displayedExample) selectExample(ids[next]!);
                 }}
-                disabled={!snapshot || !!view.error}
+                // Initialization clears the snapshot. Keep keyboard focus on
+                // this selector during a chosen-example switch, but ignore
+                // further selections until the worker acknowledges it.
+                disabled={(!snapshot && !chosenExample) || !!view.error}
+                aria-disabled={!snapshot || !!view.error}
               >
                 {!displayedExample && (
                   <option value="" disabled>

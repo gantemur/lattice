@@ -132,6 +132,10 @@ test('HMC Run/Pause, Reset replay and presentation changes preserve the worker s
     )
     .toBeGreaterThan(16);
   await page.getByRole('button', { name: 'Pause', exact: true }).click();
+  // Pause lets the in-flight worker batch finish; read its acknowledged count.
+  await expect(
+    page.getByRole('button', { name: 'Step', exact: true }),
+  ).toBeEnabled();
   const paused = Number(
     await page.getByTestId('quartic-updates').textContent(),
   );
