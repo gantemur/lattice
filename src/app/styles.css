@@ -2759,7 +2759,7 @@ footer {
   gap: 0.5rem;
   margin: 0.75rem 0;
 }
-.gauge-faces button[aria-pressed='true'] {
+.gauge-workspace .gauge-faces button[aria-pressed='true'] {
   border-color: var(--accent, #166c67);
   background: #e5eeea;
 }

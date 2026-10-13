@@ -129,6 +129,19 @@ test('gauge transformation and ToolDeck assignments are numerically inert', asyn
     .getByTestId('featured-tool')
     .getByTestId('gauge-invariants')
     .textContent();
+  const histogram = page
+    .getByRole('region', { name: 'Gauge tools', exact: true })
+    .getByTestId('featured-tool')
+    .getByRole('table', { name: 'Current segment plaquette sign histogram' });
+  await expect(histogram.getByRole('row')).toHaveCount(5);
+  for (let i = 1; i <= 4; i++) {
+    const cells = await histogram
+      .getByRole('row')
+      .nth(i)
+      .getByRole('cell')
+      .allTextContents();
+    expect(Number(cells[1]) + Number(cells[2])).toBe(1);
+  }
   await feature(page, 'transform');
   await page.getByLabel('Gauge transformation vertex').selectOption('v0');
   await page

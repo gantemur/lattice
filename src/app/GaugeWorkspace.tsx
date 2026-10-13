@@ -228,6 +228,26 @@ export function GaugeWorkspace({
               ))}
             </tbody>
           </table>
+          <table aria-label="Current segment plaquette sign histogram">
+            <thead>
+              <tr>
+                <th>Face</th>
+                <th>−1 count</th>
+                <th>+1 count</th>
+              </tr>
+            </thead>
+            <tbody>
+              {model.domain.faces.map((f) => (
+                <tr key={f.id}>
+                  <td>{f.id}</td>
+                  <td>
+                    {(current?.samples ?? 0) - (current?.plus[f.id] ?? 0)}
+                  </td>
+                  <td>{current?.plus[f.id] ?? 0}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
           <p className="plot-note">
             S is the dimensionless total action, not physical energy. Each
             segment has its own target. No independent-sample error bars are

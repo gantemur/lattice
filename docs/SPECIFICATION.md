@@ -2,7 +2,7 @@
 
 **Version:** 0.25 (tiny Z₂ gauge theory, 2026-10-13)
 
-**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a tiny Z₂ gauge theory is implemented; the complete local validation pipeline has passed; remote deployment is pending.
+**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a tiny Z₂ gauge theory is released to main with verified Pages deployment.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -277,7 +277,7 @@ Spatial local Metropolis remains the initial default. HMC draft defaults are ε=
 
 All existing spatial observables and reference gates remain unchanged. Full-segment measurements survive the 256-vector bound; eight segments remain available. HMC adds acceptance including warm-up, divergence counts, scaled finite signed-ΔH mean/RMS/max, force/step work and at most 256 recent defects. Spatial force counts include failed overflow calls. Latest inspection reports actual start/proposed S,K,H, ε,L,Lε, α,u, outcome and bounded completed-step defects, never local-site fields. The selectable HMC tool is a read-only projection; the featured field and existing tools remain available. Global update indices are monotone across sampler segments but represent different work. Auxiliary time, spatial distance, Markov updates and QM Euclidean time are distinct. No automatic tuning, unsupported uncertainty, physical tunneling rate, generic 2D mass fit or archive changes are introduced. See [mathematics](math/hmc-spatial-phi4.md) and [review](M4D2_REVIEW.md).
 
-#### M5a tiny Z₂ gauge theory (implemented; locally validated)
+#### M5a tiny Z₂ gauge theory (released)
 
 Small Systems adds two presentation-only gauge launchers alongside its 20 existing named recipes, without widening the old site-model union or changing any of the five top-level destinations. The existing `graphPreset('square'|'torus')` oriented cell complexes supply four vertices and respectively 4 links/1 face or 8 links/4 faces. Every link has its own ±1 variable and physical edge ID. The counting-measure action is `S=−K Σ_f P_f`, with `K∈[−4,4]`, no additional beta and no gauge quotient. Signed closed walks remain explicit although Z₂ inversion is trivial.
 

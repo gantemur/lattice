@@ -1,6 +1,6 @@
 # Lattice Lab
 
-**Status:** M0–M4d2 and the model-interface architecture audit are released to main. M5a tiny Z₂ gauge theory is implemented and locally validated; remote deployment is pending. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
+**Status:** M0–M4d2 and the model-interface architecture audit are released to main. M5a tiny Z₂ gauge theory is released to main with verified Pages deployment. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 

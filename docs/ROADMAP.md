@@ -246,7 +246,7 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 - Numerical HMC acceptance logic includes the correct Metropolis correction; reproducibility and area-preserving/time-reversal checks performed within numerical tolerance.
 - Real-valued fields handle scaling and color maps safely without misleading auto-rescaling.
 
-## M5a — Tiny Z₂ gauge theory (implemented; locally validated)
+## M5a — Tiny Z₂ gauge theory (released)
 
 Delivered scope: open plaquette and genuine periodic 2×2 cell complex, independent exact and lazy local link samplers, worker-owned paused gauge transformations, full invariant statistics and bounded segments, independent enumeration/analytic references, all physical link IDs accessible on desktop and phone. Two Small Systems launchers leave the five top-level destinations and old numerical engines intact. The [review](M5A_REVIEW.md) records exhaustive invariance/orbits, finite-state balance, fixed-seed ensemble checks, actual worker protocol, production browser coverage and release status. No gauge archive or sweep format is introduced.
 
@@ -284,7 +284,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a tiny Z₂ gauge theory is implemented and locally validated; remaining M5 models and later archive stages remain future scope.
+M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a tiny Z₂ gauge theory is released to main; remaining M5 models and later archive stages remain future scope.
 
 ## Definition of done for the initial public usable release
 

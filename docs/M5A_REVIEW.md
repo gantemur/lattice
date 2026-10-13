@@ -1,6 +1,6 @@
 # M5a — Tiny Z₂ lattice gauge theory review
 
-**Branch:** `codex/m5a-z2-gauge`. **Verified base:** `fca9e1fab7ebd4d3dff5ff2e25578ad6cf366842`, matching fetched origin/main before implementation. Work reuses a clean managed checkout; unrelated original-checkout screenshots and earlier recoverable stashes remain untouched. Implementation and the complete local pipeline are complete; remote release and live deployment verification are pending.
+**Branch:** `codex/m5a-z2-gauge`. **Verified base:** `fca9e1fab7ebd4d3dff5ff2e25578ad6cf366842`, matching fetched origin/main before implementation. Work reuses a clean managed checkout; unrelated original-checkout screenshots and earlier recoverable stashes remain untouched. The initial implementation is released and its Actions/Pages and public desktop/phone checks have passed. A small presentation follow-up adds the already-collected face counts and selected-face highlight, with the complete local pipeline repeated successfully.
 
 ## Architecture plan and delivered slice
 
@@ -45,11 +45,11 @@ At torus K=0.7 the sampled mean actions are −2.033675 (direct) and −2.04085 
 
 ## UI, validation and performance
 
-The 48 new numerical/protocol cases pass; all 487 pre-existing unit tests also pass. Production browser tests cover all physical links, presets, parameters/segments, direct/local sampling, gauge preview/apply, loops, exact guidance, tool capacity and display-only seeded replay on desktop Chromium, 360px Chromium and mobile WebKit. The original catalog browser expectations now allow exactly two additional entries while retaining its original groups and numerical examples. Initial browser validation caught and corrected unreliable curved SVG hit targets; dedicated label targets now support touch and keyboard while visible paths remain clickable. Assertions are scoped to the active gauge deck because other workspaces deliberately remain mounted.
+The 48 new numerical/protocol cases pass; all 487 pre-existing unit tests also pass. Production browser tests cover all physical links, presets, parameters/segments, direct/local sampling, gauge preview/apply, loops, exact guidance, tool capacity and display-only seeded replay on desktop Chromium, 360px Chromium and mobile WebKit. The original catalog browser expectations now allow exactly two additional entries while retaining its original groups and numerical examples. A final presentation follow-up displays the already-accumulated per-face sign counts and protects selected-face styling; its browser assertion checks that each pair of counts sums to the retained sample count. The complete pipeline passed again with the same counts. Initial browser validation caught and corrected unreliable curved SVG hit targets; dedicated label targets now support touch and keyboard while visible paths remain clickable. Assertions are scoped to the active gauge deck because other workspaces deliberately remain mounted.
 
 Screenshots: [desktop](screenshots/m5a-desktop.png), [phone](screenshots/m5a-phone.png), [mobile WebKit](screenshots/m5a-mobile-webkit.png). The full `CI=1 npm run check` passed formatting, TypeScript, **535 unit tests in 72 files**, production build and **340 browser tests with the two existing skips unchanged**. No new skips or retries were needed in the final run. `git diff --check` and 134 relative documentation links passed. No dependency, legacy numerical kernel, archive schema or sweep change is included. The existing large-main-chunk build advisory remains (main JS about 681 kB minified / 197 kB gzip).
 
-The measured workload is Run click → first increased worker update rendered → acknowledged Pause, with 128-attempt torus batches: **136 ms desktop Chromium, 218 ms 360px Chromium, 115 ms mobile WebKit** in the final complete pipeline. These include browser scheduling and polling, not isolated kernel timings or guarantees for physical phones. They support the deliberately small fixed batch without an optimization framework.
+The measured workload is Run click → first increased worker update rendered → acknowledged Pause, with 128-attempt torus batches: **121 ms desktop Chromium, 102 ms 360px Chromium, 114 ms mobile WebKit** in the final complete pipeline. These include browser scheduling and polling, not isolated kernel timings or guarantees for physical phones. They support the deliberately small fixed batch without an optimization framework.
 
 ## Readability and remaining limits
 
@@ -59,4 +59,10 @@ No U(1), arbitrary/larger topology, gauge fixing, matter, quantum dynamics, cons
 
 ## Release evidence
 
-The complete local release gate has passed. The implementation commit, remote main/workflow and public-site results will be recorded after the authorized PR or ordinary fast-forward release; local success alone is not a deployment claim.
+Implementation commit **`c5ea50bf65422a8649114190fc2a0c1bff3caca2`** was pushed on `codex/m5a-z2-gauge`. PR creation returned HTTP 403, “Resource not accessible by integration”; no authenticated GitHub CLI was installed. After the complete local gate, exact diff review, clean-worktree check and a fresh fetch confirming origin/main as an ancestor, the explicitly authorized ordinary non-force push fast-forwarded main from `fca9e1f` to `c5ea50b`. Both remote refs were verified.
+
+The [implementation main workflow](https://github.com/gantemur/lattice/actions/runs/38466758282) passed **validation and Pages deployment**. Its downloaded job log confirms 535 unit tests and 340 browser passes with two existing skips (browser suite 13.0 minutes on that runner).
+
+Public checks at [gantemur.github.io/lattice](https://gantemur.github.io/lattice/) verified the served JavaScript contains the implementation SHA. At **1280px and 360px**, actual workers passed direct sampling, local Run/Pause, eight-link selection, invariant preview/apply, exact references, winding inspection, topology reset, retained navigation and scalar fallback. Each profile loaded 15 local JS/CSS/font assets successfully, with **zero console/page errors, failed requests or horizontal overflow**. Live screenshots were retained in the task's temporary verification artifacts; the reviewed repository screenshots above include the final presentation follow-up.
+
+The follow-up changes only the inspection count table, selected-face styling, their regression assertion, screenshots and release documentation. Its complete local pipeline passed again with the same 535/340 counts and unchanged skips. Its main push will run the same required validation/deployment workflow; the final delivered commit and live-site confirmation are reported in the task's release result.
