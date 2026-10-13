@@ -130,7 +130,7 @@ it('spectral Step and unequal batches replay with bounded segment measurements',
   }
   expect(batched.snapshot()).toEqual(stepped.snapshot());
   const segment = batched.snapshot().segments[0]!;
-  expect(segment.reference.method).toBe('spectral');
+  expect(segment.reference!.method).toBe('spectral');
   expect(segment.measurements).toBe(300);
   expect(segment.recent).toHaveLength(256);
   expect(segment.discardedMeasurements).toBe(44);
@@ -200,7 +200,7 @@ it('full-segment spectral power survives recent-vector eviction', () => {
       1,
       segment.pairProducts,
       segment.sites.map((site) => site.mean!),
-      segment.reference.mean,
+      segment.reference!.mean,
     ),
   ).toBeCloseTo(directPower / 300, 10);
 });

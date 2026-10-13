@@ -1,6 +1,6 @@
 # Lattice Lab
 
-**Status:** M0–M4c0 and the model-interface architecture audit are merged. Model-page Stages A–C cover Lattice QM, Lattice Fields and Lattice Systems; Stages D1–E bring elementary, graph-Ising and real scalar Small Systems into one page pattern with named examples and a bounded custom Ising graph editor. The 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
+**Status:** M0–M4c0 and the model-interface architecture audit are merged. M4c1 interacting Euclidean QM is implemented on a feature branch pending review/release. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
@@ -13,6 +13,10 @@ Lattice QM, Lattice Fields, Lattice Systems, and all current Small Systems model
 ## 1D classical Ising chain
 
 In **Lattice Systems**, choose **1D Ising chain** to run an open chain of 2–64 spins or a periodic ring of 3–64 spins. The existing local Metropolis and heat-bath worker handles sampling with physical J, h and T. A dedicated spin-chain view, exact-versus-sampled spatial-correlation plot and configurable ToolDeck connect full-segment measurements with exact finite-length results from a scaled 2×2 transfer matrix. The bulk correlation length is labeled separately from finite-chain correlations and Monte Carlo mixing. There is no finite-temperature phase transition in this nearest-neighbor one-dimensional model. See the [mathematics guide](docs/math/ising-chain-transfer.md) and [implementation review](docs/ISING_CHAIN_REVIEW.md).
+
+## M4c1 interacting Euclidean QM (feature branch)
+
+Lattice QM can select a separate periodic quartic/double-well oscillator with editable N, β, r, λ, h and local Metropolis settings. Presets cover the Gaussian limit, single-well quartic, symmetric double well and tilted double well. A full-width periodic path and optional potential, full-segment correlator, transfer spectrum, effective-energy, path-average history and transition tools distinguish Euclidean time from algorithmic updates. The independent transfer analysis runs lazily in another worker, compares three coordinate quadratures, and withholds a trusted gap when resolution checks fail. Local-chain warm-up is only a budget; sign changes of whole-path averages diagnose possible sampling metastability, not physical tunneling. See [mathematics](docs/math/interacting-oscillator.md) and [M4c1 review](docs/M4C1_REVIEW.md).
 
 ## M4c0 (merged)
 

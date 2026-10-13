@@ -132,7 +132,8 @@ export function FieldWorkspace() {
   }
   const trace = snapshot?.lastTrace;
   const samples = current?.measurements ?? 0;
-  const knownSiteVariance = current?.reference.covariance[site]?.[site] ?? null;
+  const knownSiteVariance =
+    current?.reference?.covariance[site]?.[site] ?? null;
   const independentSE =
     (current?.settings.sampler.kind === 'direct' ||
       current?.settings.sampler.kind === 'spectral') &&

@@ -27,6 +27,14 @@ import {
 } from '../models/oscillator';
 import type { OscillatorParameters } from '../models/oscillator';
 import { isFullyPeriodic } from '../models/fieldFourier';
+import { quarticTransition } from '../algorithms/quarticOscillatorSampler';
+import {
+  defaultQuarticOscillator,
+  quarticPathAction,
+  quarticQuadraticPart,
+  validateQuarticOscillator,
+} from '../models/quarticOscillator';
+import type { QuarticOscillatorParameters } from '../models/quarticOscillator';
 import {
   emptyMoments,
   recordMoment,
@@ -49,11 +57,18 @@ export type OscillatorFieldSettings = CommonFieldSettings & {
   model: 'oscillator';
   oscillator: OscillatorParameters;
 };
-export type FieldSettings = GaussianFieldSettings | OscillatorFieldSettings;
+export type QuarticFieldSettings = CommonFieldSettings & {
+  model: 'quartic-oscillator';
+  quartic: QuarticOscillatorParameters;
+  oscillator?: never;
+};
+export type FieldSettings =
+  GaussianFieldSettings | OscillatorFieldSettings | QuarticFieldSettings;
 export type FieldConfiguration = FieldSettings & { seed: number };
 export type OscillatorConfiguration = OscillatorFieldSettings & {
   seed: number;
 };
+export type QuarticConfiguration = QuarticFieldSettings & { seed: number };
 export const defaultFieldConfiguration: FieldConfiguration = {
   parameters: {
     shape: { kind: 'chain', length: 8, periodic: false },
@@ -73,6 +88,15 @@ export const defaultOscillatorConfiguration: OscillatorConfiguration = {
   parameters: oscillatorField(defaultOscillator),
   sampler: { kind: 'spectral' },
   warmupSweeps: 0,
+  strideSweeps: 1,
+  seed: 12345,
+};
+export const defaultQuarticConfiguration: QuarticConfiguration = {
+  model: 'quartic-oscillator',
+  quartic: defaultQuarticOscillator,
+  parameters: quarticQuadraticPart(defaultQuarticOscillator),
+  sampler: { kind: 'metropolis', width: 1 },
+  warmupSweeps: 20,
   strideSweeps: 1,
   seed: 12345,
 };
@@ -98,6 +122,10 @@ export type FieldSegmentSnapshot = {
   pairProducts: number[][];
   recent: FieldMeasurement[];
   discardedMeasurements: number;
+  positiveAveragePaths: number;
+  negativeAveragePaths: number;
+  zeroAveragePaths: number;
+  observedSignChanges: number;
   reference: {
     method: 'dense' | 'spectral';
     measure: 'ordinary' | 'mean-zero';
@@ -105,7 +133,7 @@ export type FieldSegmentSnapshot = {
     covariance: number[][];
     logPartition: number;
     eigenvalues?: number[];
-  };
+  } | null;
 };
 export type FieldSnapshot = {
   runId: number;
@@ -130,7 +158,27 @@ export type FieldResponse =
   | { type: 'error'; runId: number; message: string };
 
 export function validateFieldSettings(settings: FieldSettings) {
-  if (settings.model === 'oscillator') {
+  if (settings.model === 'quartic-oscillator') {
+    validateQuarticOscillator(settings.quartic);
+    const expected = quarticQuadraticPart(settings.quartic);
+    const actual = settings.parameters;
+    const shape = actual.shape;
+    if (
+      shape.kind !== 'chain' ||
+      shape.length !== settings.quartic.sites ||
+      !shape.periodic ||
+      fieldMeasure(actual) !== 'ordinary' ||
+      actual.r !== expected.r ||
+      actual.kappaX !== expected.kappaX ||
+      actual.kappaY !== 0 ||
+      actual.source !== expected.source
+    )
+      throw new Error(
+        'Quartic quadratic coefficients disagree with physical parameters.',
+      );
+    if (settings.sampler.kind !== 'metropolis')
+      throw new Error('Quartic paths require local Metropolis sampling.');
+  } else if (settings.model === 'oscillator') {
     if (!settings.oscillator)
       throw new Error('Oscillator physical parameters are required.');
     validateOscillator(settings.oscillator);
@@ -161,7 +209,10 @@ export function validateFieldSettings(settings: FieldSettings) {
   } else throw new Error('Unknown field model.');
   const size = createFieldLattice(settings.parameters.shape).size;
   validateFieldSampler(settings.sampler, size);
-  const measure = fieldMeasure(settings.parameters);
+  const measure =
+    settings.model === 'quartic-oscillator'
+      ? 'ordinary'
+      : fieldMeasure(settings.parameters);
   if (measure === 'mean-zero' && settings.sampler.kind !== 'spectral')
     throw new Error('Mean-zero fields require spectral independent sampling.');
   if (
@@ -210,12 +261,19 @@ function newSegment(
     pairSums: Array.from({ length: size }, () => Array<number>(size).fill(0)),
     recent: [] as FieldMeasurement[],
     discardedMeasurements: 0,
+    positiveAveragePaths: 0,
+    negativeAveragePaths: 0,
+    zeroAveragePaths: 0,
+    observedSignChanges: 0,
+    previousAverageSign: 0,
     reference:
-      copied.model === 'oscillator'
-        ? spectralQuadraticField(copied.parameters)
-        : copied.sampler.kind === 'spectral'
-          ? spectralGaussianField(copied.parameters)
-          : exactGaussianField(copied.parameters),
+      copied.model === 'quartic-oscillator'
+        ? null
+        : copied.model === 'oscillator'
+          ? spectralQuadraticField(copied.parameters)
+          : copied.sampler.kind === 'spectral'
+            ? spectralGaussianField(copied.parameters)
+            : exactGaussianField(copied.parameters),
   };
 }
 type Segment = ReturnType<typeof newSegment>;
@@ -265,8 +323,9 @@ export class FieldRun {
     )
       throw new Error('Field geometry changes require Reset.');
     if (
+      settings.model !== 'quartic-oscillator' &&
       fieldMeasure(settings.parameters) !==
-      fieldMeasure(this.current.settings.parameters)
+        fieldMeasure(this.current.settings.parameters)
     )
       throw new Error('Changing field measure requires a seeded Reset.');
     if (JSON.stringify(settings) === JSON.stringify(this.current.settings))
@@ -311,14 +370,23 @@ export class FieldRun {
         ? 1
         : settings.strideSweeps * size;
     for (let n = 0; n < count; n++) {
-      const result = fieldTransition(
-        this.lattice,
-        settings.parameters,
-        settings.sampler,
-        this.field ?? Array<number>(size).fill(0),
-        this.rng,
-        segment.reference,
-      );
+      const result =
+        settings.model === 'quartic-oscillator' &&
+        settings.sampler.kind === 'metropolis'
+          ? quarticTransition(
+              settings.quartic,
+              this.field ?? Array<number>(size).fill(0),
+              settings.sampler.width,
+              this.rng,
+            )
+          : fieldTransition(
+              this.lattice,
+              settings.parameters,
+              settings.sampler,
+              this.field ?? Array<number>(size).fill(0),
+              this.rng,
+              segment.reference,
+            );
       this.field = result.field;
       this.updates++;
       segment.updates++;
@@ -336,8 +404,18 @@ export class FieldRun {
       // One retained field updates every site moment and pair cross-sum.
       // Only recent full vectors are evicted; summaries span the segment.
       const average = this.field.reduce((sum, value) => sum + value, 0) / size;
-      const actionDensity =
-        fieldAction(this.lattice, settings.parameters, this.field) / size;
+      const actionDensity = this.action(settings, this.field) / size;
+      const sign = Math.sign(average);
+      if (sign > 0) segment.positiveAveragePaths++;
+      else if (sign < 0) segment.negativeAveragePaths++;
+      else segment.zeroAveragePaths++;
+      if (
+        sign !== 0 &&
+        segment.previousAverageSign !== 0 &&
+        sign !== segment.previousAverageSign
+      )
+        segment.observedSignChanges++;
+      if (sign !== 0) segment.previousAverageSign = sign;
       for (let i = 0; i < size; i++) {
         recordMoment(segment.sites[i]!, this.field[i]!);
         for (let j = 0; j < size; j++)
@@ -359,6 +437,12 @@ export class FieldRun {
     this.version += count;
   }
 
+  private action(settings: FieldSettings, path: readonly number[]) {
+    return settings.model === 'quartic-oscillator'
+      ? quarticPathAction(settings.quartic, path)
+      : fieldAction(this.lattice, settings.parameters, path);
+  }
+
   snapshot(): FieldSnapshot {
     return {
       runId: this.runId,
@@ -366,11 +450,7 @@ export class FieldRun {
       seed: this.seed,
       field: this.field?.slice() ?? null,
       action: this.field
-        ? fieldAction(
-            this.lattice,
-            this.current.settings.parameters,
-            this.field,
-          )
+        ? this.action(this.current.settings, this.field)
         : null,
       updates: this.updates,
       activeSegmentId: this.current.id,
@@ -398,19 +478,28 @@ export class FieldRun {
             field: record.field.slice(),
           })),
           discardedMeasurements: segment.discardedMeasurements,
-          reference: {
-            method:
-              'method' in segment.reference
-                ? ('spectral' as const)
-                : ('dense' as const),
-            measure: fieldMeasure(segment.settings.parameters),
-            mean: segment.reference.mean.slice(),
-            covariance: segment.reference.covariance.map((row) => row.slice()),
-            logPartition: segment.reference.logPartition,
-            ...('method' in segment.reference
-              ? { eigenvalues: segment.reference.eigenvalues.slice() }
-              : {}),
-          },
+          positiveAveragePaths: segment.positiveAveragePaths,
+          negativeAveragePaths: segment.negativeAveragePaths,
+          zeroAveragePaths: segment.zeroAveragePaths,
+          observedSignChanges: segment.observedSignChanges,
+          reference:
+            segment.reference === null
+              ? null
+              : {
+                  method:
+                    'method' in segment.reference
+                      ? ('spectral' as const)
+                      : ('dense' as const),
+                  measure: fieldMeasure(segment.settings.parameters),
+                  mean: segment.reference.mean.slice(),
+                  covariance: segment.reference.covariance.map((row) =>
+                    row.slice(),
+                  ),
+                  logPartition: segment.reference.logPartition,
+                  ...('method' in segment.reference
+                    ? { eigenvalues: segment.reference.eigenvalues.slice() }
+                    : {}),
+                },
         };
       }),
     };

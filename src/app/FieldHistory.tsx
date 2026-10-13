@@ -30,7 +30,7 @@ export function FieldHistory({
   const clippedReferences = snapshot.segments.filter(
     (segment) =>
       segment.recent.length > 0 &&
-      Math.abs(segment.reference.mean[site]!) > limit,
+      Math.abs(segment.reference!.mean[site]!) > limit,
   ).length;
   return (
     <section
@@ -65,8 +65,8 @@ export function FieldHistory({
               key={segment.id}
               x1={x(start)}
               x2={x(end)}
-              y1={y(segment.reference.mean[site]!)}
-              y2={y(segment.reference.mean[site]!)}
+              y1={y(segment.reference!.mean[site]!)}
+              y2={y(segment.reference!.mean[site]!)}
               stroke={segmentColor(segment.id)}
               strokeDasharray="5 4"
               strokeWidth="1.5"

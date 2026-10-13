@@ -24,7 +24,8 @@ export function FieldInspection({
   const conditional =
     field && !constrained ? fieldConditional(lattice, p, field, site) : null;
   const terms = field ? fieldLocalTerms(lattice, p, field, site) : null;
-  const reference = segment.reference;
+  // This renderer is mounted only by the spatial Gaussian workspace.
+  const reference = segment.reference!;
   const siteMean = segment.sites[site]?.mean ?? null;
   const partnerMean = segment.sites[partner]?.mean ?? null;
   const pair = segment.measurements

@@ -18,7 +18,9 @@ export function FieldSpectrum({
   selected: number;
   onSelect: (mode: number) => void;
 }) {
+  // Only the Gaussian workspace offers this Fourier reference tool.
   const p = segment.settings.parameters;
+  const reference = segment.reference!;
   if (!isFullyPeriodic(p.shape))
     return (
       <section className="field-results" aria-label="Fourier spectrum">
@@ -30,10 +32,9 @@ export function FieldSpectrum({
       </section>
     );
   const basis = createFourierBasis(p.shape);
-  const eigenvalues =
-    segment.reference.eigenvalues ?? fieldEigenvalues(p, basis);
+  const eigenvalues = reference.eigenvalues ?? fieldEigenvalues(p, basis);
   const mode = Math.min(selected, basis.size - 1);
-  const removed = segment.reference.measure === 'mean-zero' && mode === 0;
+  const removed = reference.measure === 'mean-zero' && mode === 0;
   const exact = removed ? null : 1 / eigenvalues[mode]!;
   const measured =
     segment.measurements > 0 && !removed
@@ -42,7 +43,7 @@ export function FieldSpectrum({
           mode,
           segment.pairProducts,
           segment.sites.map((s) => s.mean!),
-          segment.reference.mean,
+          reference.mean,
         )
       : null;
   const maxPower = Math.max(
@@ -85,8 +86,7 @@ export function FieldSpectrum({
         style={{ gridTemplateColumns: `repeat(${basis.lx}, minmax(0, 1fr))` }}
       >
         {eigenvalues.map((lambda, index) => {
-          const isRemoved =
-            segment.reference.measure === 'mean-zero' && index === 0;
+          const isRemoved = reference.measure === 'mean-zero' && index === 0;
           const power = isRemoved ? 0 : 1 / lambda;
           const shade = Math.min(1, power / maxPower);
           return (

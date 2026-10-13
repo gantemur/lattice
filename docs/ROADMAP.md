@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.11, 2026-10-12
+**Version:** 0.12, 2026-10-13
 
-**Status:** M0–M4c0 and the architecture audit are merged. Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems, including bounded custom simple-graph edge-presence editing.
+**Status:** M0–M4c0 and the architecture audit are merged. M4c1 interacting Euclidean QM is implemented on a feature branch pending review/release. Model-page Stages A–E and the 1D Ising chain are implemented.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -224,7 +224,7 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 
 1. **M4a1 Gaussian fields, 1D/2D (merged).** Positive-`r` bond-Laplacian action, open/periodic boundaries, dense Cholesky mean/covariance/log Z through 64 sites, direct/heat-bath/Metropolis worker sampling, fixed-scale profile/heatmap and local/pair inspection. Full-segment moments and bounded histories have independent tiny-matrix and seeded tests. The [M4a1 review](M4A1_REVIEW.md) records remaining limits.
 2. **M4a2 Gaussian spectral and massless work (merged).** Finite DFT, periodic spectral reference and independent draws, mode-power inspection, and induced-measure mean-zero massless GFF; see [review](M4A2_REVIEW.md). Open/mixed massive fields remain dense.
-3. **M4b harmonic Euclidean oscillator (merged).** Periodic N-site path, physical β/ω controls, independent Fourier and local Gaussian sampling, full-segment two-point correlator, finite-spacing and continuum gaps, kinetic-normalized transfer trace, bounded quadrature and reflection-covariance illustration. The [M4b review](M4B_REVIEW.md) records validation and limits. Double-well paths remain future work.
+3. **M4b harmonic Euclidean oscillator (merged).** Periodic N-site path, physical β/ω controls, independent Fourier and local Gaussian sampling, full-segment two-point correlator, finite-spacing and continuum gaps, kinetic-normalized transfer trace, bounded quadrature and reflection-covariance illustration. The [M4b review](M4B_REVIEW.md) records its validation and limits; M4c1 adds the separate interacting path family.
 4. **M4c0 workspace and teaching tools (merged).** Separate mounted QM and Fields sessions, five shared routes, unified Run/Pause, and configurable six-card galleries. Optional transfer quadrature is lazy; presentation changes preserve the numerical stream. See [review](M4C0_REVIEW.md).
 5. **Featured-tool migration Stage A (implemented).** Pilot one full-width assignment plus up to six optional gallery tools in QM and Fields. Whole-assignment swaps retain keys and presentation choices; explicit replacement retains every gallery card. Existing numerical workers and archive data are unchanged. See the [architecture audit](MODEL_INTERFACE_AUDIT.md) and [Stage A review](FEATURED_STAGE_A_REVIEW.md).
 6. **QM/Fields model-page Stage B (implemented).** The model formula and collapsible editable settings lead the sidebar; the main column has controls/readings, feature, compact zero-to-six-card diagnostics, collapsible technical coverage and short mathematics/exercises. Add creates a suitable card directly; one open desktop gallery card spans both columns. Tool-specific display controls stay with their tools, keyed across feature exchange. The [Stage B review](MODEL_PAGE_STAGE_B_REVIEW.md) records tests and screenshots. Small Systems and Experiments are migrated separately.
@@ -235,8 +235,9 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 11. **Named examples Stage D3 (implemented).** Group directly selectable elementary, small-Ising and scalar examples. Add dimer, three-site chain and triangle geometries without new Ising kernels; keep K4, open chain and true torus in advanced access. Example selection preserves same-topology segment rules, legacy scalar URLs and archive data. See the [D3 review](PEDAGOGICAL_CATALOG_D3_REVIEW.md).
 12. **Custom simple-graph editing Stage E (implemented).** Directly select a custom two-to-four-spin Ising graph and edit site count, each possible simple-pair presence, signed active coupling and site field in a draft sidebar form. Canonical `pair:v0:v1`-style IDs survive edge additions. Present K=0 bonds remain in the domain; absent pairs do not. Apply starts a seeded session for topology changes or an isolated parameter segment for K/b changes. The existing Ising exact/sampling/diagnostic kernels and archive schema are reused; periodic multigraph and cell-complex presets remain distinct. See the [Stage E review](CUSTOM_ISING_GRAPH_STAGE_E_REVIEW.md).
 13. **1D classical Ising chain (implemented).** Extend the indexed Ising worker with a one-row chain: open N=2–64 or periodic N=3–64, no transverse bond or fabricated y observable. Reuse local Metropolis/heat bath, segment and archive semantics. A pure, scaled 2×2 transfer reference provides finite-N log Z, site means, energy, susceptibility and pair correlations; its signed eigenvalue ratio gives the separately labeled bulk spatial correlation length. The chain-specific ToolDeck features a readable spin chain and defaults to exact-versus-sampled spatial correlations plus magnetization history. See [mathematics](math/ising-chain-transfer.md) and [review](ISING_CHAIN_REVIEW.md).
-14. **Lattice φ⁴.** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
-15. **HMC.** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
+14. **M4c1 interacting Euclidean QM (feature branch).** A separate quartic/double-well path model uses pure periodic action and local Metropolis kernels, full-segment correlations, metastability counts and a lazy worker-owned three-grid transfer study. Resolved and under-resolved finite-spacing spectrum/correlator statuses are explicit; the harmonic model's analytic references and RNG are unchanged. Acceptance requires independent harmonic, finite-difference, quadrature-refinement, seeded-worker and desktop/phone browser evidence. See [mathematics](math/interacting-oscillator.md) and [review](M4C1_REVIEW.md).
+15. **Spatial lattice φ⁴ (future).** Local Metropolis, continuous scalar heatmaps, parameter exploration, and comparison to Gaussian limit.
+16. **HMC (future).** Leapfrog with documented step size/trajectory length, acceptance and energy-drift diagnostics; do not expose until reversibility and invariant-distribution checks pass.
 
 **Acceptance gate**
 
@@ -278,7 +279,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4c0, the readability pass and the architecture audit are merged. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. Keep interacting double-well paths, φ⁴, HMC, gauge and later archive stages as future scope.
+M0–M4c0, the readability pass and the architecture audit are merged. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M4c1 interacting double-well paths are on a feature branch pending review/release; spatial φ⁴, HMC, gauge and later archive stages remain future scope.
 
 ## Definition of done for the initial public usable release
 

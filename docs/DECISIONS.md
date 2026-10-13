@@ -336,6 +336,16 @@ On a chain, the y bond-product moment has count zero and null summary values, an
 
 The independent 2×2 spatial transfer calculation uses `K=J/T`, `b=h/T`, the periodic trace or open boundary-vector contraction, scaled finite products and a signed subleading eigenvalue. Exact raw finite-length correlations use the worker's ordered-origin averaging; open connected covariances use site-dependent means. The positive bulk length `ξ=−1/log|λ−/λ+|` is unavailable when the near-degenerate ratio cannot be resolved in floating point, and `ξ≫N` carries a finite-size warning. Spatial transfer decay, Monte Carlo update-time mixing and Lattice QM transfer gaps are separate quantities. Tool assignments and transfer analysis remain read-only.
 
+## Accepted interacting Euclidean QM M4c1 convention — 2026-10-13
+
+### D-054 — Keep the quartic path measure and reference numerics separate from Gaussian and Monte Carlo spectra
+
+Lattice QM may select the existing harmonic oscillator or a separate `quartic-oscillator` family on a periodic N-site Euclidean path. The quartic family owns physical `r, λ, h, β, N` and the complete action `Σ[(x_(j+1)−x_j)²/(2a)+a(r x_j²/2+λ x_j⁴/4−h x_j)]`, with ordinary product-Lebesgue measure and a fluctuating constant mode. Its derived quadratic coefficients are an explicit implementation decomposition only; they are not a Gaussian target or analytic reference when λ>0. The worker's model discriminator selects quartic validation, action and local Metropolis transitions, and records `reference=null`. Existing harmonic and spatial-field numerical kernels and RNG streams remain unchanged.
+
+Quartic Metropolis consumes three seeded uniforms per elementary attempt, including rejection; N attempts are a nominal sweep. Compatible physical and sampler changes preserve the path/RNG and begin an isolated warm-up/measurement segment. N or model changes and Reset begin a seeded session. Full-segment pair products yield raw path correlations. At h=0 reflection symmetry supplies zero equilibrium mean, so the raw correlator is the primary connected quantity even if finite sampling remains in one well. At h≠0 a separately labeled sample-mean plug-in connected estimate may be biased. Whole-path-average sign changes are a cadence-dependent Monte Carlo mixing indicator, never a physical tunneling rate.
+
+Optional transfer spectroscopy runs only in its own numerical-analysis worker. It shifts the physical potential by its global minimum, applies positive-weight symmetric Nyström quadrature on two coordinate spacings and an enlarged interval, checks eigenpair residuals and near-degeneracy, and reports a trusted approximate finite-a gap only when its declared resolution gates pass. The full numerical spectrum supports a separately checked finite-β thermal correlator. Analytic harmonic λ=0, finite-a quartic transfer, continuum Hamiltonian and Monte Carlo transition spectra remain distinct. The product-Lebesgue path integral and transfer trace differ by `(2πa)^(N/2)`. No archive schema, HMC or spatial φ⁴ is introduced.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

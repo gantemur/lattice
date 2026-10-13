@@ -174,9 +174,11 @@ function oscillatorSettings(
 export function OscillatorView({
   view,
   client,
+  chooseQuartic,
 }: {
   view: FieldView;
   client: FieldClient | null;
+  chooseQuartic: () => void;
 }) {
   const [draft, setDraft] = useState<OscillatorConfiguration>(
     defaultOscillatorConfiguration,
@@ -317,6 +319,22 @@ export function OscillatorView({
           </div>
           <span className="milestone">M4b · Euclidean quantum mechanics</span>
         </section>
+        <div className="qm-model-choice">
+          <label>
+            Quantum model{' '}
+            <select
+              aria-label="Quantum model"
+              value="harmonic"
+              onChange={chooseQuartic}
+            >
+              <option value="harmonic">Harmonic oscillator</option>
+              <option value="quartic">Quartic / double-well oscillator</option>
+            </select>
+          </label>
+          <span className="plot-note">
+            Changing model starts a new seeded session.
+          </span>
+        </div>
         <div className="lab-layout field-layout">
           <OscillatorControls
             draft={draft}

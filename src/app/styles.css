@@ -2678,3 +2678,26 @@ footer {
   font-weight: 700;
   font-size: 12px;
 }
+.qm-model-choice {
+  display: flex;
+  align-items: end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 auto 1.2rem;
+  max-width: 1320px;
+  padding: 0 1.5rem;
+}
+
+.qm-model-choice label {
+  min-width: min(100%, 19rem);
+}
+
+.qm-model-choice select {
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .qm-model-choice {
+    padding: 0 1rem;
+  }
+}
