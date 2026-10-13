@@ -108,7 +108,9 @@ export function measurementRows(entries: readonly ArchiveEntry[]): unknown[][] {
             datasetId,
             capture.workspace,
             capture.workspace === 'lattice'
-              ? '2d-ising'
+              ? capture.segment.settings.parameters.ly === 1
+                ? '1d-ising-chain'
+                : '2d-ising'
               : capture.segment.model.kind,
             observable,
             unit,
@@ -213,7 +215,9 @@ export function exportSummaryCsv(entries: readonly ArchiveEntry[]): string {
       workspace: capture.workspace,
       model:
         capture.workspace === 'lattice'
-          ? '2d-ising'
+          ? capture.segment.settings.parameters.ly === 1
+            ? '1d-ising-chain'
+            : '2d-ising'
           : capture.segment.model.kind,
       segment_id: capture.segment.id,
       seed: source.seed,

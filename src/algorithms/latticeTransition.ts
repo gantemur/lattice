@@ -32,7 +32,7 @@ export type LatticeTrace = {
   outcome: 'accepted' | 'rejected' | 'self' | 'changed' | 'unchanged';
 };
 /**
- * One random-site 2D Ising update in physical H units, mutating at most one
+ * One random-site indexed Ising update in physical H units, mutating at most one
  * spin. Metropolis consumes three uniforms (site, lazy proposal, decision);
  * heat bath consumes two (site, resampling). A nominal sweep is N calls, not
  * physical time. Nonfinal batches skip inspection terms without changing RNG.

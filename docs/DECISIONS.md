@@ -326,6 +326,16 @@ The Advanced Small Systems catalog directly selects a custom `ising` model on tw
 
 The sidebar editor alone owns unsubmitted site count, presence, K and b choices; worker snapshots and the featured graph show the last applied model. Applying a changed site count or present-pair set changes `topologyKey` and starts a seeded session, clearing incompatible history and selection. Applying only K or b on unchanged topology retains configuration and RNG while opening an isolated measurement segment, even when K crosses zero. Disabled draft K values survive toggling before Apply; after Apply, re-enabling an absent pair starts from the displayed default K=0.5. Exact enumeration, all three graph-Ising samplers, diagnostics, six-card teaching tools and experiment exports reuse their existing implementations. This bounded numeric editor is not an interactive graph drawing, a generic graph runtime or a gauge-model precursor.
 
+## Accepted 1D Ising-chain convention — 2026-10-12
+
+### D-053 — One-row indexed chain, absent y observables, and a separate spatial transfer reference
+
+Extend D-030's original `Ly≥2` restriction only for a validated one-dimensional shape: `Lx=N`, `Ly=1`, `periodicY=false`, `Jy=0`, with open `2≤N≤64` or periodic `3≤N≤64`. This produces exactly `N−1` or `N` x-bond records and no vertical self-links. All prior 2D shapes and periodic length-two multiplicities remain unchanged. The worker's existing local Metropolis/heat-bath kernels, RNG order, nominal-sweep cadence and parameter segments also serve the chain. No separate Monte Carlo engine or archive schema is introduced.
+
+On a chain, the y bond-product moment has count zero and null summary values, and the y spatial series is empty. The archive validator permits this representation only at `Ly=1`; every historical 2D capture still requires its original full y moment. CSV identifies chain records as `1d-ising-chain` and keeps physical `e=H/N`. The 2D Tc formula, Tc preset, square canvas and 5×5 neighborhood remain confined to the 2D page.
+
+The independent 2×2 spatial transfer calculation uses `K=J/T`, `b=h/T`, the periodic trace or open boundary-vector contraction, scaled finite products and a signed subleading eigenvalue. Exact raw finite-length correlations use the worker's ordered-origin averaging; open connected covariances use site-dependent means. The positive bulk length `ξ=−1/log|λ−/λ+|` is unavailable when the near-degenerate ratio cannot be resolved in floating point, and `ξ≫N` carries a finite-size warning. Spatial transfer decay, Monte Carlo update-time mixing and Lattice QM transfer gaps are separate quantities. Tool assignments and transfer analysis remain read-only.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

@@ -1,7 +1,5 @@
 import { SiteHeader } from './SiteHeader';
-import { useEffect, useRef, useState } from 'react';
-import { LatticeClient } from '../engine/latticeClient';
-import type { LatticeView, LatticeWorkerPort } from '../engine/latticeClient';
+import { useState } from 'react';
 import { defaultLatticeConfiguration } from '../engine/latticeRun';
 import type {
   LatticeConfiguration,
@@ -15,32 +13,9 @@ import { formatNumber } from '../plotting/PlotFrame';
 import { InlineMath, DisplayMath } from '../ui/Math';
 import { LatticeStatisticalDiagnostics } from './StatisticalDiagnostics';
 import type { Capture } from '../experiments/archive';
+import { useLatticeSession } from './useLatticeSession';
+import { ChainSystems } from './ChainSystems';
 
-function useLattice() {
-  const [view, setView] = useState<LatticeView>({
-    snapshot: null,
-    running: false,
-    busy: false,
-    error: null,
-  });
-  const client = useRef<LatticeClient | null>(null);
-  useEffect(() => {
-    const instance = new LatticeClient(
-      () =>
-        new Worker(new URL('../workers/lattice.worker.ts', import.meta.url), {
-          type: 'module',
-        }) as unknown as LatticeWorkerPort,
-      setView,
-    );
-    client.current = instance;
-    instance.initialize(defaultLatticeConfiguration);
-    return () => {
-      instance.dispose();
-      client.current = null;
-    };
-  }, []);
-  return { view, client };
-}
 function exactTwoByTwo(snapshot: LatticeSnapshot) {
   const p = snapshot.configuration.parameters;
   if (p.lx !== 2 || p.ly !== 2) return null;
@@ -91,7 +66,32 @@ export function LatticeSystems({
   saveCaptures: (captures: Capture[]) => void;
   archiveCount: number;
 }) {
-  const { view, client } = useLattice();
+  const [dimension, setDimension] = useState<'2d' | 'chain'>('2d');
+  return dimension === 'chain' ? (
+    <ChainSystems
+      saveCaptures={saveCaptures}
+      archiveCount={archiveCount}
+      switchToGrid={() => setDimension('2d')}
+    />
+  ) : (
+    <TwoDimensionalSystems
+      saveCaptures={saveCaptures}
+      archiveCount={archiveCount}
+      switchToChain={() => setDimension('chain')}
+    />
+  );
+}
+
+function TwoDimensionalSystems({
+  saveCaptures,
+  archiveCount,
+  switchToChain,
+}: {
+  saveCaptures: (captures: Capture[]) => void;
+  archiveCount: number;
+  switchToChain: () => void;
+}) {
+  const { view, client } = useLatticeSession(defaultLatticeConfiguration);
   const snapshot = view.snapshot;
   // Form edits are local until Apply/Reset; the worker snapshot is authoritative
   // for the active Gibbs measure and all sampled measurements.
@@ -219,6 +219,17 @@ export function LatticeSystems({
         </section>
         <div className="lab-layout">
           <aside className="sidebar" aria-label="Lattice settings">
+            <label className="model-choice">
+              Physical system
+              <select
+                aria-label="Lattice physical system"
+                value="2d"
+                onChange={switchToChain}
+              >
+                <option value="2d">2D square-lattice Ising</option>
+                <option value="chain">1D Ising chain</option>
+              </select>
+            </label>
             <section className="model-card lattice-model-card">
               <p className="eyebrow">Nearest-neighbor Ising</p>
               <DisplayMath>{String.raw`\begin{aligned}H={}&-J_x\sum_{\langle i,j\rangle_x}s_is_j\\&-J_y\sum_{\langle i,j\rangle_y}s_is_j\\&-h\sum_i s_i\end{aligned}`}</DisplayMath>

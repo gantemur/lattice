@@ -1,6 +1,6 @@
 # Lattice Lab
 
-**Status:** M0–M4c0 and the model-interface architecture audit are merged. Model-page Stages A–C cover Lattice QM, Lattice Fields and Lattice Systems; Stages D1–E bring elementary, graph-Ising and real scalar Small Systems into one page pattern with named examples and a bounded custom Ising graph editor.
+**Status:** M0–M4c0 and the model-interface architecture audit are merged. Model-page Stages A–C cover Lattice QM, Lattice Fields and Lattice Systems; Stages D1–E bring elementary, graph-Ising and real scalar Small Systems into one page pattern with named examples and a bounded custom Ising graph editor. The 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
@@ -9,6 +9,10 @@ The repository is [gantemur/lattice](https://github.com/gantemur/lattice), indep
 ## Configurable model pages (Stages A–D3)
 
 Lattice QM, Lattice Fields, Lattice Systems, and all current Small Systems models show one configurable, full-width featured display above up to six optional gallery cards. Their default features are the Euclidean path, spatial field configuration, 2D Ising spin canvas, elementary exact distribution, small interactive Ising graph, and real scalar configuration, respectively. **Add tool** immediately opens an unrepresented useful view when available; its own selector can change the view. A gallery card's **Feature** action swaps whole assignments, while the featured selector replaces only the featured tool. Tool-specific display controls follow keyed assignments across exchanges. One open gallery card fills the desktop row; multiple cards use two columns. Phones retain single-detail and compact-overview modes. Technical details and short mathematics/exercises are collapsible below the gallery. These choices affect only presentation, not worker sampling or measurements. See the [Stage A](docs/FEATURED_STAGE_A_REVIEW.md), [Stage B](docs/MODEL_PAGE_STAGE_B_REVIEW.md), [Stage C](docs/MODEL_PAGE_STAGE_C_REVIEW.md), [Stage D1](docs/MODEL_PAGE_STAGE_D1_REVIEW.md) and [Stage D2](docs/MODEL_PAGE_STAGE_D2_REVIEW.md) reviews. [Stage D3](docs/PEDAGOGICAL_CATALOG_D3_REVIEW.md) adds the grouped Small Systems example chooser. [Stage E](docs/CUSTOM_ISING_GRAPH_STAGE_E_REVIEW.md) adds **Custom Ising graph (2–4 spins)** in Advanced examples: each simple pair has an explicit presence choice and signed coupling, so a present zero-weight bond remains distinct from an absent bond. Advanced K4, open chain and torus geometries remain accessible with their original topology.
+
+## 1D classical Ising chain
+
+In **Lattice Systems**, choose **1D Ising chain** to run an open chain of 2–64 spins or a periodic ring of 3–64 spins. The existing local Metropolis and heat-bath worker handles sampling with physical J, h and T. A dedicated spin-chain view, exact-versus-sampled spatial-correlation plot and configurable ToolDeck connect full-segment measurements with exact finite-length results from a scaled 2×2 transfer matrix. The bulk correlation length is labeled separately from finite-chain correlations and Monte Carlo mixing. There is no finite-temperature phase transition in this nearest-neighbor one-dimensional model. See the [mathematics guide](docs/math/ising-chain-transfer.md) and [implementation review](docs/ISING_CHAIN_REVIEW.md).
 
 ## M4c0 (merged)
 

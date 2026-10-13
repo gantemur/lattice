@@ -11,13 +11,15 @@ export function bondProducts(lattice: IndexedLattice, spins: Int8Array) {
   }
   return {
     x: x / lattice.horizontalBonds,
-    y: y / lattice.verticalBonds,
+    // No y-bond product exists on a chain. Never encode it as zero.
+    y: lattice.verticalBonds ? y / lattice.verticalBonds : null,
   };
 }
 
 export type Axis = 'x' | 'y';
 export type SpatialPoint = { r: number; pairs: number; value: number };
 export const MAX_SPATIAL_LAG = 4;
+export const MAX_CHAIN_SPATIAL_LAG = 16;
 
 /** Global-mean centering is shown only when both axes are translation invariant. */
 export function spatialDisplayValue(
@@ -42,6 +44,7 @@ export function axialProducts(
   maximum = MAX_SPATIAL_LAG,
 ): SpatialPoint[] {
   const length = axis === 'x' ? lattice.lx : lattice.ly;
+  if (axis === 'y' && lattice.ly === 1) return [];
   const periodic = axis === 'x' ? lattice.periodicX : lattice.periodicY;
   const largest = Math.min(
     maximum,

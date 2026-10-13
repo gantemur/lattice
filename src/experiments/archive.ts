@@ -328,8 +328,37 @@ function validateLattice(c: LatticeCapture): void {
     c.captureUpdate
   )
     throw new Error('Lattice segment extends beyond capture update.');
-  for (const key of ['m', 'absM', 'e', 'm2', 'm4', 'e2', 'gx', 'gy'] as const)
+  for (const key of ['m', 'absM', 'e', 'm2', 'm4', 'e2', 'gx'] as const)
     moments(s[key], count, `Lattice ${key}`);
+  // V1/V2 2D captures still require one y product per sample. In a chain the
+  // direction does not exist, so the old moment shape carries count=0/null.
+  moments(s.gy, ly === 1 ? 0 : count, 'Lattice gy');
+  if (ly === 1) {
+    if (
+      s.gy.mean !== null ||
+      s.gy.variance !== null ||
+      s.gy.secondMoment !== null ||
+      !Array.isArray(s.spatialY) ||
+      s.spatialY.length !== 0
+    )
+      throw new Error('A chain cannot contain vertical observables.');
+    const largest = Math.min(
+      16,
+      s.settings.parameters.periodicX ? Math.floor(lx / 2) : lx - 1,
+    );
+    const horizontal = array(s.spatialX, 'Chain spatial products', 17);
+    if (horizontal.length !== largest + 1)
+      throw new Error('Chain spatial displacement coverage is inconsistent.');
+    horizontal.forEach((entry, r) => {
+      const point = object(entry, 'Chain spatial product');
+      if (
+        point.r !== r ||
+        point.pairs !== (s.settings.parameters.periodicX ? lx : lx - r)
+      )
+        throw new Error('Chain spatial origins are inconsistent.');
+      moments(point.moments, count, `Chain spatial r=${r}`);
+    });
+  }
   histogram(s.mHistogram, count, 'Lattice m histogram');
   histogram(s.eHistogram, count, 'Lattice e histogram');
   diagnosticRecord(c.diagnosticRecord, count);

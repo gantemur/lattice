@@ -25,6 +25,8 @@ export const defaultLatticeParameters: LatticeParameters = {
 };
 export function validateLatticeParameters(p: LatticeParameters): void {
   createIndexedLattice(p);
+  if (p.ly === 1 && p.jy !== 0)
+    throw new Error('A one-dimensional chain has no vertical coupling Jy.');
   if (
     ![p.jx, p.jy, p.field].every((n) => Number.isFinite(n) && Math.abs(n) <= 10)
   )
@@ -89,8 +91,8 @@ export function localField(
   site: number,
 ): number {
   // Incidence slots count each bond touching this site, including both
-  // periodic length-two parallels. The model supports side lengths ≥2, so
-  // there are no self-links in this indexed representation.
+  // periodic length-two parallels. Ly=1 chains have no y bonds; all supported
+  // indexed shapes forbid self-links.
   let sum = p.field;
   for (let slot = 0; slot < lattice.degree[site]!; slot++) {
     const offset = 4 * site + slot;

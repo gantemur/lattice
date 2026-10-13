@@ -25,14 +25,26 @@ export type IndexedLattice = LatticeShape & {
 
 export function validateShape(shape: LatticeShape): void {
   if (
-    ![shape.lx, shape.ly].every((n) => Number.isInteger(n) && n >= 2 && n <= 64)
+    !Number.isInteger(shape.lx) ||
+    shape.lx < 2 ||
+    shape.lx > 64 ||
+    !Number.isInteger(shape.ly) ||
+    shape.ly < 1 ||
+    shape.ly > 64
   )
-    throw new Error('Each lattice side must be an integer from 2 to 64.');
+    throw new Error('Lx must be 2–64 and Ly must be 1–64.');
   if (
     typeof shape.periodicX !== 'boolean' ||
     typeof shape.periodicY !== 'boolean'
   )
     throw new Error('Boundary choices must be open or periodic.');
+  // Ly=1 is a genuine chain: no +y bond or vertical self-link exists.
+  // A two-site periodic x axis would create parallel bonds and is deliberately
+  // reserved for the small-graph lessons, not this chain workspace.
+  if (shape.ly === 1 && (shape.periodicY || (shape.periodicX && shape.lx < 3)))
+    throw new Error(
+      'A chain needs open y and at least three sites when periodic.',
+    );
 }
 
 export function createIndexedLattice(shape: LatticeShape): IndexedLattice {

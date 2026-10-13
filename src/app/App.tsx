@@ -38,7 +38,9 @@ export function App() {
     const entries = captures.map((capture) => {
       const model =
         capture.workspace === 'lattice'
-          ? '2D Ising'
+          ? capture.segment.settings.parameters.ly === 1
+            ? '1D Ising chain'
+            : '2D Ising'
           : capture.segment.model.kind;
       const count =
         capture.workspace === 'lattice'

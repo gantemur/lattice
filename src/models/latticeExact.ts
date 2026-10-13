@@ -33,7 +33,8 @@ export function exactLatticeTwoByTwo(p: LatticeParameters) {
     magnetizations.push(magnetization(spins) / 4);
     const bonds = bondProducts(lattice, spins);
     xProducts.push(bonds.x);
-    yProducts.push(bonds.y);
+    // This reference is restricted to 2×2, where vertical bonds exist.
+    yProducts.push(bonds.y!);
   }
 
   // Subtract the lowest action before exponentiation, so even T=0.05 and

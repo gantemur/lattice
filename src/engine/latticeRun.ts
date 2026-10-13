@@ -26,6 +26,8 @@ import {
   axialProducts,
   bondProducts,
   equilibriumFluctuations,
+  MAX_CHAIN_SPATIAL_LAG,
+  MAX_SPATIAL_LAG,
 } from '../observables/latticePhysics';
 
 export type LatticeSettings = {
@@ -158,7 +160,14 @@ function newSegment(
     0.001;
   const referenceSpins = new Int8Array(lattice.size).fill(1);
   const spatial = (axis: 'x' | 'y') =>
-    axialProducts(lattice, referenceSpins, axis).map(({ r, pairs }) => ({
+    axialProducts(
+      lattice,
+      referenceSpins,
+      axis,
+      lattice.ly === 1 && axis === 'x'
+        ? MAX_CHAIN_SPATIAL_LAG
+        : MAX_SPATIAL_LAG,
+    ).map(({ r, pairs }) => ({
       r,
       pairs,
       moments: emptyMoments(),
@@ -372,12 +381,19 @@ export class LatticeRun {
         segment.diagnostics.record(m, Math.abs(m), e);
         const bonds = bondProducts(this.lattice, this.spins);
         recordMoment(segment.gx, bonds.x);
-        recordMoment(segment.gy, bonds.y);
+        if (bonds.y !== null) recordMoment(segment.gy, bonds.y);
         for (const [axis, entries] of [
           ['x', segment.spatialX],
           ['y', segment.spatialY],
         ] as const)
-          axialProducts(this.lattice, this.spins, axis).forEach((point, i) =>
+          axialProducts(
+            this.lattice,
+            this.spins,
+            axis,
+            this.lattice.ly === 1 && axis === 'x'
+              ? MAX_CHAIN_SPATIAL_LAG
+              : MAX_SPATIAL_LAG,
+          ).forEach((point, i) =>
             recordMoment(entries[i]!.moments, point.value),
           );
         recordHistogram(segment.mHistogram, m);

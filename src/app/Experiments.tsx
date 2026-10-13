@@ -36,12 +36,18 @@ function sampleCount(entry: ArchiveEntry) {
 }
 function modelName(entry: ArchiveEntry) {
   const c = entry.scientific.capture;
-  return c.workspace === 'lattice' ? '2D Ising' : c.segment.model.kind;
+  return c.workspace === 'lattice'
+    ? c.segment.settings.parameters.ly === 1
+      ? '1D Ising chain'
+      : '2D Ising'
+    : c.segment.model.kind;
 }
 function principalParameters(entry: ArchiveEntry) {
   const c = entry.scientific.capture;
   if (c.workspace === 'lattice') {
     const p = c.segment.settings.parameters;
+    if (p.ly === 1)
+      return `${p.periodicX ? 'periodic' : 'open'} N=${p.lx}, T=${formatNumber(p.temperature)}, J=${formatNumber(p.jx)}, h=${formatNumber(p.field)}`;
     return `${p.lx}×${p.ly}, T=${formatNumber(p.temperature)}, Jx=${formatNumber(p.jx)}, Jy=${formatNumber(p.jy)}, h=${formatNumber(p.field)}`;
   }
   const model = c.segment.model;
