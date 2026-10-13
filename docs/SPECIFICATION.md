@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.24 (spatial φ⁴ HMC, 2026-10-13)
+**Version:** 0.25 (tiny Z₂ gauge theory, 2026-10-13)
 
-**Status:** M0–M4d1 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M4d1 spatial interacting fields are implemented; spatial HMC is implemented and locally validated.
+**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a tiny Z₂ gauge theory is implemented; the complete local validation pipeline has passed; remote deployment is pending.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -217,7 +217,7 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 - M4d1 implements spatial `φ⁴` in 1D/2D with local Metropolis and supported finite-volume references below. M4d2 adds spatial HMC below; general mass/critical diagnostics are not implemented.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
-- `Z₂` and compact `U(1)` gauge models on oriented edges and plaquettes. Start with one open plaquette and small periodic tori. Show Wilson loops and gauge invariance explicitly. Do not imply a 2D gauge model has an Ising-like thermal transition without model-specific justification.
+- M5a implements the tiny `Z₂` gauge slice below. Compact `U(1)`, Potts, FK and XY remain later work; gauge models must not inherit unsupported Ising criticality claims.
 
 #### M4a1 massive Gaussian field (merged)
 
@@ -269,13 +269,23 @@ Interacting segments have `reference=null`. Only λ=0 uses the exact dense Gauss
 
 A dedicated φ⁴ view isolates existing Gaussian-only renderers. Its sidebar has six editable teaching presets, applied coefficients and a collapsible draft. The featured controlled `FieldVisual`, selected-site conditional/incident-bond tools, spatial correlators, scalar moments, recent history, actual proposal inspection and optional references use the existing six-card ToolDeck and phone modes. Display operations and lazy references never sample. M4d1 introduced no spatial HMC, archive/sweep format or mathematical dependency; M4d2 extends its tested gradient below. See [spatial φ⁴ mathematics](math/spatial-phi4.md) and [review](M4D1_REVIEW.md).
 
-#### M4d2 HMC for spatial φ⁴ (implemented; locally validated)
+#### M4d2 HMC for spatial φ⁴ (released)
 
 The existing ordinary spatial action and full gradient also supply identity-mass HMC: V fresh N(0,1) auxiliary momenta, L kick-drift-kick steps, final momentum reversal, and acceptance from the complete `ΔH=Δ(S+Σp²/2)`. A small pure integrator is shared with QM without altering arithmetic order, protected by exact released-output golden fixtures and full-snapshot replay. Spatial wrappers retain typed arithmetic-overflow recovery and model-specific validation. Exactly `2V+1` uniforms are consumed on every attempted trajectory, including acceptance, rejection and numerical divergence. Invalid starting states/settings throw; a divergent proposal preserves the old field. There is no finite-ΔH rejection cutoff or mean-zero projection.
 
 Spatial local Metropolis remains the initial default. HMC draft defaults are ε=0.06, L=12, warm-up 20 trajectories and stride 1. Valid ranges are ε=0.002–0.25, integer L=1–32, warm-up 0–1000 and stride 1–100 trajectories. Applied settings carry only their active cadence system. One HMC Step completes one whole-field trajectory, with no intermediate MD measurements and repeated rejected states eligible for retention. Same-geometry physics, sampler, tuning and cadence changes preserve field/RNG and start isolated segments; geometry/family changes and Reset begin seeded sessions. Spatial HMC Run batches contain eight trajectories; direct advances permit at most 32. QM/local batching is unchanged, and parameter changes wait for in-flight acknowledgments.
 
 All existing spatial observables and reference gates remain unchanged. Full-segment measurements survive the 256-vector bound; eight segments remain available. HMC adds acceptance including warm-up, divergence counts, scaled finite signed-ΔH mean/RMS/max, force/step work and at most 256 recent defects. Spatial force counts include failed overflow calls. Latest inspection reports actual start/proposed S,K,H, ε,L,Lε, α,u, outcome and bounded completed-step defects, never local-site fields. The selectable HMC tool is a read-only projection; the featured field and existing tools remain available. Global update indices are monotone across sampler segments but represent different work. Auxiliary time, spatial distance, Markov updates and QM Euclidean time are distinct. No automatic tuning, unsupported uncertainty, physical tunneling rate, generic 2D mass fit or archive changes are introduced. See [mathematics](math/hmc-spatial-phi4.md) and [review](M4D2_REVIEW.md).
+
+#### M5a tiny Z₂ gauge theory (implemented; locally validated)
+
+Small Systems adds two presentation-only gauge launchers alongside its 20 existing named recipes, without widening the old site-model union or changing any of the five top-level destinations. The existing `graphPreset('square'|'torus')` oriented cell complexes supply four vertices and respectively 4 links/1 face or 8 links/4 faces. Every link has its own ±1 variable and physical edge ID. The counting-measure action is `S=−K Σ_f P_f`, with `K∈[−4,4]`, no additional beta and no gauge quotient. Signed closed walks remain explicit although Z₂ inversion is trivial.
+
+A dedicated gauge worker owns links, RNG, counters, full invariant moments and eight bounded parameter segments. Direct enumeration-CDF draws consume one uniform; lazy random-link Metropolis consumes exactly three (link, laziness, decision). E attempted updates are one nominal sweep; local warm-up and stride use whole sweeps, while every independent draw is retained. Initialization is explicitly unmeasured. Fixed-topology K/sampler/cadence changes retain links/RNG and start isolated measurements; Reset or geometry changes start a new seeded session. Each segment keeps at most 256 recent configurations, full plaquette/action/Wilson moments, plaquette sign counts and joint winding counts. No raw-link mean is presented as a physical invariant, and local-chain estimates have no unsupported independent-sample errors.
+
+Gauge transformations are explicit preview/apply commands at a paused acknowledged boundary, checked against run ID/version. They change authoritative links and snapshot version but not RNG, MC counters, measurements, target or segments. Selected vertices/links/faces/loops and ToolDeck assignments are presentation-only. The default feature shows all oriented links, wraps and plaquettes; up to six optional tools show action, loops, exact references, symmetry, history, winding and transition inspection. Phones retain detail/overview modes. Gauge and legacy Small Systems sessions stay independently mounted after first use; switching presentation does not silently stop or restart a hidden run.
+
+Open exact Z is `16 cosh K`. Torus Z is `256 cosh⁴K(1+tanh⁴K)`; four plaquettes have even parity, and each allowed pattern has 32 link states. Gauge orbits have eight states; plaquette pattern and fixed representatives `Wx=e0 e2`, `Wy=e1 e5` label 32 torus orbits. Their four joint winding probabilities are 1/4. The two-face contractible projected walk retains a repeated connector, since the reduced boundary of this wrapped face union has two components. Gauge transformations preserve winding products; local Monte Carlo updates need not. See [mathematics](math/z2-gauge.md) for the exact walks, independent formulas and scientific limits, and [review](M5A_REVIEW.md) for evidence. U(1), larger gauge lattices, quantum dynamics, new archive/export/sweep schemas and navigation redesign are excluded.
 
 #### M2 indexed 2D Ising
 

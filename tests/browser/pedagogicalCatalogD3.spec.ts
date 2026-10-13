@@ -31,8 +31,9 @@ test('grouped examples are directly available and keyboard selectable', async ({
     'Small Ising graphs',
     'Continuous small systems',
     'Advanced examples',
+    'Small gauge systems',
   ]);
-  expect(await chooser(page).locator('option').count()).toBe(20);
+  expect(await chooser(page).locator('option').count()).toBe(22);
   if (info.project.name !== 'mobile-webkit') {
     await chooser(page).focus();
     await expect(chooser(page)).toBeFocused();

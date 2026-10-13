@@ -372,6 +372,16 @@ M4d2 extends only the existing spatial `phi4-field` sampler union. Identity auxi
 
 Local Metropolis stays the default. HMC uses explicit trajectory warm-up/stride and ε/L with no automatic retuning. Sampler and compatible settings changes retain field/RNG in new segments. Spatial Run batches are eight trajectories, direct HMC advances at most 32; QM remains 16 and local samplers 128. The existing one-in-flight acknowledgment order, measurements, pair products, m⁴, eight-segment/256-vector bounds and reference capabilities are reused. Only bounded real HMC traces and stable full-segment error/work aggregates are added. Display tools consume no randomness; no intermediate MD fields become physical measurements. Global update increments have sampler-dependent computational cost. HMC diagnostics do not imply physical dynamics, equilibration, superior mixing or a tunneling rate. No archive or sweep schema changes.
 
+## Accepted tiny Z₂ gauge convention — 2026-10-13
+
+### D-057 — Link-specific science with a narrow Small Systems launcher
+
+M5a reuses the existing oriented square/torus Domain, preserving all physical edge IDs, parallel wraps and faces. Link signs and the plaquette action are a distinct pure mathematical model, never a site-Ising adapter. A dedicated GaugeRun/worker/client owns randomness and measurements. Small Systems supplies two presentation-only launchers outside its legacy Model recipe union; both legacy and gauge sessions remain independently mounted after first use. Existing routes, old seeded engines, archives and sweeps do not change. No top-level Gauge tab or universal simulation framework is introduced.
+
+Use dimensionless K in [−4,4] and counting measure on all 2^E link configurations, without gauge fixing. Direct draws use one uniform; lazy random-link Metropolis uses exactly three in link/proposal/decision order. E attempts define one nominal sweep. Warm-up/stride govern local retained states, including self/rejected states. Fixed-topology changes preserve links/RNG and isolate measurements; topology changes and Reset reseed. Eight segments and 256 recent configurations per segment bound display storage while invariant moments and sign/winding counts cover the full segment.
+
+A paused, acknowledged gauge-transformation command validates run ID/version before mutation, consumes no RNG or MC update, creates no measurement or segment and increments snapshot version. Closed-loop selections and all tools are read-only. The fixed winding representatives are e0·e2 and e1·e5. The two-face contractible projected walk has a repeated connector: the reduced boundary of the two wrapped faces is disconnected, so it must not be misrepresented as a simple embedded planar loop. Gauge invariance does not imply winding conservation under Monte Carlo. Numerical references retain all link multiplicities; future U(1) requires its own group inversion, measure, kernels and benchmarks.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

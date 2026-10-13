@@ -238,7 +238,7 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 14. **M4c1 interacting Euclidean QM (released).** A separate quartic/double-well path model uses pure periodic action and local Metropolis kernels, full-segment correlations, metastability counts and a lazy worker-owned three-grid transfer study. Resolved and under-resolved finite-spacing spectrum/correlator statuses are explicit; the harmonic model's analytic references and RNG are unchanged. Independent harmonic, finite-difference, quadrature-refinement, seeded-worker and desktop/phone browser checks passed. See [mathematics](math/interacting-oscillator.md) and [review](M4C1_REVIEW.md).
 15. **M4c2 quartic HMC (released).** Identity-mass auxiliary momenta, full quartic force, reversible/volume-preserving leapfrog, complete-ΔH correction, trajectory-based warm-up/stride, bounded energy-defect and effort diagnostics, and sampler-aware worker batches. Finite-difference, reversibility, Jacobian, refinement, multi-seed Gaussian/interacting and desktop/phone checks gate release. The [mathematics](math/hmc-euclidean-qm.md) and [review](M4C2_REVIEW.md) give the conventions and evidence. M4d1 implements spatial φ⁴ below; spatial-field HMC is implemented in M4d2 below.
 16. **M4d1 spatial lattice φ⁴ (released to main).** Distinct ordinary 1D/2D interacting field, strict three-uniform local Metropolis, validated full gradient, full-segment m²/m⁴ and spatial x/y correlations. Analytic Gaussian, decoupled quartic quadrature, independent coupled-dimer quadrature and exact periodic-chain/QM transfer correspondence gate scientific correctness. A separate field model session, controlled profile/heatmap, local quartic conditional inspection, scalar and proposal tools, lazy reference statuses and six-card phone gallery preserve existing kernels and archives. See [mathematics](math/spatial-phi4.md) and [M4d1 review](M4D1_REVIEW.md) for validation and release evidence.
-17. **M4d2 spatial HMC (implemented; locally validated).** Whole-field identity-mass trajectories reuse a small pure leapfrog calculation with exact QM golden replay. Strict trajectory cadence, eight-trajectory Run batches, complete-ΔH correction, bounded diagnostics, preserved spatial observables and model-specific controls extend M4d1. Independent force, reversibility, Jacobian, energy-order, Gaussian/quartic/dimer/transfer, seeded-worker and desktop/phone checks gate release. See [mathematics](math/hmc-spatial-phi4.md) and [review](M4D2_REVIEW.md).
+17. **M4d2 spatial HMC (released).** Whole-field identity-mass trajectories reuse a small pure leapfrog calculation with exact QM golden replay. Strict trajectory cadence, eight-trajectory Run batches, complete-ΔH correction, bounded diagnostics, preserved spatial observables and model-specific controls extend M4d1. Independent force, reversibility, Jacobian, energy-order, Gaussian/quartic/dimer/transfer, seeded-worker and desktop/phone checks gate release. See [mathematics](math/hmc-spatial-phi4.md) and [review](M4D2_REVIEW.md).
 
 **Acceptance gate**
 
@@ -246,7 +246,11 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 - Numerical HMC acceptance logic includes the correct Metropolis correction; reproducibility and area-preserving/time-reversal checks performed within numerical tolerance.
 - Real-valued fields handle scaling and color maps safely without misleading auto-rescaling.
 
-## M5 — More models and tiny gauge systems
+## M5a — Tiny Z₂ gauge theory (implemented; locally validated)
+
+Delivered scope: open plaquette and genuine periodic 2×2 cell complex, independent exact and lazy local link samplers, worker-owned paused gauge transformations, full invariant statistics and bounded segments, independent enumeration/analytic references, all physical link IDs accessible on desktop and phone. Two Small Systems launchers leave the five top-level destinations and old numerical engines intact. The [review](M5A_REVIEW.md) records exhaustive invariance/orbits, finite-state balance, fixed-seed ensemble checks, actual worker protocol, production browser coverage and release status. No gauge archive or sweep format is introduced.
+
+## Remaining M5 — More models and gauge extensions
 
 **Objective:** demonstrate reuse of the domain/field/sampler/plot architecture.
 
@@ -254,7 +258,7 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 
 - Potts and XY models on 2D square lattices; model-appropriate updates and observables. Add vortices only with a clear lattice winding convention.
 - Optional random-cluster/FK view and valid cluster updates where the physical coupling assumptions permit them.
-- `Z₂` gauge field on oriented edges with plaquette product; one open plaquette and 2×2 torus; visible gauge transformations.
+- The tiny `Z₂` slice above is implemented; larger gauge geometries require their own explicit scope and validation.
 - Compact `U(1)` link variables; plaquette holonomy, Wilson loops, tiny systems with more link DOFs than selected inspection plots.
 - Gauge-specific small-system interface: select links to inspect while keeping the entire link configuration in the worker; do not mistake site rotors for gauge connections.
 
@@ -280,7 +284,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4d1, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M4d2 spatial HMC is implemented and locally validated; gauge and later archive stages remain future scope.
+M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a tiny Z₂ gauge theory is implemented and locally validated; remaining M5 models and later archive stages remain future scope.
 
 ## Definition of done for the initial public usable release
 

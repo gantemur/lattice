@@ -1,10 +1,14 @@
 # Lattice Lab
 
-**Status:** M0–M4d1 and the model-interface architecture audit are released to main. M4d2 spatial HMC is implemented; the complete local validation pipeline has passed. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
+**Status:** M0–M4d2 and the model-interface architecture audit are released to main. M5a tiny Z₂ gauge theory is implemented and locally validated; remote deployment is pending. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
+
+## M5a tiny Z₂ gauge theory
+
+Small Systems → **Small gauge systems** offers a single open plaquette and the genuine periodic 2×2 torus, with four and eight physical link variables respectively. A dedicated seeded worker samples the dimensionless plaquette action using exact independent draws or lazy random-link Metropolis. Select oriented links, faces, vertices and Wilson loops; preview and apply a worker-owned gauge transformation while paused. Exact enumeration and independent analytical references accompany isolated parameter-segment statistics and bounded histories. No new top-level workspace, legacy engine change or gauge archive is introduced. See [mathematics](docs/math/z2-gauge.md) and [M5a review](docs/M5A_REVIEW.md).
 
 ## Configurable model pages (Stages A–D3)
 

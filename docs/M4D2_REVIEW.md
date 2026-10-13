@@ -1,6 +1,6 @@
 # M4d2 — Spatial φ⁴ Hamiltonian Monte Carlo review
 
-**Branch:** `codex/m4d2-spatial-phi4-hmc` · **Verified base:** `14ae50cf749e0864c105789aa5a0787bc444ec17`. Remote main matched the requested base before implementation. Work uses a clean managed worktree; unrelated screenshot copies in the original checkout are untouched. Implementation and complete local validation are complete. Remote release and deployment verification are reported with the released commit and workflow URL.
+**Branch:** `codex/m4d2-spatial-phi4-hmc` · **Verified base:** `14ae50cf749e0864c105789aa5a0787bc444ec17`. Remote main matched the requested base before implementation. Work uses a clean managed worktree; unrelated screenshot copies in the original checkout are untouched. Released on main as `fca9e1fab7ebd4d3dff5ff2e25578ad6cf366842`. The [main workflow](https://github.com/gantemur/lattice/actions/runs/38443381738) passed validation and Pages deployment; the public desktop and phone checks passed. This status correction records the completed release, without changing M4d2 science.
 
 ## Architecture plan and delivered slice
 

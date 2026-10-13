@@ -1,3 +1,10 @@
+import { GaugeWorkspace } from './GaugeWorkspace';
+import {
+  GaugeCatalogOptions,
+  gaugeExamples,
+  isGaugeExample,
+} from './gaugeCatalog';
+import type { GaugeExampleId } from './gaugeCatalog';
 import { SiteHeader } from './SiteHeader';
 import { ScalarShare } from './ScalarShare';
 import { decodeScalarConfiguration } from './shareConfiguration';
@@ -55,6 +62,20 @@ export function SmallSystemsApp({
   saveCaptures: (captures: Capture[]) => void;
   archiveCount: number;
 }) {
+  // Once opened, both sessions remain mounted; visibility never samples.
+  const [gaugeExample, setGaugeExample] = useState<GaugeExampleId | null>(null);
+  const [gaugeActive, setGaugeActive] = useState(false);
+  const [gaugeLaunch, setGaugeLaunch] = useState(0);
+  function launchExample(id: string) {
+    if (isGaugeExample(id)) {
+      setGaugeExample(id);
+      setGaugeLaunch((n) => n + 1);
+      setGaugeActive(true);
+    } else {
+      setGaugeActive(false);
+      selectExample(id as ExampleId);
+    }
+  }
   const { view, client } = useSimulation();
   const snapshot = view.snapshot;
   const lastConfiguration = useRef<RunConfiguration>(
@@ -254,7 +275,7 @@ export function SmallSystemsApp({
   const exampleDescription = examples.find(
     ([id]) => id === displayedExample,
   )?.[2];
-  return (
+  const legacyPage = (
     <>
       <a className="skip-link" href="#laboratory">
         Skip to laboratory
@@ -290,11 +311,15 @@ export function SmallSystemsApp({
               </label>
               <select
                 id="model"
+                aria-label={
+                  gaugeActive
+                    ? 'Inactive Small Systems example'
+                    : 'Named example'
+                }
                 className="model-select"
                 value={displayedExample ?? ''}
                 onChange={(e) => {
-                  if (snapshot && !view.error)
-                    selectExample(e.target.value as ExampleId);
+                  if (snapshot && !view.error) launchExample(e.target.value);
                 }}
                 onKeyDown={(event) => {
                   if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')
@@ -303,7 +328,10 @@ export function SmallSystemsApp({
                   // native popup is open. Commit arrow navigation immediately.
                   event.preventDefault();
                   if (!snapshot || view.error) return;
-                  const ids = examples.map(([id]) => id);
+                  const ids: string[] = [
+                    ...examples.map(([id]) => id),
+                    ...gaugeExamples.map(([id]) => id),
+                  ];
                   const index = ids.indexOf(displayedExample ?? 'gaussian');
                   const next = Math.max(
                     0,
@@ -312,7 +340,7 @@ export function SmallSystemsApp({
                       index + (event.key === 'ArrowDown' ? 1 : -1),
                     ),
                   );
-                  if (ids[next] !== displayedExample) selectExample(ids[next]!);
+                  if (ids[next] !== displayedExample) launchExample(ids[next]!);
                 }}
                 // Initialization clears the snapshot. Keep keyboard focus on
                 // this selector during a chosen-example switch, but ignore
@@ -334,6 +362,7 @@ export function SmallSystemsApp({
                     ))}
                   </optgroup>
                 ))}
+                <GaugeCatalogOptions />
               </select>
               <p className="plot-note" data-testid="example-description">
                 {displayedExample
@@ -813,6 +842,22 @@ export function SmallSystemsApp({
           Gaussian · Spin · Binomial · Graph Ising · Real scalar field
         </span>
       </footer>
+    </>
+  );
+  return (
+    <>
+      <div hidden={gaugeActive}>{legacyPage}</div>
+      {gaugeExample && (
+        <div hidden={!gaugeActive}>
+          <GaugeWorkspace
+            example={gaugeExample}
+            launch={gaugeLaunch}
+            active={gaugeActive}
+            choose={launchExample}
+            archiveCount={archiveCount}
+          />
+        </div>
+      )}
     </>
   );
 }
