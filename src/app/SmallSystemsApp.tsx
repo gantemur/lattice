@@ -1,3 +1,7 @@
+import { XYWorkspace } from './XYWorkspace';
+import type { XYExampleId } from './xyCatalog';
+import { isXYExample, xyExamples } from './xyCatalog';
+import { XYCatalogOptions } from './xyCatalog';
 import { PottsWorkspace } from './PottsWorkspace';
 import {
   PottsCatalogOptions,
@@ -74,13 +78,15 @@ export function SmallSystemsApp({
   // Once opened, legacy/Z₂/U(1)/Potts sessions remain mounted. Explicit catalog
   // launch resets the selected additive family; top-level visibility never does.
   const [gaugeExample, setGaugeExample] = useState<GaugeExampleId | null>(null);
-  const [gaugeActive, setGaugeActive] = useState<'z2' | 'u1' | 'potts' | false>(
-    false,
-  );
+  const [gaugeActive, setGaugeActive] = useState<
+    'z2' | 'u1' | 'potts' | 'xy' | false
+  >(false);
   const [u1Example, setU1Example] = useState<U1ExampleId | null>(null);
   const [u1Launch, setU1Launch] = useState(0);
   const [pottsExample, setPottsExample] = useState<PottsExampleId | null>(null);
   const [pottsLaunch, setPottsLaunch] = useState(0);
+  const [xyExample, setXYExample] = useState<XYExampleId | null>(null);
+  const [xyLaunch, setXYLaunch] = useState(0);
   const [gaugeLaunch, setGaugeLaunch] = useState(0);
   function launchExample(id: string) {
     if (isGaugeExample(id)) {
@@ -91,6 +97,10 @@ export function SmallSystemsApp({
       setU1Example(id);
       setU1Launch((n) => n + 1);
       setGaugeActive('u1');
+    } else if (isXYExample(id)) {
+      setXYExample(id);
+      setXYLaunch((n) => n + 1);
+      setGaugeActive('xy');
     } else if (isPottsExample(id)) {
       setPottsExample(id);
       setPottsLaunch((n) => n + 1);
@@ -356,6 +366,7 @@ export function SmallSystemsApp({
                     ...examples.map(([id]) => id),
                     ...gaugeExamples.map(([id]) => id),
                     ...pottsExamples.map(([id]) => id),
+                    ...xyExamples.map(([id]) => id),
                   ];
                   const index = ids.indexOf(displayedExample ?? 'gaussian');
                   const next = Math.max(
@@ -389,6 +400,7 @@ export function SmallSystemsApp({
                 ))}
                 <GaugeCatalogOptions />
                 <PottsCatalogOptions />
+                <XYCatalogOptions />
               </select>
               <p className="plot-note" data-testid="example-description">
                 {displayedExample
@@ -879,6 +891,18 @@ export function SmallSystemsApp({
             example={gaugeExample}
             launch={gaugeLaunch}
             active={gaugeActive === 'z2'}
+            choose={launchExample}
+            archiveCount={archiveCount}
+          />
+        </div>
+      )}
+      {xyExample && (
+        <div hidden={gaugeActive !== 'xy'}>
+          <XYWorkspace
+            mode="small"
+            example={xyExample}
+            launch={xyLaunch}
+            active={gaugeActive === 'xy'}
             choose={launchExample}
             archiveCount={archiveCount}
           />

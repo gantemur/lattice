@@ -1,10 +1,14 @@
 # Lattice Lab
 
-**Status:** M0–M4d2 and the model-interface architecture audit are released to main. M5a Z₂, M5b compact U(1) and M5c Potts are released to main with verified Pages deployment. M5d FK/Edwards–Sokal and Swendsen–Wang have passed hosted validation and Pages/live checks; release evidence and final documentation-head verification are recorded in the M5d review. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
+**Status:** M0–M4d2, the model-interface audit and model-page Stages A–E are released. M5a–M5d are released through verified main `0449e2a`. M5e XY site spins and vortices are implemented; [M5e review](docs/M5E_REVIEW.md) records validation and release gates. The five existing workspaces, older seeded engines and archive formats remain unchanged.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
+
+## M5e classical XY spins and vortices
+
+**Small XY systems** offers a planar rotor, coupled pair, frustrated triangle and periodic 2×2 torus, with additional graph geometries in settings. **Lattice Systems → 2D XY** supports 2–32 sites per axis and independent open/periodic boundaries. Signed dimensionless interactions, angular Metropolis and conditional von Mises heat bath share one pure site-spin model. Tools show arrows, conditional densities, controlled finite-volume references, magnetization, correlations, oriented vortex charges and paused global rotation at zero source. Separate workers preserve Small/Lattice sessions; no new archive or navigation architecture is introduced. See [mathematics and exercises](docs/math/xy-model.md) and [review](docs/M5E_REVIEW.md). XY winding is distinct from U(1) gauge curvature; finite runs do not certify BKT criticality or mixing.
 
 ## M5d FK clusters and Swendsen–Wang
 

@@ -412,6 +412,16 @@ The existing shared PottsRun gains `fk-direct` (1+k uniforms) and `sw` (E+k, inc
 
 One FK launcher and optional tools extend existing pages, not navigation or a universal runtime. Deterministic display colors, keyed options and references never consume RNG. Independent BFS/joint sums, finite SW matrices and multiseed comparisons accompany the UI. Equal-negative-triangle ground counts are restricted to equal couplings. No new archive, external-field FK construction, negative-probability clipping, noninteger q, alternative cluster algorithm or mixing certification is implied.
 
+## Accepted classical XY conventions — 2026-10-14
+
+### D-061 — XY site angles, conditional sampling and principal-lift vortices
+
+M5e adds one pure XY family on existing physical graphs and bounded indexed rectangles, using normalized Haar measure, dimensionless signed K,h∈[−4,4] and canonical [−π,π) angles. It does not extract/rewrite gauge angle code or invent a compact-spin framework. Reference-only effective pair combinations never rewrite physical edges/faces. The 2×2 torus retains eight bonds/four faces. Tiny zero-field tree/cycle Bessel formulas have explicit signed truncation/roundoff gates; source-biased dimers use refined quadrature, with unavailable/under-resolved states for unsupported calculations.
+
+Metropolis uses exactly three uniforms; rejection heat bath records variable trial work and is never assigned a Markov acceptance rate. Random initialization consumes V uniforms, deterministic fixtures none, and initialization is unmeasured. Nominal sweeps mean V random-site attempts, including rejections. Principal bond lifts are stored forward and negated in reverse. Antipodal proximity and integer residual have separate 10⁻¹⁰ tolerances; invalid vortex images do not silently become zero. Full-image vortex coverage stays separate from ordinary measurements. Periodic neutrality is an incidence identity; nonzero principal winding can coexist with unit derived complex holonomy.
+
+A dedicated worker/run/client supports independently retained Small/Lattice sessions and old hidden-workspace semantics. Compatible Apply starts isolated segments without reseeding; topology/initialization changes reset. Eight segments/256 recent records bound storage, with no large historical images. Paused acknowledged global rotation at h=0 is a deterministic no-draw/no-update/no-measure event with a new version; it preserves accumulated statistics. Presentation tools and preview are read-only. No XY archive/sweep format, navigation redesign, extra dependency, cluster/HMC algorithm, critical-point claim or unsupported error bar is introduced. [The mathematics](math/xy-model.md) links the equations, implementation and independent tests.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

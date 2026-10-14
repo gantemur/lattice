@@ -1,3 +1,4 @@
+import { XYCatalogOptions } from './xyCatalog';
 import { PottsCatalogOptions } from './pottsCatalog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GaugeClient } from '../engine/z2GaugeClient';
@@ -550,6 +551,7 @@ export function GaugeWorkspace({
                   ))}
                   <GaugeCatalogOptions />
                   <PottsCatalogOptions />
+                  <XYCatalogOptions />
                 </select>
               </label>
               <DisplayMath>{String.raw`S_K(U)=-K\sum_f P_f(U)`}</DisplayMath>

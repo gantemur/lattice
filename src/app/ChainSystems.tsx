@@ -72,7 +72,7 @@ export function ChainSystems({
   saveCaptures: (captures: Capture[]) => void;
   archiveCount: number;
   switchToGrid: () => void;
-  chooseSystem?: (id: '2d' | 'chain' | 'potts') => void;
+  chooseSystem?: (id: '2d' | 'chain' | 'potts' | 'xy') => void;
   active?: boolean;
 }) {
   const { view, client } = useLatticeSession(defaultChainConfiguration);
@@ -193,14 +193,15 @@ export function ChainSystems({
                 }
                 value="chain"
                 onChange={(e) =>
-                  e.target.value === 'potts'
-                    ? chooseSystem?.('potts')
+                  ['potts', 'xy'].includes(e.target.value)
+                    ? chooseSystem?.(e.target.value as 'potts' | 'xy')
                     : switchToGrid()
                 }
               >
                 <option value="2d">2D square-lattice Ising</option>
                 <option value="chain">1D Ising chain</option>
                 <option value="potts">2D Potts</option>
+                <option value="xy">2D XY</option>
               </select>
             </label>
             <section className="model-card lattice-model-card">

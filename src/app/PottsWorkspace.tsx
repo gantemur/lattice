@@ -1,3 +1,4 @@
+import { XYCatalogOptions } from './xyCatalog';
 import { defaultFKOptions } from './FKTools';
 import type { FKOptions } from './FKTools';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -124,7 +125,7 @@ export function PottsWorkspace({
   active: boolean;
   choose?: (id: string) => void;
   archiveCount: number;
-  onLatticeChoice?: (id: '2d' | 'chain' | 'potts') => void;
+  onLatticeChoice?: (id: '2d' | 'chain' | 'potts' | 'xy') => void;
 }) {
   const initial = mode === 'small' ? pottsRecipe(example) : defaultLatticePotts;
   const [draft, setDraft] = useState(() => draftFor(initial)),
@@ -268,6 +269,7 @@ export function PottsWorkspace({
                     ))}
                     <GaugeCatalogOptions />
                     <PottsCatalogOptions />
+                    <XYCatalogOptions />
                   </select>
                 </label>
               ) : (
@@ -282,13 +284,14 @@ export function PottsWorkspace({
                     value="potts"
                     onChange={(e) =>
                       onLatticeChoice?.(
-                        e.target.value as '2d' | 'chain' | 'potts',
+                        e.target.value as '2d' | 'chain' | 'potts' | 'xy',
                       )
                     }
                   >
                     <option value="2d">2D square-lattice Ising</option>
                     <option value="chain">1D Ising chain</option>
                     <option value="potts">2D Potts</option>
+                    <option value="xy">2D XY</option>
                   </select>
                 </label>
               )}

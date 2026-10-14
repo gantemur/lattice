@@ -2831,3 +2831,40 @@ footer {
 .potts-workspace .sidebar p {
   overflow-wrap: anywhere;
 }
+
+/* XY arrows supplement cyclic hue; physical face IDs stay separately selectable. */
+.xy-configuration canvas {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  margin: 0 auto;
+  border-radius: 8px;
+}
+.xy-chart {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+}
+.xy-acceptance {
+  display: block;
+  width: 100%;
+  max-height: 32px;
+}
+.xy-face-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+.xy-face-strip .selected {
+  outline: 2px solid var(--accent, #166c67);
+}
+.xy-workspace table {
+  display: block;
+  overflow-x: auto;
+}
+.xy-workspace input[type='checkbox'] {
+  width: auto;
+  min-height: 20px;
+}

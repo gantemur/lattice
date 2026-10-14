@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.28 (FK/Edwards–Sokal and Swendsen–Wang, 2026-10-14)
+**Version:** 0.29 (classical XY and lattice vortices, 2026-10-14)
 
-**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a Z₂, M5b compact U(1) and M5c Potts are released with verified Pages deployment. M5d has passed hosted validation and Pages/live checks; its review records release evidence and final documentation-head verification.
+**Status:** M0–M4d2, the architecture audit and model-page Stages A–E are released. M5a–M5d are released through verified main `0449e2a`. M5e is implemented with separate Small/Lattice XY sessions; its review records numerical/browser evidence and publication gates. Local validation alone does not establish deployment.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -217,7 +217,7 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 - M4d1 implements spatial `φ⁴` in 1D/2D with local Metropolis and supported finite-volume references below. M4d2 adds spatial HMC below; general mass/critical diagnostics are not implemented.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
-- M5a implements the tiny `Z₂` gauge slice below. M5b adds compact `U(1)` below; M5c adds Potts below; M5d adds eligible FK/SW below; XY remains later work; gauge models must not inherit unsupported Ising criticality claims.
+- M5a implements the tiny `Z₂` gauge slice below. M5b adds compact `U(1)` below; M5c adds Potts below; M5d adds eligible FK/SW below; M5e adds XY below; gauge models must not inherit unsupported Ising criticality claims.
 
 #### M4a1 massive Gaussian field (merged)
 
@@ -356,6 +356,20 @@ Exact enumeration caps at V≤4,E≤8 independently of the Potts spin-state cap.
 Both workspaces retain independent clients backed by PottsRun. Fixed-support changes create segments and clear the current auxiliary image; support changes and Reset reseed. Spin and genuine FK aggregates share the same measurement boundary. Eight segments and 256 scalar records remain the limits. Per-bond counts, size histograms and full moments survive recent eviction; large boxes store only the latest full auxiliary image and no NxN connectivity. Cluster requests cap at 32 trajectories and Run batches at eight, without altering local batch sizes.
 
 One optional FK launcher and three tools extend the existing ToolDeck: bond/component versus spin-color view, exact FK/ES reference, and sampled cluster statistics. Actual transition inspection and selectable cluster histories use worker-owned data. Numeric selectors, keyboard bonds, keyed display settings, featured/gallery exchange and mobile detail/overview remain. Negative-K/nonzero-h explanations leave old Potts algorithms available. The equal-negative-triangle degeneracy formula requires equal couplings. No new persistence, routes, ghost fields, noninteger q, XY or general simulation framework is introduced. See [mathematics](math/fk-edwards-sokal.md) and [review](M5D_REVIEW.md).
+
+#### M5e classical XY site spins and lattice vortices
+
+One narrow family uses θᵢ∈[−π,π), unit spin (cos θᵢ,sin θᵢ), normalized site Haar measure and dimensionless S=−ΣₑKₑcos(θhead−θtail)−hΣᵢcos θᵢ. Signed K,h lie in [−4,4]. The graph adapter exposes site/dimer/chain3/triangle/open square/periodic torus/four-ring, with four grouped named examples. The indexed adapter supports 2≤Lx,Ly≤32 and independent open/periodic axes. Physical parallel bonds, present K=0 edges, self-link constants and declared oriented faces survive intact. No triangle face is inferred.
+
+Random-site angular Metropolis consumes three uniforms in site/displacement/decision order. Exact conditional heat bath uses the resultant neighbor vector and relative-angle von Mises rejection sampling, recording actual trials/draws; R=0 uses one angle uniform after site choice. Conditional rejection is not a rejected Markov update. One Step is a site attempt, one nominal sweep is V attempts with replacement, warm-up/stride are complete sweeps, and rejected configurations enter scheduled measurements. Random initialization consumes V draws; aligned/±vortex fixtures consume none and are unmeasured.
+
+Pure Bessel/tree/cycle references use normalized absolute Z and physical bond insertions, including the torus formula ΣₙIₙ(2Kx)²Iₙ(2Ky)². Signed character tails and floating-point allowances gate trusted results. Source-biased dimers use refined 32→64→128 angular quadrature; larger coupled source graphs and interacting large lattices explicitly lack exact references. Independent-site large lattices expose product references. Reference tools are lazy and deterministic; conditional density is not mislabeled as a marginal.
+
+Plaquettes use bottom/right/top/left signed physical walks. Principal bond lifts are computed once; reverse traversal is their exact negative. Near-antipodal increments within 10⁻¹⁰ radians mark a face ambiguous; winding must be within 10⁻¹⁰ of an integer. Full valid images alone enter Σ|Q|/F statistics, with separate coverage and omitted counts. Periodic face-incidence cancellation enforces net zero charge; open/mixed boundaries do not assert neutrality. Derived complex XY bond products remain one even with nonzero winding, unlike gauge curvature.
+
+Separate acknowledged XY worker clients preserve Small/Lattice sessions. Same-support Apply preserves state/RNG and begins an isolated segment; topology/boundary/initialization changes reset the seeded session. Reset uses applied settings/edited seed. At most eight segments and 256 recent records per segment accompany full moments. Tiny records may hold ≤4 angles, angular histograms and pair moments; large histories hold no full angle/vortex images. Ordinary statistics include mₓ,mᵧ,|m|,S,S/V,bond cosines and raw axial correlations through lag8. No independent-sample error bars or automatic mixing certification are supplied.
+
+At h=0, an acknowledged paused global rotation preserves prior statistics, updates, RNG and segments, records a deterministic event, and advances version; source-biased commands fail before mutation. Read-only preview, arrows/Canvas, numeric site/bond/face selection, vortex overlay and keyed ToolDeck options never advance sampling. The existing five routes, archives and older kernels remain unchanged. No XY archive, cluster sampler, HMC, helicity modulus, BKT fit or new navigation architecture is included. See [mathematical conventions](math/xy-model.md) and [review](M5E_REVIEW.md).
 
 ### 4.4 Model extensibility
 

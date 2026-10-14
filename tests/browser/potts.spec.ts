@@ -56,7 +56,7 @@ test('Potts named examples, exact normalization, signed drafts and eight physica
   await open(page, 'potts-torus');
   await expect(
     page.getByLabel('Named example', { exact: true }).locator('option'),
-  ).toHaveCount(28);
+  ).toHaveCount(32);
   await expect(feature(page)).toContainText(
     '8 physical bonds · 4 oriented faces',
   );
