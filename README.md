@@ -1,6 +1,6 @@
 # Lattice Lab
 
-**Status:** M0–M4d2, the model-interface audit and model-page Stages A–E are released. M5a–M5d are released through verified main `0449e2a`. M5e XY site spins and vortices are implemented; [M5e review](docs/M5E_REVIEW.md) records validation and release gates. The five existing workspaces, older seeded engines and archive formats remain unchanged.
+**Status:** M0–M4d2, the model-interface audit and model-page Stages A–E are released. M5a–M5e are released, including XY site spins and lattice vortices in implementation `0ffa034`. Hosted validation and desktop/phone Pages verification passed; [M5e review](docs/M5E_REVIEW.md) records actual evidence and the documentation-head verification policy. The five existing workspaces, older seeded engines and archive formats remain unchanged.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 

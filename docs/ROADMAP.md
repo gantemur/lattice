@@ -2,7 +2,7 @@
 
 **Version:** 0.16, 2026-10-14
 
-**Status:** M0–M4d2, the architecture audit and model-page Stages A–E are released. M5a–M5d are released through main `0449e2a`; M5e XY is implemented, with validation/publication evidence in its review.
+**Status:** M0–M4d2, the architecture audit and model-page Stages A–E are released. M5a–M5e are released. XY implementation `0ffa034` passed hosted validation, Pages and desktop/phone live verification; evidence is in its review.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -25,7 +25,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
 | **M4: Continuous lattice fields and paths** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–E model pages, M4c1 interacting QM, M4c2 quartic-path HMC; M4d1 spatial φ⁴ | Tiny-matrix covariance, Fourier/oscillator invariants; full-force HMC validation | Through M4d2 released to main |
-| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a–M5d released; M5e implemented, publication gates below |
+| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a–M5e scientific core released; evidence below |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
 ## M0 — Deployable foundation and one exact model
@@ -264,7 +264,7 @@ Implemented on `codex/m5d-fk-edwards-sokal-sw` from released main `8b0bbdef2ddea
 
 ## M5e — Classical XY and lattice vortices
 
-Implemented on `codex/m5e-xy-vortices` from main `0449e2a993a5f4a363fa28081c8de74abc234333`. One site-angle family connects small Bessel/character/quadrature examples to bounded 2D lattices. Both local samplers, signed physical geometry, strict RNG accounting, principal-lift integer vortices, ambiguity coverage, periodic neutrality and worker-owned global rotation have independent mathematical/replay checks. Four named examples, Canvas arrows/overlays and the existing ToolDeck retain five workspaces and older sessions. [Mathematics](math/xy-model.md) and [review](M5E_REVIEW.md) declare ensembles, error gates, browser evidence and limits. Full local and hosted validation plus final served-SHA verification after older deployments finish gate release. Stop after M5e: no new archive, XY cluster/HMC, BKT fitting or M6 implementation.
+Implemented on `codex/m5e-xy-vortices` from main `0449e2a993a5f4a363fa28081c8de74abc234333`. One site-angle family connects small Bessel/character/quadrature examples to bounded 2D lattices. Both local samplers, signed physical geometry, strict RNG accounting, principal-lift integer vortices, ambiguity coverage, periodic neutrality and worker-owned global rotation have independent mathematical/replay checks. Four named examples, Canvas arrows/overlays and the existing ToolDeck retain five workspaces and older sessions. [Mathematics](math/xy-model.md) and [review](M5E_REVIEW.md) declare ensembles, error gates, browser evidence and limits. Implementation `0ffa0345f0f79ab19d22fa644b2092d25d704516` passed full local and hosted validation, Pages and live desktop/phone checks after older deployments finished. The review records the actual workflow/asset evidence; the documentation head receives a final served-SHA check in the delivery report. Stop after M5e: no new archive, XY cluster/HMC, BKT fitting or M6 implementation.
 
 ## Remaining M5 extensions (not part of the planned scientific core)
 
@@ -272,7 +272,7 @@ Implemented on `codex/m5e-xy-vortices` from main `0449e2a993a5f4a363fa28081c8de7
 
 **Deliverables**
 
-- Potts and XY/vortices are implemented in M5c/M5e above. Their planned scientific scope closes when M5e deployment is verified; later algorithms require new scope.
+- Potts and XY/vortices are implemented in M5c/M5e above. Their planned scientific scope is released; later algorithms require new scope.
 - M5d implements the zero-field ferromagnetic FK/ES representation and SW below; broader random-cluster dynamics require new scope.
 - The tiny `Z₂` slice above is implemented; larger gauge geometries require their own explicit scope and validation.
 - Compact `U(1)` is implemented for the two tiny cell complexes above; larger domains and alternative samplers need separate scope and validation.
@@ -300,7 +300,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a Z₂, M5b U(1) and M5c Potts are released to main. M5d is released through main `0449e2a`. M5e implements XY with release gates above; later archive stages remain future scope.
+M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a Z₂, M5b U(1) and M5c Potts are released to main. M5d is released through main `0449e2a`. M5e XY is also released with hosted/live evidence above; later archive stages remain future scope.
 
 ## Definition of done for the initial public usable release
 

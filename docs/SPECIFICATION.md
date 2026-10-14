@@ -2,7 +2,7 @@
 
 **Version:** 0.29 (classical XY and lattice vortices, 2026-10-14)
 
-**Status:** M0–M4d2, the architecture audit and model-page Stages A–E are released. M5a–M5d are released through verified main `0449e2a`. M5e is implemented with separate Small/Lattice XY sessions; its review records numerical/browser evidence and publication gates. Local validation alone does not establish deployment.
+**Status:** M0–M4d2, the architecture audit and model-page Stages A–E are released. M5a–M5e are released, with XY implementation `0ffa034` passing hosted validation, Pages deployment and desktop/phone live checks. Its review records numerical evidence, release provenance and final documentation-head verification.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -357,7 +357,7 @@ Both workspaces retain independent clients backed by PottsRun. Fixed-support cha
 
 One optional FK launcher and three tools extend the existing ToolDeck: bond/component versus spin-color view, exact FK/ES reference, and sampled cluster statistics. Actual transition inspection and selectable cluster histories use worker-owned data. Numeric selectors, keyboard bonds, keyed display settings, featured/gallery exchange and mobile detail/overview remain. Negative-K/nonzero-h explanations leave old Potts algorithms available. The equal-negative-triangle degeneracy formula requires equal couplings. No new persistence, routes, ghost fields, noninteger q, XY or general simulation framework is introduced. See [mathematics](math/fk-edwards-sokal.md) and [review](M5D_REVIEW.md).
 
-#### M5e classical XY site spins and lattice vortices
+#### M5e classical XY site spins and lattice vortices (released)
 
 One narrow family uses θᵢ∈[−π,π), unit spin (cos θᵢ,sin θᵢ), normalized site Haar measure and dimensionless S=−ΣₑKₑcos(θhead−θtail)−hΣᵢcos θᵢ. Signed K,h lie in [−4,4]. The graph adapter exposes site/dimer/chain3/triangle/open square/periodic torus/four-ring, with four grouped named examples. The indexed adapter supports 2≤Lx,Ly≤32 and independent open/periodic axes. Physical parallel bonds, present K=0 edges, self-link constants and declared oriented faces survive intact. No triangle face is inferred.
 
