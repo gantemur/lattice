@@ -25,7 +25,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
 | **M4: Continuous lattice fields and paths** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–E model pages, M4c1 interacting QM, M4c2 quartic-path HMC; M4d1 spatial φ⁴ | Tiny-matrix covariance, Fourier/oscillator invariants; full-force HMC validation | Through M4d2 released to main |
-| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a–M5c released; M5d implemented with release gates below |
+| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a–M5d released; hosted/live evidence below |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
 ## M0 — Deployable foundation and one exact model
@@ -260,7 +260,7 @@ Implemented on `codex/m5c-potts-models` from verified released main `25049f351f5
 
 ## M5d — FK, Edwards–Sokal and Swendsen–Wang
 
-Implemented on `codex/m5d-fk-edwards-sokal-sw` from released main `8b0bbdef2ddea1053b82362b243eb37e14192380`. Both internal stages are present: exact physical-bond enumeration/joint identities and genuine conditional bond-refresh/component-recolor SW. Tiny exact FK draws, strict eligibility, explicit trajectory cadence, bounded worker-owned FK measurements and Small/Lattice teaching tools retain the five workspaces and old seeded kernels. Independent BFS/joint sums, complete tiny transition matrices, released replay hashes, fixed multiseed comparisons and desktop/phone production tests gate completion. [Mathematics](math/fk-edwards-sokal.md) and [review](M5D_REVIEW.md) record actual evidence and limits. Hosted validation, Pages and served-SHA/live checks are separate release gates; local success alone does not claim deployment. Stop here; no M5e/XY or persistence expansion.
+Implemented on `codex/m5d-fk-edwards-sokal-sw` from released main `8b0bbdef2ddea1053b82362b243eb37e14192380`. Both internal stages are present: exact physical-bond enumeration/joint identities and genuine conditional bond-refresh/component-recolor SW. Tiny exact FK draws, strict eligibility, explicit trajectory cadence, bounded worker-owned FK measurements and Small/Lattice teaching tools retain the five workspaces and old seeded kernels. Independent BFS/joint sums, complete tiny transition matrices, released replay hashes, fixed multiseed comparisons and desktop/phone production tests gate completion. [Mathematics](math/fk-edwards-sokal.md) and [review](M5D_REVIEW.md) record actual evidence and limits. Implementation `5b1cb807384f8e4ddf189a47a91e249c7b9402a2` and the documentation follow-up passed hosted validation and Pages/live checks. The review records actual results and a detected late older deployment; final documentation-head verification is reported separately. Local success alone does not claim deployment. Stop here; no M5e/XY or persistence expansion.
 
 ## Remaining M5 — More models and gauge extensions
 
@@ -296,7 +296,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a Z₂, M5b U(1) and M5c Potts are released to main. M5d is implemented with publication gates below; XY and later archive stages remain future scope.
+M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a Z₂, M5b U(1) and M5c Potts are released to main. M5d has passed hosted and live release checks recorded below; XY and later archive stages remain future scope.
 
 ## Definition of done for the initial public usable release
 

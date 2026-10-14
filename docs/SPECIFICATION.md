@@ -2,7 +2,7 @@
 
 **Version:** 0.28 (FK/Edwards–Sokal and Swendsen–Wang, 2026-10-14)
 
-**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a Z₂, M5b compact U(1) and M5c Potts are released with verified Pages deployment. M5d is implemented with publication gates recorded in its review.
+**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a Z₂, M5b compact U(1) and M5c Potts are released with verified Pages deployment. M5d has passed hosted validation and Pages/live checks; its review records release evidence and final documentation-head verification.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
