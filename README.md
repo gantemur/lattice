@@ -6,6 +6,10 @@ Lattice Lab is a browser-based laboratory for teaching and small-scale explorati
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
+## M5b compact U(1) gauge theory
+
+Small Systems → **Small gauge systems** now also offers compact U(1) on the open plaquette and periodic 2×2 torus. Canonical link angles, signed holonomies, local angular Metropolis, paused worker-owned vertex transformations, separate parameter segments and complex invariant measurements use an independent U(1) worker. Controlled Bessel/character references use normalized Haar measure, with Z(0)=1; open plaquette and continuous winding histograms distinguish theory from correlated samples. The five routes and all existing engines/archives remain compatible. See [mathematics](docs/math/u1-gauge.md) and [M5b review](docs/M5B_REVIEW.md) for validation and release status.
+
 ## M5a tiny Z₂ gauge theory
 
 Small Systems → **Small gauge systems** offers a single open plaquette and the genuine periodic 2×2 torus, with four and eight physical link variables respectively. A dedicated seeded worker samples the dimensionless plaquette action using exact independent draws or lazy random-link Metropolis. Select oriented links, faces, vertices and Wilson loops; preview and apply a worker-owned gauge transformation while paused. Exact enumeration and independent analytical references accompany isolated parameter-segment statistics and bounded histories. No new top-level workspace, legacy engine change or gauge archive is introduced. See [mathematics](docs/math/z2-gauge.md) and [M5a review](docs/M5A_REVIEW.md).
@@ -128,7 +132,7 @@ Each of the latest **eight segments** keeps its settings, start index, update/wa
 
 Mulberry32 midpoint v1 remains the RNG. Direct Gaussian Box–Muller v1 still consumes exactly two uniforms per draw; spin direct/heat bath uses one, direct binomial uses n, and Metropolis uses two per update. Reset initializes chains at 0 (Gaussian), +1 (spin), or round(np) (binomial); initialization is not a measurement. Reproducibility requires the same seed, settings/update sequence, algorithm and build; browser transcendental functions can differ in their last bits. Run posts batches of 128 with at most one in flight. Apply and Pause respect the batch acknowledgment boundary. Plotting, history browsing, snapshot frequency and Step inspection never consume RNG values.
 
-**Planned beyond M3b2:** gauge dynamics and cluster algorithms. A future periodic 2×2 gauge lattice has eight oriented link variables, independent of the number of chosen plots.
+**Gauge continuation:** tiny Z₂ and compact U(1) examples use eight oriented links on the periodic 2×2 torus, independent of teaching-tool count. Larger gauge systems and cluster algorithms remain future work.
 
 ## Read first
 

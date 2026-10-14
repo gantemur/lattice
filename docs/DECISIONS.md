@@ -382,6 +382,16 @@ Use dimensionless K in [−4,4] and counting measure on all 2^E link configurati
 
 A paused, acknowledged gauge-transformation command validates run ID/version before mutation, consumes no RNG or MC update, creates no measurement or segment and increments snapshot version. Closed-loop selections and all tools are read-only. The fixed winding representatives are e0·e2 and e1·e5. The two-face contractible projected walk has a repeated connector: the reduced boundary of the two wrapped faces is disconnected, so it must not be misrepresented as a simple embedded planar loop. Gauge invariance does not imply winding conservation under Monte Carlo. Numerical references retain all link multiplicities; future U(1) requires its own group inversion, measure, kernels and benchmarks.
 
+## Accepted compact U(1) convention — 2026-10-13
+
+### D-058 — Continuous link science, normalized Haar and independent bounded references
+
+M5b shares only the authoritative square/torus signed descriptors and the read-only cell drawing with M5a. U(1) has canonical [−π,π) angle arrays, nontrivial conjugation, signed incidence differences/gradient and a separate worker. Its action −KΣcosθ_f uses normalized Haar, Z(0)=1, without gauge fixing or a hidden Wilson constant. The unchanged Z₂ numerical kernels retain an exact released full-snapshot replay fixture. Two additional named launchers leave existing model, route, archive and sweep identities intact.
+
+Angular Metropolis uses exactly three uniforms (link/displacement/decision), fixed width 0.02–π, no deliberate lazy stay/adaptation and E attempts per nominal sweep. Eight isolated segments retain full complex invariant moments and 24-bin angular histograms plus 256 measured vectors; the latest transition is separately inspectable. Parameter/tuning/cadence changes preserve angles/RNG; geometry, Reset and explicit named-example launches reseed. Top-level visibility leaves mounted sessions intact. Paused version-checked vertex transformations are deterministic events, never measurements or proposals.
+
+Bessel power series and all-integer torus character sums have explicit truncation and roundoff allowances, including shifted negative-index Wilson tails. Only resolved references publish trusted numbers; the default gate is 10⁻¹² relative partition/absolute loop error, and more demanding precision is unsupported. Independent periodic 1D/3D quadrature gates the formulas. Circular complex means replace ordinary angle means. The torus constraint is a group product; principal angles may sum to a nonzero multiple of 2π. Winding phases remain Haar distributed at equilibrium but need not mix quickly in a finite run. No independent-sample error, conserved sector, confinement transition, continuum limit, gauge HMC or new persistence claim is introduced.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

@@ -1,10 +1,12 @@
+import { U1GaugeWorkspace } from './U1GaugeWorkspace';
 import { GaugeWorkspace } from './GaugeWorkspace';
 import {
   GaugeCatalogOptions,
   gaugeExamples,
   isGaugeExample,
+  isU1Example,
 } from './gaugeCatalog';
-import type { GaugeExampleId } from './gaugeCatalog';
+import type { GaugeExampleId, U1ExampleId } from './gaugeCatalog';
 import { SiteHeader } from './SiteHeader';
 import { ScalarShare } from './ScalarShare';
 import { decodeScalarConfiguration } from './shareConfiguration';
@@ -62,15 +64,22 @@ export function SmallSystemsApp({
   saveCaptures: (captures: Capture[]) => void;
   archiveCount: number;
 }) {
-  // Once opened, both sessions remain mounted; visibility never samples.
+  // Once opened, legacy/Z₂/U(1) sessions remain mounted. Explicit catalog
+  // launch resets the selected gauge family; top-level visibility never does.
   const [gaugeExample, setGaugeExample] = useState<GaugeExampleId | null>(null);
-  const [gaugeActive, setGaugeActive] = useState(false);
+  const [gaugeActive, setGaugeActive] = useState<'z2' | 'u1' | false>(false);
+  const [u1Example, setU1Example] = useState<U1ExampleId | null>(null);
+  const [u1Launch, setU1Launch] = useState(0);
   const [gaugeLaunch, setGaugeLaunch] = useState(0);
   function launchExample(id: string) {
     if (isGaugeExample(id)) {
       setGaugeExample(id);
       setGaugeLaunch((n) => n + 1);
-      setGaugeActive(true);
+      setGaugeActive('z2');
+    } else if (isU1Example(id)) {
+      setU1Example(id);
+      setU1Launch((n) => n + 1);
+      setGaugeActive('u1');
     } else {
       setGaugeActive(false);
       selectExample(id as ExampleId);
@@ -846,13 +855,24 @@ export function SmallSystemsApp({
   );
   return (
     <>
-      <div hidden={gaugeActive}>{legacyPage}</div>
+      <div hidden={!!gaugeActive}>{legacyPage}</div>
       {gaugeExample && (
-        <div hidden={!gaugeActive}>
+        <div hidden={gaugeActive !== 'z2'}>
           <GaugeWorkspace
             example={gaugeExample}
             launch={gaugeLaunch}
-            active={gaugeActive}
+            active={gaugeActive === 'z2'}
+            choose={launchExample}
+            archiveCount={archiveCount}
+          />
+        </div>
+      )}
+      {u1Example && (
+        <div hidden={gaugeActive !== 'u1'}>
+          <U1GaugeWorkspace
+            example={u1Example}
+            launch={u1Launch}
+            active={gaugeActive === 'u1'}
             choose={launchExample}
             archiveCount={archiveCount}
           />

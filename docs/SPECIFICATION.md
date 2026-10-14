@@ -1,6 +1,6 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.25 (tiny Z₂ gauge theory, 2026-10-13)
+**Version:** 0.26 (compact U(1) gauge theory, 2026-10-13)
 
 **Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a tiny Z₂ gauge theory is released to main with verified Pages deployment.
 
@@ -217,7 +217,7 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 - M4d1 implements spatial `φ⁴` in 1D/2D with local Metropolis and supported finite-volume references below. M4d2 adds spatial HMC below; general mass/critical diagnostics are not implemented.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
-- M5a implements the tiny `Z₂` gauge slice below. Compact `U(1)`, Potts, FK and XY remain later work; gauge models must not inherit unsupported Ising criticality claims.
+- M5a implements the tiny `Z₂` gauge slice below. M5b adds compact `U(1)` below; Potts, FK and XY remain later work; gauge models must not inherit unsupported Ising criticality claims.
 
 #### M4a1 massive Gaussian field (merged)
 
@@ -286,6 +286,16 @@ A dedicated gauge worker owns links, RNG, counters, full invariant moments and e
 Gauge transformations are explicit preview/apply commands at a paused acknowledged boundary, checked against run ID/version. They change authoritative links and snapshot version but not RNG, MC counters, measurements, target or segments. Selected vertices/links/faces/loops and ToolDeck assignments are presentation-only. The default feature shows all oriented links, wraps and plaquettes; up to six optional tools show action, loops, exact references, symmetry, history, winding and transition inspection. Phones retain detail/overview modes. Gauge and legacy Small Systems sessions stay independently mounted after first use; switching presentation does not silently stop or restart a hidden run.
 
 Open exact Z is `16 cosh K`. Torus Z is `256 cosh⁴K(1+tanh⁴K)`; four plaquettes have even parity, and each allowed pattern has 32 link states. Gauge orbits have eight states; plaquette pattern and fixed representatives `Wx=e0 e2`, `Wy=e1 e5` label 32 torus orbits. Their four joint winding probabilities are 1/4. The two-face contractible projected walk retains a repeated connector, since the reduced boundary of this wrapped face union has two components. Gauge transformations preserve winding products; local Monte Carlo updates need not. See [mathematics](math/z2-gauge.md) for the exact walks, independent formulas and scientific limits, and [review](M5A_REVIEW.md) for evidence. U(1), larger gauge lattices, quantum dynamics, new archive/export/sweep schemas and navigation redesign are excluded.
+
+#### M5b compact U(1) gauge theory (implemented; release verification tracked separately)
+
+Two further Small Systems examples use the same open/torus oriented cell complexes, with 4/8 canonical link angles in [−π,π). Shared `gaugeGeometry` owns only IDs and walks; `GaugeCellGraph` owns only presentation geometry. Z₂ sign arithmetic, samplers, worker and exact seeded replay remain unchanged. The U(1) action is `S=−K Σ_f cos θ_f`, K∈[−4,4], under normalized product Haar `∏dθ/(2π)`; Z(0)=1, with no counting factor, extra beta or gauge fixing. Signed incidence determines angles, local action differences and the tested full gradient. Reverse transport is conjugation. The torus face product is one; principal angles need sum to zero only modulo 2π. Fixed winding loops and the oriented two-face walk retain M5a identities and projection caveats.
+
+A separate U1GaugeRun/client/worker owns angles, seeded RNG and measurements. Angular Metropolis draws exactly link/displacement/decision uniforms, δ=width(2u−1), width∈[0.02,π], default 0.8, with no lazy stay or automatic tuning. E attempts form a nominal sweep; complete warm-up and stride sweeps schedule measurements, including rejections. Defaults are 200 warm-up and stride two. Run batches 128; direct commands cap at 10,000. Initialization is unmeasured. Fixed-topology K/width/cadence changes preserve angles/RNG with isolated segments; geometry, Reset or explicit gauge-example launches create seeded sessions. Top-level tabs preserve independently mounted legacy/Z₂/U(1) sessions. No model/URL/archive/sweep identity is changed.
+
+Eight segments retain full complex plaquette and predefined-loop moments, mean real plaquette, total action, fixed 24-bin invariant-angle histograms and at most 256 recent **measured** configurations each. The latest attempted transition is separate. Full statistics survive eviction; no arithmetic angle means or independent-sample MCMC errors are shown. A paused acknowledged vertex-phase command changes only angles, event and snapshot version, never RNG, counters, measurements or segments. Invalid/stale commands are atomic.
+
+The independent open reference is I0 and I1/I0. Torus Z=Σ_n I_n(K)^4, face numerator Σ_n I_(n+1) I_n³ and two-face numerator Σ_n I_(n+1)² I_n² use all integer character modes with bounded tails. The default 10⁻¹² gate covers relative Z and absolute loop errors including floating-point allowances; cutoff exhaustion and unsupported precision withhold trusted values. All exact imaginary expectations and winding means are zero. Open density applies only to a face; torus winding densities are Haar. Plaquette agreement alone does not certify flat-holonomy mixing. The UI reuses ToolDeck and phone modes for geometry, complex inspection, loops, transformation, references, histograms, history and transitions. See [mathematics](math/u1-gauge.md) and [review](M5B_REVIEW.md). No larger geometry, gauge HMC, matter, topological-sector estimator, navigation redesign or gauge archive is added.
 
 #### M2 indexed 2D Ising
 

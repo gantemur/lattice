@@ -2806,3 +2806,13 @@ footer {
   background: #166c67;
   color: white;
 }
+
+/* Gauge charts retain their scientific coordinates inside narrow tool cards. */
+.u1-workspace svg[role='img'] {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.u1-workspace table {
+  overflow-wrap: anywhere;
+}

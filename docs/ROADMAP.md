@@ -1,8 +1,8 @@
 # Lattice Lab — Development Roadmap
 
-**Version:** 0.14, 2026-10-13
+**Version:** 0.15, 2026-10-13
 
-**Status:** M0–M4d1 and the architecture audit are released to main. Model-page Stages A–E and the 1D Ising chain are implemented.
+**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E and the 1D Ising chain are implemented.
 
 **Specification:** [SPECIFICATION.md](SPECIFICATION.md)
 
@@ -24,8 +24,8 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3a: Diagnostics & observables** | χ, Binder, heat capacity, spatial correlations, bounded ACF/ESS/SE, exact tiny-chain benchmarks | Independent enumeration, Markov spectra and statistical estimator tests | Merged in PR #8 |
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
-| **M4: Continuous lattice fields and paths** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–E model pages, M4c1 interacting QM, M4c2 quartic-path HMC; M4d1 spatial φ⁴ | Tiny-matrix covariance, Fourier/oscillator invariants; full-force HMC validation | Through M4d1 released to main |
-| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | Planned |
+| **M4: Continuous lattice fields and paths** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–E model pages, M4c1 interacting QM, M4c2 quartic-path HMC; M4d1 spatial φ⁴ | Tiny-matrix covariance, Fourier/oscillator invariants; full-force HMC validation | Through M4d2 released to main |
+| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a released; M5b implemented with release gates tracked below |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
 ## M0 — Deployable foundation and one exact model
@@ -250,6 +250,10 @@ The M3b2 slice extends the merged M3b1 archive with independently seeded bounded
 
 Delivered scope: open plaquette and genuine periodic 2×2 cell complex, independent exact and lazy local link samplers, worker-owned paused gauge transformations, full invariant statistics and bounded segments, independent enumeration/analytic references, all physical link IDs accessible on desktop and phone. Two Small Systems launchers leave the five top-level destinations and old numerical engines intact. The [review](M5A_REVIEW.md) records exhaustive invariance/orbits, finite-state balance, fixed-seed ensemble checks, actual worker protocol, production browser coverage and release status. No gauge archive or sweep format is introduced.
 
+## M5b — Compact U(1) tiny gauge theory
+
+Implemented on `codex/m5b-compact-u1-gauge` from verified main `6634d771e0af7eb653ac3af62930f7d4c5f118a9`. Two continuous-link examples reuse oriented square/torus geometry and drawing, with distinct U(1) arithmetic, angular Metropolis and worker-owned complex measurements. Controlled Bessel/character references, independent one-/three-angle quadrature, gauge invariance and coupled-chain tests, seeded segments and full desktop/phone regression gate delivery. The [mathematics](math/u1-gauge.md) and [review](M5B_REVIEW.md) describe exact conventions, actual numerical evidence and release status. No gauge archive or universal simulation framework is introduced. Deployment is not asserted until the remote validation and Pages jobs and public smoke checks pass.
+
 ## Remaining M5 — More models and gauge extensions
 
 **Objective:** demonstrate reuse of the domain/field/sampler/plot architecture.
@@ -259,7 +263,7 @@ Delivered scope: open plaquette and genuine periodic 2×2 cell complex, independ
 - Potts and XY models on 2D square lattices; model-appropriate updates and observables. Add vortices only with a clear lattice winding convention.
 - Optional random-cluster/FK view and valid cluster updates where the physical coupling assumptions permit them.
 - The tiny `Z₂` slice above is implemented; larger gauge geometries require their own explicit scope and validation.
-- Compact `U(1)` link variables; plaquette holonomy, Wilson loops, tiny systems with more link DOFs than selected inspection plots.
+- Compact `U(1)` is implemented for the two tiny cell complexes above; larger domains and alternative samplers need separate scope and validation.
 - Gauge-specific small-system interface: select links to inspect while keeping the entire link configuration in the worker; do not mistake site rotors for gauge connections.
 
 **Acceptance gate**
