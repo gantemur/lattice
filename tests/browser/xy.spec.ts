@@ -292,6 +292,35 @@ test('independent XY sessions, 2D boundaries, selectors, old workspaces and mobi
   }
   await expect(updates(page)).toHaveText('1');
   await settings(page);
+  for (const [lx, ly] of [
+    [2, 32],
+    [32, 2],
+  ]) {
+    await root(page).getByLabel('XY Lx', { exact: true }).fill(String(lx));
+    await root(page).getByLabel('XY Ly', { exact: true }).fill(String(ly));
+    await apply(page);
+    const canvas = feature(page).getByTestId('xy-canvas');
+    await expect(canvas).toHaveAttribute(
+      'aria-label',
+      `${lx} by ${ly} XY spin arrows; use site and plaquette selectors`,
+    );
+    const box = (await canvas.boundingBox())!;
+    expect(box.width).toBeLessThanOrEqual(642);
+    expect(box.height).toBeLessThanOrEqual(642);
+    expect(box.width / box.height).toBeCloseTo((lx! + 1) / (ly! + 1), 2);
+    // The CSS box remains the actual drawing box, so pointer hit testing keeps
+    // the same row-major mapping after either dimension is constrained.
+    await canvas.click({
+      position: {
+        x: (box.width * lx!) / (lx! + 1),
+        y: (box.height * ly!) / (ly! + 1),
+      },
+    });
+    await expect(feature(page).getByTestId('xy-selected')).toContainText(
+      `Site ${lx! * ly! - 1}`,
+    );
+    await layout(page);
+  }
   await root(page).getByLabel('XY Lx', { exact: true }).fill('16');
   await root(page).getByLabel('XY Ly', { exact: true }).fill('16');
   await apply(page);
