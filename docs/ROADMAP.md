@@ -25,7 +25,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
 | **M4: Continuous lattice fields and paths** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–E model pages, M4c1 interacting QM, M4c2 quartic-path HMC; M4d1 spatial φ⁴ | Tiny-matrix covariance, Fourier/oscillator invariants; full-force HMC validation | Through M4d2 released to main |
-| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a/M5b released; M5c implemented with release gates tracked below |
+| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a–M5c released; M5d implemented with release gates below |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
 ## M0 — Deployable foundation and one exact model
@@ -256,7 +256,11 @@ Implemented on `codex/m5b-compact-u1-gauge` from verified main `6634d771e0af7eb6
 
 ## M5c — q-state Potts models
 
-Implemented on `codex/m5c-potts-models` from verified released main `25049f351f5753bc99d1cbde0a94295c9fc21bbe`. q=2,3,4 small graphs and 2≤Lx,Ly≤32 rectangles share pure categorical mathematics and one Potts engine, with separate Small/Lattice sessions. Signed/anisotropic interactions, exact tiny enumeration, lazy Metropolis, heat bath, eligible independent draws, isolated measurement segments, categorical tools and raw axial correlations are implemented. [Mathematics](math/potts-model.md) and [review](M5C_REVIEW.md) record independent formulas, full tiny transition matrices, q=2 action/partition correspondence, multiseed sampling and desktop/phone evidence. Completion requires hosted validation, Pages and public-site verification; local checks alone do not assert deployment. M5d FK remains unimplemented and must independently enforce its ferromagnetic coupling assumptions.
+Implemented on `codex/m5c-potts-models` from verified released main `25049f351f5753bc99d1cbde0a94295c9fc21bbe`. q=2,3,4 small graphs and 2≤Lx,Ly≤32 rectangles share pure categorical mathematics and one Potts engine, with separate Small/Lattice sessions. Signed/anisotropic interactions, exact tiny enumeration, lazy Metropolis, heat bath, eligible independent draws, isolated measurement segments, categorical tools and raw axial correlations are implemented. [Mathematics](math/potts-model.md) and [review](M5C_REVIEW.md) record independent formulas, full tiny transition matrices, q=2 action/partition correspondence, multiseed sampling and desktop/phone evidence. Released as `8b0bbdef2ddea1053b82362b243eb37e14192380`: hosted validation and Pages [passed](https://github.com/gantemur/lattice/actions/runs/38514716290), with served SHA, assets/workers and desktop/360px behavior verified.
+
+## M5d — FK, Edwards–Sokal and Swendsen–Wang
+
+Implemented on `codex/m5d-fk-edwards-sokal-sw` from released main `8b0bbdef2ddea1053b82362b243eb37e14192380`. Both internal stages are present: exact physical-bond enumeration/joint identities and genuine conditional bond-refresh/component-recolor SW. Tiny exact FK draws, strict eligibility, explicit trajectory cadence, bounded worker-owned FK measurements and Small/Lattice teaching tools retain the five workspaces and old seeded kernels. Independent BFS/joint sums, complete tiny transition matrices, released replay hashes, fixed multiseed comparisons and desktop/phone production tests gate completion. [Mathematics](math/fk-edwards-sokal.md) and [review](M5D_REVIEW.md) record actual evidence and limits. Hosted validation, Pages and served-SHA/live checks are separate release gates; local success alone does not claim deployment. Stop here; no M5e/XY or persistence expansion.
 
 ## Remaining M5 — More models and gauge extensions
 
@@ -265,7 +269,7 @@ Implemented on `codex/m5c-potts-models` from verified released main `25049f351f5
 **Deliverables**
 
 - Potts is implemented in M5c above. XY remains future work; add vortices only with a clear lattice winding convention.
-- Optional random-cluster/FK view and valid cluster updates where the physical coupling assumptions permit them.
+- M5d implements the zero-field ferromagnetic FK/ES representation and SW below; broader random-cluster dynamics require new scope.
 - The tiny `Z₂` slice above is implemented; larger gauge geometries require their own explicit scope and validation.
 - Compact `U(1)` is implemented for the two tiny cell complexes above; larger domains and alternative samplers need separate scope and validation.
 - Gauge-specific small-system interface: select links to inspect while keeping the entire link configuration in the worker; do not mistake site rotors for gauge connections.
@@ -292,7 +296,7 @@ For every feature or small pull request, require:
 4. A screenshot/smoke-test note and explicit list of limitations.
 5. Necessary updates to this roadmap/specification and a decision record if architectural assumptions changed.
 
-M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a tiny Z₂ gauge theory is released to main; remaining M5 models and later archive stages remain future scope.
+M0–M4d2, the readability pass and the architecture audit are released to main. **Model-page Stages A–E are implemented for QM, Fields, Lattice Systems and Small Systems**. M5a Z₂, M5b U(1) and M5c Potts are released to main. M5d is implemented with publication gates below; XY and later archive stages remain future scope.
 
 ## Definition of done for the initial public usable release
 

@@ -1,14 +1,18 @@
 # Lattice Lab
 
-**Status:** M0–M4d2 and the model-interface architecture audit are released to main. M5a tiny Z₂ gauge theory is released to main with verified Pages deployment. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
+**Status:** M0–M4d2 and the model-interface architecture audit are released to main. M5a Z₂, M5b compact U(1) and M5c Potts are released to main with verified Pages deployment. M5d FK/Edwards–Sokal and Swendsen–Wang are implemented; release gates are recorded in the M5d review. Model-page Stages A–E unify the current workspaces; the 1D Ising chain extends Lattice Systems with a spatial transfer-matrix reference.
 
 Lattice Lab is a browser-based laboratory for teaching and small-scale exploration of statistical mechanics, Euclidean lattice quantum mechanics, and lattice field theory. Its emphasis is on mathematical structure, observable quantities, transparent algorithms, and comparisons with exact results.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
+## M5d FK clusters and Swendsen–Wang
+
+The existing Potts laboratories now offer exact tiny FK joint draws and whole-lattice Swendsen–Wang trajectories for h=0 and nonnegative physical couplings. One **FK clusters and Potts colors** launcher exposes distinct physical bonds, canonical component labels, spin colors, exact partition/connectivity identities and genuine sampled cluster statistics. SW warm-up and stride count whole trajectories; old local sweep conventions and seeded streams remain unchanged. See [mathematics](docs/math/fk-edwards-sokal.md) and [M5d review](docs/M5D_REVIEW.md). No new workspace, archive format, antiferromagnetic FK rule or independent-sample error claim is introduced.
+
 ## M5c categorical Potts models
 
-Small Systems → **Small Potts systems** offers a dimer, antiferromagnetic triangle and periodic 2×2 torus. **Lattice Systems → 2D Potts** supports q=2,3,4 on bounded open/periodic rectangles. Both use one Potts implementation with independent worker sessions, signed dimensionless interactions, lazy Metropolis/heat bath, eligible exact independent draws, color/order/action measurements and raw equality correlations. Tiny exact references include the complete q=2 Ising normalization. See [mathematics](docs/math/potts-model.md) and [M5c review](docs/M5C_REVIEW.md) for numerical evidence, limits and release gates. Existing model sessions and archive formats are unchanged; FK and cluster sampling are future work.
+Small Systems → **Small Potts systems** offers a dimer, antiferromagnetic triangle and periodic 2×2 torus. **Lattice Systems → 2D Potts** supports q=2,3,4 on bounded open/periodic rectangles. Both use one Potts implementation with independent worker sessions, signed dimensionless interactions, lazy Metropolis/heat bath, eligible exact independent draws, color/order/action measurements and raw equality correlations. Tiny exact references include the complete q=2 Ising normalization. See [mathematics](docs/math/potts-model.md) and [M5c review](docs/M5C_REVIEW.md) for numerical evidence, limits and release gates. Existing model sessions and archive formats are unchanged; M5d adds the eligible FK representation described above.
 
 ## M5b compact U(1) gauge theory
 

@@ -112,7 +112,7 @@ There are at most eight segments and 256 recent measured records per segment. Ol
 
 Local samples are correlated. Strong coupling, large fields and antiferromagnetic frustration can make mixing very slow; no finite run proves equilibration, a critical point, universality or a thermodynamic limit. There are no unvalidated susceptibility/Binder formulas, independent-sample error bars or automatic criticality detection. Multiseed moderate-coupling regression benchmarks are described in the [review](../M5C_REVIEW.md).
 
-The future FK/random-cluster and Edwards–Sokal representations are related descriptions, not implemented tools. In particular, the usual ferromagnetic bond probability 1−exp(−K) is invalid for negative K. No FK bonds, cluster algorithms, XY/clock interactions, archive/sweep schema or universal runtime is introduced here.
+M5d now adds the related [FK/Edwards–Sokal representation](fk-edwards-sokal.md), exact joint draws and Swendsen–Wang on the zero-source ferromagnetic subset. The usual bond probability 1−exp(−K) remains invalid for negative K; the signed Potts model and historical local/direct samplers described here are unchanged. No XY/clock interaction, archive/sweep schema or universal runtime is introduced.
 
 ## Exercises
 

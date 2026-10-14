@@ -79,7 +79,7 @@ Screenshots: [small desktop](screenshots/m5c-small-desktop.png), [small 360px](s
 
 The publication diff contains only additive Potts science/UI/tests, narrowly scoped catalog/navigation integration, six new M5c screenshots and associated documentation. Regenerated historical screenshots are kept in a separate local recovery stash rather than included. M5b release-status lines are reconciled with its already successful hosted run.
 
-Release uses PR-first workflow, with the explicitly authorized ordinary non-force fast-forward fallback only for the known HTTP 403 integration block and after fresh ancestry/clean-tree checks. Hosted validation, Pages deployment, remote SHA agreement and the served embedded SHA plus live desktop/360px checks remain post-publication gates. Their exact outcomes and workflow link are reported in the release delivery message; this pre-publication record does not substitute local success for deployment.
+Release uses PR-first workflow, with the explicitly authorized ordinary non-force fast-forward fallback only for the known HTTP 403 integration block and after fresh ancestry/clean-tree checks. M5c was subsequently released as `8b0bbdef2ddea1053b82362b243eb37e14192380`. Hosted validation and Pages [both passed](https://github.com/gantemur/lattice/actions/runs/38514716290), with 708 unit tests and 367 browser passes/two existing skips. Remote main/feature SHAs, served embedded SHA, desktop/360px behavior and JS/CSS/font/worker loading were verified. This paragraph reconciles the earlier pre-publication record; M5d is tracked separately.
 
 ## Remaining limits / preparation for M5d
 

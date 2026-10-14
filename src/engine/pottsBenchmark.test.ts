@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { PottsRun, defaultSmallPotts } from './pottsRun';
-import type { PottsConfiguration, PottsSegment } from './pottsRun';
+import type { LocalPottsSettings, PottsSegment } from './pottsRun';
 import { pottsGraph } from '../domain/pottsDomain';
 import type { PottsGeometrySettings } from '../domain/pottsDomain';
 import { pottsModel } from '../models/potts';
@@ -11,7 +11,10 @@ import type { PottsModel } from '../models/potts';
 // not independent-sample confidence intervals for correlated local chains.
 const seeds = [17, 271, 12345, 89231];
 const tinySamples = 6000;
-function simulate(c: PottsConfiguration, samples: number): PottsSegment {
+function simulate(
+  c: LocalPottsSettings & { seed: number },
+  samples: number,
+): PottsSegment {
   const run = new PottsRun(c),
     size = pottsModel(c.parameters).size;
   let remaining =

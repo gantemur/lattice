@@ -34,7 +34,7 @@ test('grouped examples are directly available and keyboard selectable', async ({
     'Small gauge systems',
     'Small Potts systems',
   ]);
-  expect(await chooser(page).locator('option').count()).toBe(27);
+  expect(await chooser(page).locator('option').count()).toBe(28);
   if (info.project.name !== 'mobile-webkit') {
     await chooser(page).focus();
     await expect(chooser(page)).toBeFocused();

@@ -49,7 +49,7 @@ test('U(1) catalog, periodic links, independent worker lifecycle and signed segm
   });
   page.on('requestfailed', (r) => failed.push(r.url()));
   await open(page);
-  await expect(choose(page).locator('option')).toHaveCount(27);
+  await expect(choose(page).locator('option')).toHaveCount(28);
   await expect(
     page.getByRole('navigation', { name: 'Workspaces' }).getByRole('link'),
   ).toHaveCount(5);

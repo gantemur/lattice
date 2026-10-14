@@ -402,6 +402,16 @@ One PottsRun and pure sampler set serve independently mounted Small/Lattice clie
 
 Full moments/occupancies/bond counts and bounded raw axial correlations survive eviction of recent display points. Eight segments, 256 scalar records per segment and tiny-only retained vectors/pair matrices bound storage. Raw equality and normalized equality are never described as connected correlations. Majority order has finite-volume bias; local MCMC measurements do not receive independent-sample error bars. The reference implementation favors clear bond sums and categorical softmax; no legacy numerical optimization or extraction is required. FK, cluster updates and Potts persistence require a later explicit scope and validation.
 
+## Accepted FK joint representation — 2026-10-14
+
+### D-060 — Conditional cluster algorithms extend Potts without changing its physics
+
+M5d uses standard zero-source ferromagnetic Edwards–Sokal only: q=2,3,4 and physical K∈[0,4]. Existing signed/source-biased Potts samplers remain available. Physical bond IDs are never deduplicated or removed for K=0; components include isolates and use deterministic smallest-site ordering. The absolute partition shift ΣK and q=2 Ising shift are contractual. Tiny exact FK enumeration has its own V≤4,E≤8 cap.
+
+The existing shared PottsRun gains `fk-direct` (1+k uniforms) and `sw` (E+k, including every bond trial), with pure separate FK mathematics/sampling. SW cadence uses explicit whole-trajectory fields; old local sweeps, direct draw budgets and snapshot fields retain exact released replay. No accept/reject statistic is invented. Compatible Apply preserves colors/RNG but starts a segment and clears auxiliary display state. Only genuine joint samples enter FK aggregates at the same boundary as spin measurements. Eight segments, 256 scalar records, per-bond/size totals and one latest auxiliary image bound memory; no large pair matrix is added. Cluster Run batches are eight and command cap32; old local scheduling is unchanged.
+
+One FK launcher and optional tools extend existing pages, not navigation or a universal runtime. Deterministic display colors, keyed options and references never consume RNG. Independent BFS/joint sums, finite SW matrices and multiseed comparisons accompany the UI. Equal-negative-triangle ground counts are restricted to equal couplings. No new archive, external-field FK construction, negative-probability clipping, noninteger q, alternative cluster algorithm or mixing certification is implied.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

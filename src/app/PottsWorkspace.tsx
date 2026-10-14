@@ -1,13 +1,16 @@
+import { defaultFKOptions } from './FKTools';
+import type { FKOptions } from './FKTools';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { PottsClient } from '../engine/pottsClient';
 import type { PottsPort, PottsView } from '../engine/pottsClient';
 import {
   defaultLatticePotts,
+  pottsCadence,
   samePottsSupport,
   validatePottsSettings,
 } from '../engine/pottsRun';
 import type { PottsConfiguration } from '../engine/pottsRun';
-import type { PottsSampler } from '../algorithms/pottsSampler';
+import type { AllPottsSamplers } from '../engine/pottsRun';
 import { pottsGeometries, pottsGraph } from '../domain/pottsDomain';
 import type { PottsGeometry } from '../domain/pottsDomain';
 import { pottsModel } from '../models/potts';
@@ -31,7 +34,7 @@ type Draft = {
   periodicY: boolean;
   kx: string;
   ky: string;
-  sampler: PottsSampler;
+  sampler: AllPottsSamplers;
   warmup: string;
   stride: string;
   seed: string;
@@ -55,8 +58,8 @@ function draftFor(c: PottsConfiguration): Draft {
     kx: g.kind === 'lattice' ? String(g.kx) : '.7',
     ky: g.kind === 'lattice' ? String(g.ky) : '.7',
     sampler: c.sampler,
-    warmup: String(c.warmup),
-    stride: String(c.stride),
+    warmup: String(pottsCadence(c).warmup),
+    stride: String(pottsCadence(c).stride),
     seed: String(c.seed),
   };
 }
@@ -87,9 +90,17 @@ function parsed(d: Draft, mode: 'small' | 'lattice'): PottsConfiguration {
               ky: Number(d.ky),
             },
     },
-    sampler: d.sampler,
-    warmup: Number(d.warmup),
-    stride: Number(d.stride),
+    ...(d.sampler === 'sw'
+      ? {
+          sampler: d.sampler,
+          warmupTrajectories: Number(d.warmup),
+          strideTrajectories: Number(d.stride),
+        }
+      : {
+          sampler: d.sampler,
+          warmup: Number(d.warmup),
+          stride: Number(d.stride),
+        }),
     seed: Number(d.seed),
   };
   validatePottsSettings(configuration);
@@ -130,6 +141,7 @@ export function PottsWorkspace({
     [bond, setBond] = useState('e0'),
     [color, setColor] = useState(0),
     [compare, setCompare] = useState(0);
+  const [fkOptions, setFKOptions] = useState<Record<number, FKOptions>>({});
   const [histories, setHistories] = useState<Record<number, string>>({});
   const client = useRef<PottsClient | null>(null),
     previousLaunch = useRef(launch);
@@ -154,6 +166,7 @@ export function PottsWorkspace({
     setColor(0);
     setCompare(0);
     setHistories({});
+    setFKOptions({});
   }
   useEffect(() => {
     if (previousLaunch.current === launch) return;
@@ -401,7 +414,7 @@ export function PottsWorkspace({
                     onChange={(e) =>
                       setDraft({
                         ...draft,
-                        sampler: e.target.value as PottsSampler,
+                        sampler: e.target.value as AllPottsSamplers,
                       })
                     }
                   >
@@ -409,6 +422,10 @@ export function PottsWorkspace({
                       Lazy random-site Metropolis
                     </option>
                     <option value="heat-bath">Random-site heat bath</option>
+                    <option value="fk-direct">
+                      Exact FK joint draw (V≤4, E≤8)
+                    </option>
+                    <option value="sw">Swendsen–Wang trajectory</option>
                     <option
                       value="direct"
                       disabled={
@@ -422,10 +439,19 @@ export function PottsWorkspace({
                     </option>
                   </select>
                 </label>
-                {numbers('warmup', 'Potts warm-up sweeps', 0, 10000)}
+                {numbers(
+                  'warmup',
+                  draft.sampler === 'sw'
+                    ? 'Potts warm-up trajectories'
+                    : 'Potts warm-up sweeps',
+                  0,
+                  10000,
+                )}
                 {numbers(
                   'stride',
-                  'Potts measurement stride (sweeps)',
+                  draft.sampler === 'sw'
+                    ? 'Potts measurement stride (trajectories)'
+                    : 'Potts measurement stride (sweeps)',
                   1,
                   1000,
                 )}
@@ -440,8 +466,9 @@ export function PottsWorkspace({
               {model.shape
                 ? `${model.shape.lx}×${model.shape.ly}`
                 : pottsGeometries[model.graph!.id as PottsGeometry]}
-              ; h={model.h}; {applied.sampler}; warm-up {applied.warmup}, stride{' '}
-              {applied.stride}.{' '}
+              ; h={model.h}; {applied.sampler}; warm-up{' '}
+              {pottsCadence(applied).warmup}, stride{' '}
+              {pottsCadence(applied).stride} {pottsCadence(applied).unit}.{' '}
               {model.shape && applied.parameters.geometry.kind === 'lattice'
                 ? `Kx=${applied.parameters.geometry.kx}, Ky=${applied.parameters.geometry.ky}`
                 : model.bonds.map((b) => `${b.id}=${b.K}`).join(', ')}
@@ -488,20 +515,26 @@ export function PottsWorkspace({
                   : 'Paused'}
               {view.pending ? ' · settings pending' : ''} ·{' '}
               <span data-testid="potts-updates">{snapshot?.updates ?? 0}</span>{' '}
-              updates ·{' '}
+              algorithmic updates ·{' '}
               <span data-testid="potts-samples">{current?.samples ?? 0}</span>{' '}
               retained · segment{' '}
-              <span data-testid="potts-segment">{current?.id ?? 1}</span>.
+              <span data-testid="potts-segment">{current?.id ?? 1}</span>.{' '}
+              {applied.sampler === 'sw'
+                ? `${current?.updates ?? 0} whole SW trajectories in this segment.`
+                : ''}
             </p>
             {(error || view.error) && <p role="alert">{error ?? view.error}</p>}
             <p className="plot-note">
               One local Step is one site attempt; {model.size} attempts with
               replacement form a nominal sweep, not physical time. Direct draws
-              retain every whole configuration and ignore warm-up/stride.
-              All-zero initialization is unmeasured. Apply on fixed support
-              preserves colors/RNG in a new segment; q/topology/boundaries and
-              Reset reseed. Seed edits take effect on Reset/support change.
-              Apply waits for a posted batch; Pause finishes its acknowledgment.
+              (Potts or FK) retain every whole configuration and ignore
+              warm-up/stride. One SW Step is one whole bond/recolor trajectory;
+              warm-up and stride count trajectories, not site sweeps. FK/SW
+              require h=0 and all K≥0. All-zero initialization is unmeasured.
+              Apply on fixed support preserves colors/RNG in a new segment;
+              q/topology/boundaries and Reset reseed. Seed edits take effect on
+              Reset/support change. Apply waits for a posted batch; Pause
+              finishes its acknowledgment.
             </p>
             <p className="plot-note">
               No Potts archive or sweep format is available. Top-level tab
@@ -513,11 +546,24 @@ export function PottsWorkspace({
             <ToolDeck
               title="Potts tools"
               tools={pottsTools}
-              featuredDefault="configuration"
-              defaults={['occupation', 'reference']}
+              key={example}
+              featuredDefault={
+                example === 'potts-fk-torus'
+                  ? 'fk-configuration'
+                  : 'configuration'
+              }
+              defaults={
+                example === 'potts-fk-torus'
+                  ? ['fk-reference', 'fk-statistics']
+                  : ['occupation', 'reference']
+              }
               renderTool={(id, key) => (
                 <PottsTool
                   id={id}
+                  fkOptions={fkOptions[key] ?? defaultFKOptions}
+                  changeFKOptions={(options) =>
+                    setFKOptions((current) => ({ ...current, [key]: options }))
+                  }
                   model={model}
                   snapshot={snapshot}
                   site={site}
@@ -541,10 +587,11 @@ export function PottsWorkspace({
                 <p key={s.id}>
                   Segment {s.id}, q={s.settings.parameters.q}, h=
                   {s.settings.parameters.h}, {s.settings.sampler}; warm-up{' '}
-                  {s.settings.warmup}, stride {s.settings.stride} sweeps;{' '}
-                  {s.updates} attempts/draws, {s.warmupUpdates} discarded
-                  warm-up attempts, {s.samples} complete measurements,{' '}
-                  {s.history.length} recent records.{' '}
+                  {pottsCadence(s.settings).warmup}, stride{' '}
+                  {pottsCadence(s.settings).stride}{' '}
+                  {pottsCadence(s.settings).unit}; {s.updates} updates,{' '}
+                  {s.warmupUpdates} discarded warm-up updates, {s.samples}{' '}
+                  complete measurements, {s.history.length} recent records.{' '}
                   {s.settings.parameters.geometry.kind === 'graph'
                     ? Object.entries(s.settings.parameters.geometry.couplings)
                         .map(([id, k]) => `${id}=${k}`)
@@ -575,10 +622,11 @@ export function PottsWorkspace({
               <p>
                 Fixed warm-up is a budget, not evidence of mixing. Local chains
                 can mix slowly at large signed coupling. Tiny boxes do not
-                establish critical behavior. FK and Edwards–Sokal are future
-                work: the usual p=1−exp(−K) bond probability is not valid for
-                negative K. No cluster update, clock/XY interaction or automatic
-                criticality inference is implemented.
+                establish critical behavior. FK and Edwards–Sokal require zero
+                source and nonnegative couplings. SW is an algorithmic
+                trajectory, not physical time; equal update counts do not mean
+                equal work. No clock/XY interaction or automatic criticality
+                inference is implemented.
               </p>
             </details>
           </div>

@@ -1,3 +1,16 @@
+import { pottsClusterTransition } from '../algorithms/pottsClusterSampler';
+import type {
+  ClusterSampler,
+  PottsClusterTrace,
+} from '../algorithms/pottsClusterSampler';
+import { requireFK } from '../models/fk';
+import { exactFK } from '../models/fkExact';
+import {
+  emptyFKMeasurements,
+  recordFKMeasurement,
+  recordFKWork,
+} from '../observables/fkMeasurements';
+import type { FKMeasurements } from '../observables/fkMeasurements';
 import { createRng, validateSeed } from '../algorithms/rng';
 import { pottsTransition } from '../algorithms/pottsSampler';
 import type { PottsSampler, PottsTrace } from '../algorithms/pottsSampler';
@@ -13,21 +26,45 @@ import { pottsGraph, pottsTopology } from '../domain/pottsDomain';
 import { emptyMoments, recordMoment } from '../observables/moments';
 import type { Moments } from '../observables/moments';
 
-export type PottsSettings = {
+export type LocalPottsSettings = {
   parameters: PottsParameters;
   sampler: PottsSampler;
   warmup: number;
   stride: number;
 };
+export type PottsSettings =
+  | LocalPottsSettings
+  | {
+      parameters: PottsParameters;
+      sampler: 'fk-direct';
+      warmup: number;
+      stride: number;
+    }
+  | {
+      parameters: PottsParameters;
+      sampler: 'sw';
+      warmupTrajectories: number;
+      strideTrajectories: number;
+    };
+export type AllPottsSamplers = PottsSampler | ClusterSampler;
+export function pottsCadence(s: PottsSettings) {
+  return s.sampler === 'sw'
+    ? {
+        warmup: s.warmupTrajectories,
+        stride: s.strideTrajectories,
+        unit: 'trajectories',
+      }
+    : { warmup: s.warmup, stride: s.stride, unit: 'sweeps' };
+}
 export type PottsConfiguration = PottsSettings & { seed: number };
-export const defaultSmallPotts: PottsConfiguration = {
+export const defaultSmallPotts: LocalPottsSettings & { seed: number } = {
   parameters: { q: 3, h: 0, geometry: pottsGraph('dimer') },
   sampler: 'direct',
   warmup: 100,
   stride: 1,
   seed: 12345,
 };
-export const defaultLatticePotts: PottsConfiguration = {
+export const defaultLatticePotts: LocalPottsSettings & { seed: number } = {
   parameters: {
     q: 3,
     h: 0,
@@ -64,6 +101,7 @@ export type PottsSegment = {
   spatialX: { r: number; pairs: number; moments: Moments }[];
   spatialY: { r: number; pairs: number; moments: Moments }[];
   history: PottsMeasurement[];
+  fk?: FKMeasurements;
 };
 export type PottsSnapshot = {
   runId: number;
@@ -73,6 +111,7 @@ export type PottsSnapshot = {
   updates: number;
   draws: number;
   trace: PottsTrace | null;
+  cluster?: PottsClusterTrace;
   segments: PottsSegment[];
   droppedSegments: number;
 };
@@ -87,20 +126,25 @@ export type PottsResponse =
   | { type: 'error'; runId: number; message: string };
 export function validatePottsSettings(s: PottsSettings): PottsModel {
   const model = pottsModel(s.parameters);
+  const { warmup, stride } = pottsCadence(s);
   if (
-    !['direct', 'metropolis', 'heat-bath'].includes(s.sampler) ||
-    !Number.isInteger(s.warmup) ||
-    s.warmup < 0 ||
-    s.warmup > 10000 ||
-    !Number.isInteger(s.stride) ||
-    s.stride < 1 ||
-    s.stride > 1000
+    !['direct', 'metropolis', 'heat-bath', 'fk-direct', 'sw'].includes(
+      s.sampler,
+    ) ||
+    !Number.isInteger(warmup) ||
+    warmup < 0 ||
+    warmup > 10000 ||
+    !Number.isInteger(stride) ||
+    stride < 1 ||
+    stride > 1000
   )
     throw new Error(
-      'Choose a Potts sampler, 0–10000 warm-up sweeps and stride 1–1000.',
+      'Choose a Potts sampler, 0–10000 warm-up units and stride 1–1000.',
     );
   if (s.sampler === 'direct' && pottsStateCount(model) === null)
     throw new Error('Direct sampling requires q^V≤256.');
+  if (s.sampler === 'sw' || s.sampler === 'fk-direct') requireFK(model);
+  if (s.sampler === 'fk-direct') exactFK(model);
   return model;
 }
 export function samePottsSupport(
@@ -114,6 +158,13 @@ export function samePottsSupport(
   );
 }
 function settingsOnly(c: PottsSettings): PottsSettings {
+  if (c.sampler === 'sw')
+    return structuredClone({
+      parameters: c.parameters,
+      sampler: c.sampler,
+      warmupTrajectories: c.warmupTrajectories,
+      strideTrajectories: c.strideTrajectories,
+    });
   return structuredClone({
     parameters: c.parameters,
     sampler: c.sampler,
@@ -133,6 +184,7 @@ export class PottsRun {
   private version = 0;
   private droppedSegments = 0;
   private trace: PottsTrace | null = null;
+  private cluster: PottsClusterTrace | undefined;
   private segments: PottsSegment[] = [];
   private rng;
   constructor(
@@ -200,6 +252,9 @@ export class PottsRun {
       spatialX: spatial(0),
       spatialY: spatial(1),
       history: [],
+      ...(['sw', 'fk-direct'].includes(this.configuration.sampler)
+        ? { fk: emptyFKMeasurements(model) }
+        : {}),
     });
     if (this.segments.length > 8) {
       this.segments.shift();
@@ -221,6 +276,7 @@ export class PottsRun {
       this.model = nextModel;
       this.newSegment();
       this.trace = null;
+      this.cluster = undefined;
     }
     this.version++;
   }
@@ -245,6 +301,8 @@ export class PottsRun {
         recordMoment(target[i]!.moments, value.same),
       );
     }
+    if (segment.fk && this.cluster)
+      Object.assign(values, recordFKMeasurement(segment.fk, this.cluster));
     segment.history.push({
       update: this.updates,
       values,
@@ -256,23 +314,46 @@ export class PottsRun {
     if (
       !Number.isInteger(count) ||
       count < 1 ||
-      count > POTTS_ADVANCE_LIMIT ||
+      count >
+        (['sw', 'fk-direct'].includes(this.configuration.sampler)
+          ? 32
+          : POTTS_ADVANCE_LIMIT) ||
       !Number.isSafeInteger(this.updates + count)
     )
-      throw new Error('Advance 1–4096 updates within the safe counter range.');
+      throw new Error(
+        'Advance within the safe counter range: cluster requests ≤32; historical samplers ≤4096.',
+      );
     const segment = this.segments.at(-1)!,
-      { sampler, warmup, stride } = segment.settings,
+      { sampler } = segment.settings,
+      { warmup, stride } = pottsCadence(segment.settings),
       size = this.model.size;
     for (let i = 0; i < count; i++) {
-      this.trace = pottsTransition(this.model, sampler, this.colors, this.rng);
+      if (sampler === 'sw' || sampler === 'fk-direct') {
+        this.cluster = pottsClusterTransition(
+          this.model,
+          sampler,
+          this.colors,
+          this.rng,
+        );
+        this.trace = null;
+        recordFKWork(segment.fk!, this.cluster);
+      } else
+        this.trace = pottsTransition(
+          this.model,
+          sampler,
+          this.colors,
+          this.rng,
+        );
       this.updates++;
       segment.updates++;
-      segment.outcomes[this.trace.outcome]++;
-      if (sampler === 'direct') this.measure(segment);
+      if (this.trace) segment.outcomes[this.trace.outcome]++;
+      if (sampler === 'direct' || sampler === 'fk-direct')
+        this.measure(segment);
       else {
-        if (segment.updates <= warmup * size) segment.warmupUpdates++;
-        const afterWarmup = segment.updates - warmup * size;
-        if (afterWarmup > 0 && afterWarmup % (stride * size) === 0)
+        const cadenceSize = sampler === 'sw' ? 1 : size;
+        if (segment.updates <= warmup * cadenceSize) segment.warmupUpdates++;
+        const afterWarmup = segment.updates - warmup * cadenceSize;
+        if (afterWarmup > 0 && afterWarmup % (stride * cadenceSize) === 0)
           this.measure(segment);
       }
     }
@@ -289,6 +370,7 @@ export class PottsRun {
       trace: this.trace,
       segments: this.segments,
       droppedSegments: this.droppedSegments,
+      ...(this.cluster ? { cluster: this.cluster } : {}),
     });
   }
 }

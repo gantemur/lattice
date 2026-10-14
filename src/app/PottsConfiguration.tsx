@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react';
 import type { PottsModel } from '../models/potts';
+import type { FKComponents } from '../models/fk';
 import type { PottsSnapshot } from '../engine/pottsRun';
 import { drawingPositions } from '../domain/graph';
+// A deterministic display palette, never sampled colors or an RNG stream.
+export const clusterColor = (label: number) =>
+  `hsl(${(label * 137.508 + 170) % 360} 55% 37%)`;
 export const pottsColors = ['#166c67', '#b95b3e', '#6554a4', '#c79816'];
 /** Categorical color labels are accessible independently of the palette. This
  * projection never maps a color to an angle or reuses Ising spin arithmetic. */
@@ -12,6 +16,8 @@ export function PottsConfigurationView({
   bond,
   selectSite,
   selectBond,
+  clusters,
+  flags,
 }: {
   model: PottsModel;
   snapshot: PottsSnapshot | null;
@@ -19,6 +25,8 @@ export function PottsConfigurationView({
   bond: string;
   selectSite: (site: number) => void;
   selectBond: (id: string) => void;
+  clusters?: FKComponents;
+  flags?: Uint8Array;
 }) {
   const colors = snapshot?.colors ?? new Uint8Array(model.size);
   return (
@@ -35,6 +43,8 @@ export function PottsConfigurationView({
           bond={bond}
           selectSite={selectSite}
           selectBond={selectBond}
+          clusters={clusters}
+          flags={flags}
         />
       ) : (
         <PottsCanvas
@@ -42,17 +52,25 @@ export function PottsConfigurationView({
           colors={colors}
           site={site}
           selectSite={selectSite}
+          clusters={clusters}
         />
       )}
-      <div className="lattice-legend">
-        {Array.from({ length: model.q }, (_, c) => (
-          <span key={c}>
-            <i style={{ background: pottsColors[c] }} />
-            Color {c}
-            {c === 0 ? ' · distinguished color' : ''}
-          </span>
-        ))}
-      </div>
+      {clusters ? (
+        <p>
+          Cluster labels c0…c{clusters.count - 1}; hue identifies components,
+          not spin colors.
+        </p>
+      ) : (
+        <div className="lattice-legend">
+          {Array.from({ length: model.q }, (_, c) => (
+            <span key={c}>
+              <i style={{ background: pottsColors[c] }} />
+              Color {c}
+              {c === 0 ? ' · distinguished color' : ''}
+            </span>
+          ))}
+        </div>
+      )}
       <div className="gauge-selectors">
         <label>
           Potts selected site
@@ -107,6 +125,8 @@ function PottsGraph({
   bond,
   selectSite,
   selectBond,
+  clusters,
+  flags,
 }: {
   model: PottsModel;
   colors: Uint8Array;
@@ -114,6 +134,8 @@ function PottsGraph({
   bond: string;
   selectSite: (site: number) => void;
   selectBond: (id: string) => void;
+  clusters?: FKComponents;
+  flags?: Uint8Array;
 }) {
   const positions = drawingPositions(model.graph!);
   return (
@@ -121,9 +143,9 @@ function PottsGraph({
       className="graph-diagram"
       viewBox="0 0 360 260"
       role="group"
-      aria-label="Categorical Potts graph"
+      aria-label={clusters ? 'FK component graph' : 'Categorical Potts graph'}
     >
-      {model.bonds.map((b) => {
+      {model.bonds.map((b, e) => {
         const [x1, y1] = positions[model.siteIds[b.tail]!]!,
           [x2, y2] = positions[model.siteIds[b.head]!]!;
         const parallels = model.bonds.filter(
@@ -158,10 +180,20 @@ function PottsGraph({
             <path
               d={`M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}`}
               fill="none"
-              stroke={b.K < 0 ? '#b95b3e' : '#166c67'}
+              stroke={
+                flags
+                  ? flags[e]
+                    ? '#166c67'
+                    : '#879997'
+                  : b.K < 0
+                    ? '#b95b3e'
+                    : '#166c67'
+              }
               strokeWidth={bond === b.id ? 4 : 2}
-              opacity={b.K === 0 ? 0.45 : 1}
-              strokeDasharray={b.wraps ? '6 4' : undefined}
+              opacity={flags ? (flags[e] ? 1 : 0.3) : b.K === 0 ? 0.45 : 1}
+              strokeDasharray={
+                flags && !flags[e] ? '2 4' : b.wraps ? '6 4' : undefined
+              }
             />
             <rect
               x={lx - 23}
@@ -202,7 +234,11 @@ function PottsGraph({
               cx={x}
               cy={y}
               r="23"
-              fill={pottsColors[colors[i]!]}
+              fill={
+                clusters
+                  ? clusterColor(clusters.labels[i]!)
+                  : pottsColors[colors[i]!]
+              }
               stroke={site === i ? '#e7b64b' : '#203b38'}
               strokeWidth={site === i ? 5 : 2}
             />
@@ -210,10 +246,12 @@ function PottsGraph({
               x={x}
               y={y! + 4}
               textAnchor="middle"
-              style={{ fill: colors[i] === 3 ? '#203b38' : 'white' }}
+              style={{
+                fill: !clusters && colors[i] === 3 ? '#203b38' : 'white',
+              }}
               fontSize="13"
             >
-              {i}: {colors[i]}
+              {i}: {clusters ? `c${clusters.labels[i]}` : colors[i]}
             </text>
           </g>
         );
@@ -226,11 +264,13 @@ function PottsCanvas({
   colors,
   site,
   selectSite,
+  clusters,
 }: {
   model: PottsModel;
   colors: Uint8Array;
   site: number;
   selectSite: (site: number) => void;
+  clusters?: FKComponents;
 }) {
   const ref = useRef<HTMLCanvasElement>(null),
     { lx, ly } = model.shape!;
@@ -241,7 +281,9 @@ function PottsCanvas({
     canvas.width = lx * cell;
     canvas.height = ly * cell;
     for (let i = 0; i < colors.length; i++) {
-      context.fillStyle = pottsColors[colors[i]!]!;
+      context.fillStyle = clusters
+        ? clusterColor(clusters.labels[i]!)
+        : pottsColors[colors[i]!]!;
       context.fillRect((i % lx) * cell, Math.floor(i / lx) * cell, cell, cell);
     }
     context.strokeStyle = '#f5ce66';
@@ -252,12 +294,12 @@ function PottsCanvas({
       cell - 4,
       cell - 4,
     );
-  }, [colors, site, lx, ly]);
+  }, [colors, clusters, site, lx, ly]);
   return (
     <canvas
       ref={ref}
       data-testid="potts-canvas"
-      aria-label={`${lx} by ${ly} categorical Potts grid; use numeric site selection`}
+      aria-label={`${lx} by ${ly} ${clusters ? 'FK component' : 'categorical Potts'} grid; use numeric site selection`}
       onPointerDown={(e) => {
         const r = e.currentTarget.getBoundingClientRect(),
           x = Math.max(

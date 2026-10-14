@@ -1,8 +1,8 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.27 (categorical Potts models, 2026-10-14)
+**Version:** 0.28 (FK/Edwards–Sokal and Swendsen–Wang, 2026-10-14)
 
-**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a tiny Z₂ gauge theory is released to main with verified Pages deployment.
+**Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a Z₂, M5b compact U(1) and M5c Potts are released with verified Pages deployment. M5d is implemented with publication gates recorded in its review.
 
 **Audience:** researcher/instructor, students, contributors, coding agents  
 **Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
@@ -217,7 +217,7 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 - M4d1 implements spatial `φ⁴` in 1D/2D with local Metropolis and supported finite-volume references below. M4d2 adds spatial HMC below; general mass/critical diagnostics are not implemented.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
-- M5a implements the tiny `Z₂` gauge slice below. M5b adds compact `U(1)` below; M5c adds Potts below; FK and XY remain later work; gauge models must not inherit unsupported Ising criticality claims.
+- M5a implements the tiny `Z₂` gauge slice below. M5b adds compact `U(1)` below; M5c adds Potts below; M5d adds eligible FK/SW below; XY remains later work; gauge models must not inherit unsupported Ising criticality claims.
 
 #### M4a1 massive Gaussian field (merged)
 
@@ -335,7 +335,7 @@ For every valid 1–4-spin graph Ising model, construct the **actual** selected 
 
 M3a's numerical conventions remain unchanged. M3b1 stores their available segment aggregates and bounded recent observations on demand; M3b2 executes independent parameter sweeps using the existing M2 kernels. M0–M2 update kernels, RNG streams and direct-Gaussian analytic uncertainty references stay unchanged.
 
-#### M5c categorical Potts models (implemented; release gates in review)
+#### M5c categorical Potts models (released)
 
 The Potts family uses counting measure on q=2,3,4 site colors and dimensionless `S=−Σ_b K_b δequal−hΣ_i δcolor0`, with independently signed K,h∈[−4,4]. It is not a clock model. A narrow bond adapter preserves the existing graph's IDs, zero-coupling edges, parallel bonds and oriented faces, and the indexed lattice's positive-axis records. Small geometry settings cover a site, dimer, three-site chain, triangle, open 2×2 square and periodic 2×2 torus. Three launchers expose the dimer, antiferromagnetic triangle and torus. Lattice Systems retains 2D Ising as its default and adds 2D Potts with 2≤Lx,Ly≤32, independent axis boundaries and Kx/Ky. Navigation and existing URL/archive/sweep formats are unchanged.
 
@@ -343,7 +343,19 @@ Both placements use the same pure Potts model, algorithms and PottsRun, with ind
 
 Full-segment moments, color occupancies, physical-bond agreement and raw axial equality correlations are independent of rendering; at most eight segments and 256 recent records per segment are kept, with color vectors only for tiny systems. Large rectangles have no NxN pair storage. Featured tools plus a maximum six-tool gallery expose categorical configuration, conditionals, exact references, occupation, action/order/agreement, histories, raw x/y correlations, actual update traces and the q=2 Ising correspondence. `m0=(q p0−1)/(q−1)` and `majority=(q max p−1)/(q−1)` remain distinct; majority has positive finite-volume bias. `Gq=(q C−1)/(q−1)` is normalized raw equality, not connected covariance. No correlated-chain error bar or mixing claim is inferred.
 
-At q=2, J=K/2 and b=h/2 on the same physical bonds, `S_P=S_I−C` and `log Z_P=log Z_I+C`, `C=(ΣK+Vh)/2`. Tiny references use stable counting enumeration and independent site/dimer/triangle formulas. Existing Ising models, gauge kernels, scalar/field/QM samplers and archive schemas remain untouched. See [mathematics](math/potts-model.md) and [review](M5C_REVIEW.md) for exact counting, transition matrices, multiseed benchmarks and release evidence. FK/cluster algorithms, clock/XY, Potts persistence and automatic criticality detection are excluded.
+At q=2, J=K/2 and b=h/2 on the same physical bonds, `S_P=S_I−C` and `log Z_P=log Z_I+C`, `C=(ΣK+Vh)/2`. Tiny references use stable counting enumeration and independent site/dimer/triangle formulas. Existing Ising models, gauge kernels, scalar/field/QM samplers and archive schemas remain untouched. See [mathematics](math/potts-model.md) and [review](M5C_REVIEW.md) for exact counting, transition matrices, multiseed benchmarks and release evidence. M5c excludes cluster algorithms; M5d extends it below. Clock/XY, Potts persistence and automatic criticality detection remain excluded.
+
+#### M5d FK / Edwards–Sokal and Swendsen–Wang
+
+The unchanged counting-measure Potts family has an additional bond representation only for q=2,3,4, h=0 and every physical K∈[0,4]. Set p=−expm1(−K). Every physical edge has a separate occupation flag; isolates, parallel bonds, zero couplings and self-links preserve their meaning. Canonical component labels follow smallest-site order. Components are not maximal same-color domains, and FK flags are not gauge links.
+
+Exact enumeration caps at V≤4,E≤8 independently of the Potts spin-state cap. Stable log weights include impossible zero-probability words. The reference supplies absolute `log Z_P=log Z_FK+ΣK`, bond/cluster/largest-size distributions, physical occupancies and pair connectivity. Independent joint sums and q=2 Ising references validate normalization and `C_same=1/q+(1−1/q)P_connected`.
+
+`fk-direct` uses one exact-CDF uniform plus one per component and retains every draw. `sw` consumes one uniform per physical bond, including disagreeing/K=0 bonds, then one per canonical component. One SW Step is a whole trajectory, with explicit `warmupTrajectories`/`strideTrajectories`; no acceptance rate is defined. Old local/direct arithmetic, cadence and snapshot shape remain protected by released replay fixtures. Unsupported requests fail before state or RNG changes.
+
+Both workspaces retain independent clients backed by PottsRun. Fixed-support changes create segments and clear the current auxiliary image; support changes and Reset reseed. Spin and genuine FK aggregates share the same measurement boundary. Eight segments and 256 scalar records remain the limits. Per-bond counts, size histograms and full moments survive recent eviction; large boxes store only the latest full auxiliary image and no NxN connectivity. Cluster requests cap at 32 trajectories and Run batches at eight, without altering local batch sizes.
+
+One optional FK launcher and three tools extend the existing ToolDeck: bond/component versus spin-color view, exact FK/ES reference, and sampled cluster statistics. Actual transition inspection and selectable cluster histories use worker-owned data. Numeric selectors, keyboard bonds, keyed display settings, featured/gallery exchange and mobile detail/overview remain. Negative-K/nonzero-h explanations leave old Potts algorithms available. The equal-negative-triangle degeneracy formula requires equal couplings. No new persistence, routes, ghost fields, noninteger q, XY or general simulation framework is introduced. See [mathematics](math/fk-edwards-sokal.md) and [review](M5D_REVIEW.md).
 
 ### 4.4 Model extensibility
 

@@ -1,3 +1,5 @@
+import type { FKOptions } from './FKTools';
+import { FKTool, FKTransition } from './FKTools';
 import type { PottsModel } from '../models/potts';
 import { pottsConditional, pottsObservables } from '../models/potts';
 import {
@@ -12,6 +14,27 @@ import { DisplayMath } from '../ui/Math';
 import { PottsConfigurationView, pottsColors } from './PottsConfiguration';
 import type { ToolDefinition } from './ToolDeck';
 export const pottsTools = [
+  {
+    id: 'fk-configuration',
+    title: 'FK bonds and clusters',
+    kind: 'Visualization',
+    description:
+      'Actual auxiliary bonds; distinct component and spin-color views.',
+  },
+  {
+    id: 'fk-reference',
+    title: 'Exact FK and Edwards–Sokal',
+    kind: 'Analysis',
+    description:
+      'Bond enumeration, absolute partition shift and connectivity identities.',
+  },
+  {
+    id: 'fk-statistics',
+    title: 'FK cluster statistics',
+    kind: 'Plot',
+    description:
+      'Genuine retained cluster measurements and bounded size histograms.',
+  },
   {
     id: 'configuration',
     title: 'Categorical configuration',
@@ -83,7 +106,11 @@ export function PottsTool({
   selectColor,
   selectCompare,
   selectHistory,
+  fkOptions,
+  changeFKOptions,
 }: {
+  fkOptions: FKOptions;
+  changeFKOptions: (options: FKOptions) => void;
   id: PottsToolId;
   model: PottsModel;
   snapshot: PottsSnapshot | null;
@@ -102,6 +129,20 @@ export function PottsTool({
     current = snapshot?.segments.at(-1),
     segments = snapshot?.segments ?? [];
   const exact = pottsStateCount(model) !== null ? exactPotts(model) : null;
+  if (id.startsWith('fk-'))
+    return (
+      <FKTool
+        options={fkOptions}
+        changeOptions={changeFKOptions}
+        {...{ id, model, snapshot, site, bond, selectSite, selectBond }}
+      />
+    );
+  if (
+    id === 'transition' &&
+    snapshot &&
+    ['sw', 'fk-direct'].includes(snapshot.configuration.sampler)
+  )
+    return <FKTransition snapshot={snapshot} />;
   if (id === 'configuration')
     return (
       <PottsConfigurationView
@@ -242,7 +283,7 @@ export function PottsTool({
         </p>
         {model.graph?.id === 'triangle' &&
           model.h === 0 &&
-          model.bonds.every((b) => b.K < 0) && (
+          model.bonds.every((b) => b.K < 0 && b.K === model.bonds[0]!.K) && (
             <p data-testid="potts-frustration">
               For equal antiferromagnetic bonds: q={model.q} has{' '}
               {pottsTriangleReference(model.q, -1).groundStates} ground
@@ -385,14 +426,29 @@ export function PottsTool({
             value={history}
             onChange={(e) => selectHistory(e.target.value)}
           >
-            {['m0', 'majority', 'actionDensity', 'agreement']
-              .filter((key) => key in pottsObservables(model, state))
+            {[
+              'm0',
+              'majority',
+              'actionDensity',
+              'agreement',
+              'fk.clusters',
+              'fk.occupied',
+              'fk.largestFraction',
+            ]
+              .filter(
+                (key) =>
+                  key in pottsObservables(model, state) ||
+                  (key.startsWith('fk.') && segments.some((s) => s.fk)),
+              )
               .map((key) => (
                 <option key={key}>{key}</option>
               ))}
           </select>
         </label>
-        <PottsHistory segments={segments} observable={history} />
+        <PottsHistory
+          segments={segments.filter((s) => !history.startsWith('fk.') || s.fk)}
+          observable={history}
+        />
       </>
     );
   if (id === 'correlation')
@@ -651,7 +707,8 @@ function PottsHistory({
         Latest 256 measured records per segment; evicted data are not
         reconstructed or joined. Coordinates count algorithmic updates, not
         physical time. Direct draws are independent; local measurements are
-        Markov-correlated.
+        Markov-correlated. Whole SW trajectories are algorithmic updates, not
+        nominal local sweeps.
       </p>
     </>
   );

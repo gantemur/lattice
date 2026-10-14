@@ -4,6 +4,7 @@ import { pottsGraph } from '../domain/pottsDomain';
 export const pottsExamples = [
   ['potts-dimer', 'Potts dimer'],
   ['potts-triangle', 'Antiferromagnetic Potts triangle'],
+  ['potts-fk-torus', 'FK clusters and Potts colors'],
   ['potts-torus', 'Potts periodic 2×2 torus'],
 ] as const;
 export type PottsExampleId = (typeof pottsExamples)[number][0];
@@ -13,6 +14,7 @@ export function isPottsExample(id: string): id is PottsExampleId {
 export function pottsRecipe(id: PottsExampleId): PottsConfiguration {
   return {
     ...defaultSmallPotts,
+    sampler: id === 'potts-fk-torus' ? 'fk-direct' : 'direct',
     parameters: {
       q: 3,
       h: 0,

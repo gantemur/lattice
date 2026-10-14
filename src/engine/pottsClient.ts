@@ -136,7 +136,10 @@ export class PottsClient {
     // Fixed bounded policy, measured on both local algorithms at 32×32.
     // Tiny direct/state inspections use 128; rectangles use 1024 attempts.
     const size = this.view.snapshot!.colors.length;
-    this.send({ type: 'advance', count: size > 8 ? 1024 : 128 });
+    const cluster = ['sw', 'fk-direct'].includes(
+      this.view.snapshot!.configuration.sampler,
+    );
+    this.send({ type: 'advance', count: cluster ? 8 : size > 8 ? 1024 : 128 });
   }
   start() {
     if (this.ready() && !this.view.running) {
