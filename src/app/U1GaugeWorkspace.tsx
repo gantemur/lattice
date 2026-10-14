@@ -1,3 +1,4 @@
+import { PottsCatalogOptions } from './pottsCatalog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { U1GaugeClient } from '../engine/u1GaugeClient';
 import type { U1Port, U1View } from '../engine/u1GaugeClient';
@@ -162,6 +163,7 @@ export function U1GaugeWorkspace({
                     </optgroup>
                   ))}
                   <GaugeCatalogOptions />
+                  <PottsCatalogOptions />
                 </select>
               </label>
               <DisplayMath>{String.raw`U_e=e^{i\theta_e},\quad S=-K\sum_f\cos\theta_f`}</DisplayMath>

@@ -1,3 +1,4 @@
+import { PottsCatalogOptions } from './pottsCatalog';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { GaugeClient } from '../engine/z2GaugeClient';
 import type { GaugePort, GaugeView } from '../engine/z2GaugeClient';
@@ -548,6 +549,7 @@ export function GaugeWorkspace({
                     </optgroup>
                   ))}
                   <GaugeCatalogOptions />
+                  <PottsCatalogOptions />
                 </select>
               </label>
               <DisplayMath>{String.raw`S_K(U)=-K\sum_f P_f(U)`}</DisplayMath>

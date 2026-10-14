@@ -6,6 +6,10 @@ Lattice Lab is a browser-based laboratory for teaching and small-scale explorati
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice), independent of [SOL](https://gantemur.github.io/sol/). The GitHub Pages URL is [gantemur.github.io/lattice/](https://gantemur.github.io/lattice/). The product name remains **Lattice Lab**.
 
+## M5c categorical Potts models
+
+Small Systems → **Small Potts systems** offers a dimer, antiferromagnetic triangle and periodic 2×2 torus. **Lattice Systems → 2D Potts** supports q=2,3,4 on bounded open/periodic rectangles. Both use one Potts implementation with independent worker sessions, signed dimensionless interactions, lazy Metropolis/heat bath, eligible exact independent draws, color/order/action measurements and raw equality correlations. Tiny exact references include the complete q=2 Ising normalization. See [mathematics](docs/math/potts-model.md) and [M5c review](docs/M5C_REVIEW.md) for numerical evidence, limits and release gates. Existing model sessions and archive formats are unchanged; FK and cluster sampling are future work.
+
 ## M5b compact U(1) gauge theory
 
 Small Systems → **Small gauge systems** now also offers compact U(1) on the open plaquette and periodic 2×2 torus. Canonical link angles, signed holonomies, local angular Metropolis, paused worker-owned vertex transformations, separate parameter segments and complex invariant measurements use an independent U(1) worker. Controlled Bessel/character references use normalized Haar measure, with Z(0)=1; open plaquette and continuous winding histograms distinguish theory from correlated samples. The five routes and all existing engines/archives remain compatible. See [mathematics](docs/math/u1-gauge.md) and [M5b review](docs/M5B_REVIEW.md) for validation and release status.

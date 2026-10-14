@@ -1,6 +1,6 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.26 (compact U(1) gauge theory, 2026-10-13)
+**Version:** 0.27 (categorical Potts models, 2026-10-14)
 
 **Status:** M0–M4d2 and the architecture audit are released to main. Model-page Stages A–E cover QM, Fields, Lattice Systems, named Small Systems examples and bounded custom Ising graphs. M5a tiny Z₂ gauge theory is released to main with verified Pages deployment.
 
@@ -217,7 +217,7 @@ A version-1 shareable URL contains only scalar model/domain parameters, sampler 
 - M4d1 implements spatial `φ⁴` in 1D/2D with local Metropolis and supported finite-volume references below. M4d2 adds spatial HMC below; general mass/critical diagnostics are not implemented.
 - Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
 - Random-cluster/FK representation for comparison with Ising/Potts.
-- M5a implements the tiny `Z₂` gauge slice below. M5b adds compact `U(1)` below; Potts, FK and XY remain later work; gauge models must not inherit unsupported Ising criticality claims.
+- M5a implements the tiny `Z₂` gauge slice below. M5b adds compact `U(1)` below; M5c adds Potts below; FK and XY remain later work; gauge models must not inherit unsupported Ising criticality claims.
 
 #### M4a1 massive Gaussian field (merged)
 
@@ -287,7 +287,7 @@ Gauge transformations are explicit preview/apply commands at a paused acknowledg
 
 Open exact Z is `16 cosh K`. Torus Z is `256 cosh⁴K(1+tanh⁴K)`; four plaquettes have even parity, and each allowed pattern has 32 link states. Gauge orbits have eight states; plaquette pattern and fixed representatives `Wx=e0 e2`, `Wy=e1 e5` label 32 torus orbits. Their four joint winding probabilities are 1/4. The two-face contractible projected walk retains a repeated connector, since the reduced boundary of this wrapped face union has two components. Gauge transformations preserve winding products; local Monte Carlo updates need not. See [mathematics](math/z2-gauge.md) for the exact walks, independent formulas and scientific limits, and [review](M5A_REVIEW.md) for evidence. U(1), larger gauge lattices, quantum dynamics, new archive/export/sweep schemas and navigation redesign are excluded.
 
-#### M5b compact U(1) gauge theory (implemented; release verification tracked separately)
+#### M5b compact U(1) gauge theory (released)
 
 Two further Small Systems examples use the same open/torus oriented cell complexes, with 4/8 canonical link angles in [−π,π). Shared `gaugeGeometry` owns only IDs and walks; `GaugeCellGraph` owns only presentation geometry. Z₂ sign arithmetic, samplers, worker and exact seeded replay remain unchanged. The U(1) action is `S=−K Σ_f cos θ_f`, K∈[−4,4], under normalized product Haar `∏dθ/(2π)`; Z(0)=1, with no counting factor, extra beta or gauge fixing. Signed incidence determines angles, local action differences and the tested full gradient. Reverse transport is conjugation. The torus face product is one; principal angles need sum to zero only modulo 2π. Fixed winding loops and the oriented two-face walk retain M5a identities and projection caveats.
 
@@ -334,6 +334,16 @@ Independent blocking uses nonoverlapping blocks of sizes `1,2,4,…`, discards i
 For every valid 1–4-spin graph Ising model, construct the **actual** selected one-update transition matrix: random-site ½-lazy Metropolis, random-site heat bath including unchanged resampling, or direct independent Gibbs draws. Preserve distinct parallel/self-link effects through the existing action/local-field functions. Normalize against exact Gibbs probabilities; check stochasticity and detailed balance. When all Gibbs probabilities exceed `10⁻¹²` and the reversible spectrum is stable, symmetrize with `sqrt(πᵢ/πⱼ)Pᵢⱼ`, diagonalize the small real symmetric matrix, and report nontrivial eigenvalues and gap `1−λ₂` per elementary update. For observable `f`, use centered equilibrium mode weights to calculate `γ_f(k)`, exact `τ_int`, and exact asymptotic variance `Σ_{a>0} c_a²(1+λ_a^q)/(1−λ_a^q)` for observations every `q` updates. `q=1` for graph measurements and `q=N·strideSweeps` for M2's exact 2×2 benchmark. Numerically concentrated or effectively closed chains, and constant observables, have explicit unavailable statuses. Exact stationary theory is compared with empirical recent-window diagnostics but is never presented as evidence of equilibration. The full matrix need not occupy the main interface.
 
 M3a's numerical conventions remain unchanged. M3b1 stores their available segment aggregates and bounded recent observations on demand; M3b2 executes independent parameter sweeps using the existing M2 kernels. M0–M2 update kernels, RNG streams and direct-Gaussian analytic uncertainty references stay unchanged.
+
+#### M5c categorical Potts models (implemented; release gates in review)
+
+The Potts family uses counting measure on q=2,3,4 site colors and dimensionless `S=−Σ_b K_b δequal−hΣ_i δcolor0`, with independently signed K,h∈[−4,4]. It is not a clock model. A narrow bond adapter preserves the existing graph's IDs, zero-coupling edges, parallel bonds and oriented faces, and the indexed lattice's positive-axis records. Small geometry settings cover a site, dimer, three-site chain, triangle, open 2×2 square and periodic 2×2 torus. Three launchers expose the dimer, antiferromagnetic triangle and torus. Lattice Systems retains 2D Ising as its default and adds 2D Potts with 2≤Lx,Ly≤32, independent axis boundaries and Kx/Ky. Navigation and existing URL/archive/sweep formats are unchanged.
+
+Both placements use the same pure Potts model, algorithms and PottsRun, with independent mounted clients. Lazy Metropolis consumes site/proposal/decision uniforms (half self-proposals); heat bath consumes site/color uniforms; exact whole-state draws consume one uniform when q^V≤256. Initialization is all color 0, unmeasured. V local attempts define a nominal sweep, not physical time. Complete warm-up/stride sweeps govern retained local states, including rejections and unchanged resamples; direct draws retain every draw. Run uses fixed 128-attempt tiny or 1024-attempt large batches, one in flight. Apply queues behind acknowledgment. Compatible changes retain state/RNG and isolate segments; q/topology/boundaries and Reset reseed.
+
+Full-segment moments, color occupancies, physical-bond agreement and raw axial equality correlations are independent of rendering; at most eight segments and 256 recent records per segment are kept, with color vectors only for tiny systems. Large rectangles have no NxN pair storage. Featured tools plus a maximum six-tool gallery expose categorical configuration, conditionals, exact references, occupation, action/order/agreement, histories, raw x/y correlations, actual update traces and the q=2 Ising correspondence. `m0=(q p0−1)/(q−1)` and `majority=(q max p−1)/(q−1)` remain distinct; majority has positive finite-volume bias. `Gq=(q C−1)/(q−1)` is normalized raw equality, not connected covariance. No correlated-chain error bar or mixing claim is inferred.
+
+At q=2, J=K/2 and b=h/2 on the same physical bonds, `S_P=S_I−C` and `log Z_P=log Z_I+C`, `C=(ΣK+Vh)/2`. Tiny references use stable counting enumeration and independent site/dimer/triangle formulas. Existing Ising models, gauge kernels, scalar/field/QM samplers and archive schemas remain untouched. See [mathematics](math/potts-model.md) and [review](M5C_REVIEW.md) for exact counting, transition matrices, multiseed benchmarks and release evidence. FK/cluster algorithms, clock/XY, Potts persistence and automatic criticality detection are excluded.
 
 ### 4.4 Model extensibility
 

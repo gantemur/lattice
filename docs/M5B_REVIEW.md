@@ -1,6 +1,6 @@
 # M5b — Compact U(1) gauge laboratory review
 
-**Branch:** `codex/m5b-compact-u1-gauge`. **Verified base:** `6634d771e0af7eb653ac3af62930f7d4c5f118a9`, matching freshly fetched origin/main. The managed checkout was clean; unrelated original-checkout files and existing recovery stashes were not changed. Implementation and local validation are recorded below. This is the pre-publication validation record; exact release SHAs, hosted workflow results and live-site evidence are reported separately in the delivery message. Local validation alone does not establish deployment.
+**Branch:** `codex/m5b-compact-u1-gauge`. **Verified base:** `6634d771e0af7eb653ac3af62930f7d4c5f118a9`, matching freshly fetched origin/main. The managed checkout was clean; unrelated original-checkout files and existing recovery stashes were not changed. Implementation and local validation are recorded below. Released at `25049f351f5753bc99d1cbde0a94295c9fc21bbe` by the authorized ordinary fast-forward after PR creation returned HTTP 403. The [main workflow](https://github.com/gantemur/lattice/actions/runs/38508189972) passed validation and Pages deployment. Public 1280px/360px checks verified the served SHA, 16 JS/CSS/font assets, seven worker loads and existing navigation, with no errors or horizontal overflow.
 
 ## Architecture and source readability
 
@@ -69,4 +69,4 @@ This slice supports only the declared open/torus complexes, bounded K/width and 
 
 Potts/FK/XY can proceed as separately scoped site/bond model work; neither the compact-link representation nor its gauge observables should be reused as XY site-spin science. The tested oriented geometry and pure gradient leave future gauge work possible without implementing it here.
 
-Full local validation and intended-diff review are complete. Publication must still satisfy the requested PR-first/non-force-fast-forward procedure, fresh ancestry verification, the existing hosted validation/Pages workflow, and public desktop/phone asset-version and behavior checks. The delivery report records those remote outcomes; this pre-publication review does not claim deployment.
+Release gates passed for the commit and workflow recorded above: 584 unit tests and 349 browser tests passed with two pre-existing skips. Hosted browser validation took approximately 12.2 minutes. Public desktop/phone Run-to-render-and-acknowledged-Pause observations were 171/173 ms. This release record was reconciled during M5c; no M5b numerical behavior changed.

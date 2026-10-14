@@ -1,3 +1,10 @@
+import { PottsWorkspace } from './PottsWorkspace';
+import {
+  PottsCatalogOptions,
+  isPottsExample,
+  pottsExamples,
+} from './pottsCatalog';
+import type { PottsExampleId } from './pottsCatalog';
 import { U1GaugeWorkspace } from './U1GaugeWorkspace';
 import { GaugeWorkspace } from './GaugeWorkspace';
 import {
@@ -64,12 +71,16 @@ export function SmallSystemsApp({
   saveCaptures: (captures: Capture[]) => void;
   archiveCount: number;
 }) {
-  // Once opened, legacy/Z₂/U(1) sessions remain mounted. Explicit catalog
-  // launch resets the selected gauge family; top-level visibility never does.
+  // Once opened, legacy/Z₂/U(1)/Potts sessions remain mounted. Explicit catalog
+  // launch resets the selected additive family; top-level visibility never does.
   const [gaugeExample, setGaugeExample] = useState<GaugeExampleId | null>(null);
-  const [gaugeActive, setGaugeActive] = useState<'z2' | 'u1' | false>(false);
+  const [gaugeActive, setGaugeActive] = useState<'z2' | 'u1' | 'potts' | false>(
+    false,
+  );
   const [u1Example, setU1Example] = useState<U1ExampleId | null>(null);
   const [u1Launch, setU1Launch] = useState(0);
+  const [pottsExample, setPottsExample] = useState<PottsExampleId | null>(null);
+  const [pottsLaunch, setPottsLaunch] = useState(0);
   const [gaugeLaunch, setGaugeLaunch] = useState(0);
   function launchExample(id: string) {
     if (isGaugeExample(id)) {
@@ -80,6 +91,10 @@ export function SmallSystemsApp({
       setU1Example(id);
       setU1Launch((n) => n + 1);
       setGaugeActive('u1');
+    } else if (isPottsExample(id)) {
+      setPottsExample(id);
+      setPottsLaunch((n) => n + 1);
+      setGaugeActive('potts');
     } else {
       setGaugeActive(false);
       selectExample(id as ExampleId);
@@ -340,6 +355,7 @@ export function SmallSystemsApp({
                   const ids: string[] = [
                     ...examples.map(([id]) => id),
                     ...gaugeExamples.map(([id]) => id),
+                    ...pottsExamples.map(([id]) => id),
                   ];
                   const index = ids.indexOf(displayedExample ?? 'gaussian');
                   const next = Math.max(
@@ -372,6 +388,7 @@ export function SmallSystemsApp({
                   </optgroup>
                 ))}
                 <GaugeCatalogOptions />
+                <PottsCatalogOptions />
               </select>
               <p className="plot-note" data-testid="example-description">
                 {displayedExample
@@ -862,6 +879,18 @@ export function SmallSystemsApp({
             example={gaugeExample}
             launch={gaugeLaunch}
             active={gaugeActive === 'z2'}
+            choose={launchExample}
+            archiveCount={archiveCount}
+          />
+        </div>
+      )}
+      {pottsExample && (
+        <div hidden={gaugeActive !== 'potts'}>
+          <PottsWorkspace
+            mode="small"
+            example={pottsExample}
+            launch={pottsLaunch}
+            active={gaugeActive === 'potts'}
             choose={launchExample}
             archiveCount={archiveCount}
           />

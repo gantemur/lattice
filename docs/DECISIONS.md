@@ -392,6 +392,16 @@ Angular Metropolis uses exactly three uniforms (link/displacement/decision), fix
 
 Bessel power series and all-integer torus character sums have explicit truncation and roundoff allowances, including shifted negative-index Wilson tails. Only resolved references publish trusted numbers; the default gate is 10⁻¹² relative partition/absolute loop error, and more demanding precision is unsupported. Independent periodic 1D/3D quadrature gates the formulas. Circular complex means replace ordinary angle means. The torus constraint is a group product; principal angles may sum to a nonzero multiple of 2π. Winding phases remain Haar distributed at equilibrium but need not mix quickly in a finite run. No independent-sample error, conserved sector, confinement transition, continuum limit, gauge HMC or new persistence claim is introduced.
 
+## Accepted categorical Potts convention — 2026-10-14
+
+### D-059 — One Potts engine, two presentation owners, unchanged legacy science
+
+M5c uses a Potts-only bond adapter over existing graph and indexed geometry. Counting measure, q=2,3,4 categorical labels, signed dimensionless equality couplings and a distinguished-color source define the pure model. Physical zero-coupling, parallel and self bonds retain identity; self-links add constants and no conditional score. Site colors never reuse Ising sign arrays or gauge link kernels. The complete q=2 normalization shift is part of the contract, not merely normalized-probability equivalence.
+
+One PottsRun and pure sampler set serve independently mounted Small/Lattice clients. The three small launchers and Lattice physical-system option do not expand legacy model unions, routes, archives or sweep manifests. Metropolis consumes exactly three uniforms including its half-probability intentional stay; heat bath two; eligible exact whole-state sampling one. V random-site attempts define a nominal sweep. Direct draws ignore local cadence. Compatible Apply preserves colors/RNG in a new segment; support changes, Reset and explicit example launches reseed. One in-flight batch, queued Apply and acknowledged Pause preserve deterministic scheduling. No rendering or reference operation samples.
+
+Full moments/occupancies/bond counts and bounded raw axial correlations survive eviction of recent display points. Eight segments, 256 scalar records per segment and tiny-only retained vectors/pair matrices bound storage. Raw equality and normalized equality are never described as connected correlations. Majority order has finite-volume bias; local MCMC measurements do not receive independent-sample error bars. The reference implementation favors clear bond sums and categorical softmax; no legacy numerical optimization or extraction is required. FK, cluster updates and Potts persistence require a later explicit scope and validation.
+
 ## Open decisions
 
 - Whether later plots need a charting or UI component library beyond M0's native controls and small SVG plot.

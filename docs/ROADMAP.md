@@ -25,7 +25,7 @@ Each milestone closes only when its acceptance tests pass. A milestone may be sp
 | **M3b1: Saved experiments** | In-memory segment archive, comparison, portable JSON/CSV export and import | Capture invariance, provenance and round-trip tests | Merged in PR #9 |
 | **M3b2: Sweeps** | Bounded independently seeded parameter sweeps and comparison plots | Seed, budget, numerical and import/replay tests | Merged in PR #10 |
 | **M4: Continuous lattice fields and paths** | M4a1 massive 1D/2D Gaussian foundation, M4a2 Fourier/massless, M4b harmonic oscillator, M4c0 workspaces/tools, Stages A–E model pages, M4c1 interacting QM, M4c2 quartic-path HMC; M4d1 spatial φ⁴ | Tiny-matrix covariance, Fourier/oscillator invariants; full-force HMC validation | Through M4d2 released to main |
-| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a released; M5b implemented with release gates tracked below |
+| **M5: More models / gauge** | Potts, XY, FK, Z₂ / U(1) tiny gauge laboratory | FK / duality checks, gauge-invariance tests | M5a/M5b released; M5c implemented with release gates tracked below |
 | **M6: Research-facing extensions** | Improved actions, deeper spectral diagnostics, geometry and regulator comparisons | Model-specific benchmarks and performance studies | Exploratory |
 
 ## M0 — Deployable foundation and one exact model
@@ -252,7 +252,11 @@ Delivered scope: open plaquette and genuine periodic 2×2 cell complex, independ
 
 ## M5b — Compact U(1) tiny gauge theory
 
-Implemented on `codex/m5b-compact-u1-gauge` from verified main `6634d771e0af7eb653ac3af62930f7d4c5f118a9`. Two continuous-link examples reuse oriented square/torus geometry and drawing, with distinct U(1) arithmetic, angular Metropolis and worker-owned complex measurements. Controlled Bessel/character references, independent one-/three-angle quadrature, gauge invariance and coupled-chain tests, seeded segments and full desktop/phone regression gate delivery. The [mathematics](math/u1-gauge.md) and [review](M5B_REVIEW.md) describe exact conventions, actual numerical evidence and release status. No gauge archive or universal simulation framework is introduced. Deployment is not asserted until the remote validation and Pages jobs and public smoke checks pass.
+Implemented on `codex/m5b-compact-u1-gauge` from verified main `6634d771e0af7eb653ac3af62930f7d4c5f118a9`. Two continuous-link examples reuse oriented square/torus geometry and drawing, with distinct U(1) arithmetic, angular Metropolis and worker-owned complex measurements. Controlled Bessel/character references, independent one-/three-angle quadrature, gauge invariance and coupled-chain tests, seeded segments and full desktop/phone regression gate delivery. The [mathematics](math/u1-gauge.md) and [review](M5B_REVIEW.md) describe exact conventions, actual numerical evidence and release status. No gauge archive or universal simulation framework is introduced. Released as `25049f351f5753bc99d1cbde0a94295c9fc21bbe`: hosted validation and Pages [passed](https://github.com/gantemur/lattice/actions/runs/38508189972); public desktop/360px behavior, served SHA and worker/assets were verified.
+
+## M5c — q-state Potts models
+
+Implemented on `codex/m5c-potts-models` from verified released main `25049f351f5753bc99d1cbde0a94295c9fc21bbe`. q=2,3,4 small graphs and 2≤Lx,Ly≤32 rectangles share pure categorical mathematics and one Potts engine, with separate Small/Lattice sessions. Signed/anisotropic interactions, exact tiny enumeration, lazy Metropolis, heat bath, eligible independent draws, isolated measurement segments, categorical tools and raw axial correlations are implemented. [Mathematics](math/potts-model.md) and [review](M5C_REVIEW.md) record independent formulas, full tiny transition matrices, q=2 action/partition correspondence, multiseed sampling and desktop/phone evidence. Completion requires hosted validation, Pages and public-site verification; local checks alone do not assert deployment. M5d FK remains unimplemented and must independently enforce its ferromagnetic coupling assumptions.
 
 ## Remaining M5 — More models and gauge extensions
 
@@ -260,7 +264,7 @@ Implemented on `codex/m5b-compact-u1-gauge` from verified main `6634d771e0af7eb6
 
 **Deliverables**
 
-- Potts and XY models on 2D square lattices; model-appropriate updates and observables. Add vortices only with a clear lattice winding convention.
+- Potts is implemented in M5c above. XY remains future work; add vortices only with a clear lattice winding convention.
 - Optional random-cluster/FK view and valid cluster updates where the physical coupling assumptions permit them.
 - The tiny `Z₂` slice above is implemented; larger gauge geometries require their own explicit scope and validation.
 - Compact `U(1)` is implemented for the two tiny cell complexes above; larger domains and alternative samplers need separate scope and validation.

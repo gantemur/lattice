@@ -2816,3 +2816,18 @@ footer {
 .u1-workspace table {
   overflow-wrap: anywhere;
 }
+
+/* Categorical plots and the current lattice stay inside narrow teaching cards. */
+.potts-workspace svg[role='img'],
+.potts-configuration canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 640px;
+}
+.potts-workspace table {
+  overflow-wrap: anywhere;
+}
+.potts-workspace .sidebar p {
+  overflow-wrap: anywhere;
+}

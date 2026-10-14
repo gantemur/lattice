@@ -1,3 +1,4 @@
+import { PottsWorkspace } from './PottsWorkspace';
 import { SiteHeader } from './SiteHeader';
 import { useState } from 'react';
 import { defaultLatticeConfiguration } from '../engine/latticeRun';
@@ -67,18 +68,51 @@ export function LatticeSystems({
   archiveCount: number;
 }) {
   const [dimension, setDimension] = useState<'2d' | 'chain'>('2d');
-  return dimension === 'chain' ? (
-    <ChainSystems
-      saveCaptures={saveCaptures}
-      archiveCount={archiveCount}
-      switchToGrid={() => setDimension('2d')}
-    />
-  ) : (
-    <TwoDimensionalSystems
-      saveCaptures={saveCaptures}
-      archiveCount={archiveCount}
-      switchToChain={() => setDimension('chain')}
-    />
+  const [pottsActive, setPottsActive] = useState(false);
+  const [pottsOpened, setPottsOpened] = useState(false);
+  function chooseSystem(id: '2d' | 'chain' | 'potts') {
+    if (id === 'potts') {
+      setPottsOpened(true);
+      setPottsActive(true);
+    } else {
+      setDimension(id);
+      setPottsActive(false);
+    }
+  }
+  // Adding Potts never unmounts the existing Ising owner. The legacy Ising
+  // grid/chain switch retains its established semantics inside this container.
+  return (
+    <>
+      <div hidden={pottsActive}>
+        {dimension === 'chain' ? (
+          <ChainSystems
+            saveCaptures={saveCaptures}
+            archiveCount={archiveCount}
+            switchToGrid={() => setDimension('2d')}
+            chooseSystem={chooseSystem}
+            active={!pottsActive}
+          />
+        ) : (
+          <TwoDimensionalSystems
+            saveCaptures={saveCaptures}
+            archiveCount={archiveCount}
+            switchToChain={() => setDimension('chain')}
+            chooseSystem={chooseSystem}
+            active={!pottsActive}
+          />
+        )}
+      </div>
+      {pottsOpened && (
+        <div hidden={!pottsActive}>
+          <PottsWorkspace
+            mode="lattice"
+            active={pottsActive}
+            archiveCount={archiveCount}
+            onLatticeChoice={chooseSystem}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
@@ -86,10 +120,14 @@ function TwoDimensionalSystems({
   saveCaptures,
   archiveCount,
   switchToChain,
+  chooseSystem,
+  active,
 }: {
   saveCaptures: (captures: Capture[]) => void;
   archiveCount: number;
   switchToChain: () => void;
+  chooseSystem: (id: '2d' | 'chain' | 'potts') => void;
+  active: boolean;
 }) {
   const { view, client } = useLatticeSession(defaultLatticeConfiguration);
   const snapshot = view.snapshot;
@@ -222,12 +260,21 @@ function TwoDimensionalSystems({
             <label className="model-choice">
               Physical system
               <select
-                aria-label="Lattice physical system"
+                aria-label={
+                  active
+                    ? 'Lattice physical system'
+                    : 'Inactive Ising physical system'
+                }
                 value="2d"
-                onChange={switchToChain}
+                onChange={(e) =>
+                  e.target.value === 'chain'
+                    ? switchToChain()
+                    : chooseSystem('potts')
+                }
               >
                 <option value="2d">2D square-lattice Ising</option>
                 <option value="chain">1D Ising chain</option>
+                <option value="potts">2D Potts</option>
               </select>
             </label>
             <section className="model-card lattice-model-card">

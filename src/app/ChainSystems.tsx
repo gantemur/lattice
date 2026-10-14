@@ -66,10 +66,14 @@ export function ChainSystems({
   saveCaptures,
   archiveCount,
   switchToGrid,
+  chooseSystem,
+  active = true,
 }: {
   saveCaptures: (captures: Capture[]) => void;
   archiveCount: number;
   switchToGrid: () => void;
+  chooseSystem?: (id: '2d' | 'chain' | 'potts') => void;
+  active?: boolean;
 }) {
   const { view, client } = useLatticeSession(defaultChainConfiguration);
   const snapshot = view.snapshot;
@@ -182,12 +186,21 @@ export function ChainSystems({
             <label className="model-choice">
               Physical system
               <select
-                aria-label="Lattice physical system"
+                aria-label={
+                  active
+                    ? 'Lattice physical system'
+                    : 'Inactive Ising physical system'
+                }
                 value="chain"
-                onChange={switchToGrid}
+                onChange={(e) =>
+                  e.target.value === 'potts'
+                    ? chooseSystem?.('potts')
+                    : switchToGrid()
+                }
               >
                 <option value="2d">2D square-lattice Ising</option>
                 <option value="chain">1D Ising chain</option>
+                <option value="potts">2D Potts</option>
               </select>
             </label>
             <section className="model-card lattice-model-card">
