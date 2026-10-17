@@ -1,6 +1,6 @@
 # Reading the Lattice Lab source
 
-Start with the numerical path before the React components: **domain → model → sampler → run/measurement recorder → worker/client → plot or workspace**. The functions below are hand-authored entry points. `docs/SPECIFICATION.md` defines the mathematical contract; milestone reviews explain why the implementation has its present limits.
+Start with the numerical path before the React components: **domain → model → sampler → run/measurement recorder → worker/client → plot or workspace**. The functions below are hand-authored entry points. `docs/SPECIFICATION.md` defines the mathematical contract; [release and validation references](RELEASES.md) connect implemented capabilities to independent tests and published screenshots.
 
 | Feature to trace | Read in this order |
 | --- | --- |
@@ -47,3 +47,18 @@ Start with [the mathematics and dimer exercise](math/fk-edwards-sokal.md). Read 
 Read [XY mathematics and hand exercises](math/xy-model.md) → `domain/xyDomain.ts` (physical graph/indexed adaptation) → `domain/xyPlaquettes.ts` (signed square walks) → `models/xy.ts` (action, gradient, conditional vector, observables) → `models/xyVortices.ts` (one forward real lift, ambiguity and integer gates). Compare `xy.test.ts` with the ±1 open-square fixture and test-only periodic 1×4. Next read `models/xyReference.ts` beside `test/xyOracle.ts` and `xyReference.test.ts`: the separate angular oracle checks normalized Bessel/tree/cycle/torus results and quadrature convergence without calling production action/reference functions. `algorithms/xySampler.ts` states every uniform and rejection-trial contract, checked by its injected-RNG, equilibrium and rotation-covariance tests.
 
 Continue through `engine/xyRun.ts` (seeded state, complete-sweep measurements, separate vortex coverage, bounded history and deterministic rotation) → `xyClient.ts`/`workers/xy.worker.ts` (one acknowledged batch). The run/client tests cover real command handling and stale/queued requests; `xyBenchmark.test.ts` declares fixed multi-seed budgets before outcomes. Finally read `app/xyCatalog.tsx`, `XYWorkspace.tsx` (applied snapshot versus draft ownership), `XYConfiguration.tsx` (read-only SVG/Canvas and accessible selection), and `XYTools.tsx` (reference/conditional/correlation/vortex projections). `tests/browser/xy.spec.ts` exercises production workers, old-session returns and 8–32² desktop/phone behavior. No mathematical module imports React; previous U(1)/Potts/Ising/field engines remain untouched.
+
+## Scientific contribution standards
+
+Keep geometry, mathematical models, samplers, statistics, worker scheduling, persistence and presentation independently readable and testable. Prefer descriptive names and straightforward reference algorithms; justify less transparent optimizations with measured performance. Comments should explain equations, assumptions, invariants, numerical safeguards and non-obvious ownership or ordering, rather than narrating each line. Small hand-checkable examples help readers verify the implementation without trusting the function under test.
+
+- Every physical edge has a stable identity. Preserve parallel bonds and self-links; test periodic length-two axes, the one-dimensional four-ring, thin periodic geometries and oriented face boundaries. Never infer a face merely from a drawing.
+- Distinguish site, link and face variables. Gauge invariance tests must use the actual oriented incidence and gauge observables.
+- State the action/energy, measure, beta, field normalization and boundary conventions near their implementations. Reject singular or nonnormalizable models; massless Gaussian support requires an explicit zero-mode convention.
+- Separate elementary updates, nominal sweeps, retained measurements and rendered frames. Monte Carlo and auxiliary integration time are not physical time.
+- Exclude warm-up, isolate parameter segments and preserve RNG consumption under batching and presentation changes. A fixed warm-up budget is not evidence of equilibrium.
+- Distinguish exact enumeration, analytic formulas, controlled quadrature and Monte Carlo estimates. Quote uncertainty only when the retained record and estimator support it.
+- Test every new action, local difference, exact result and sampler invariant against an independent calculation. Keep bounded histories distinct from full-segment aggregates and retain executable provenance/compatibility checks.
+- Keep phone controls collapsible, keyboard/touch accessible and numerically inert. Run formatting, typecheck, unit tests, production build and browser checks before claiming validation; disclose unavailable checks and limitations.
+
+The [functional specification](SPECIFICATION.md) records behavior and mathematical constraints. The [README](../README.md#develop-and-validate) documents build and deployment commands. This is scientific/developer guidance, not a runtime dependency.
