@@ -1,6 +1,6 @@
 # Euclidean harmonic oscillator: from paths to a spectral gap
 
-This is the mathematical reading companion to [M4b](../M4B_REVIEW.md). Follow the implementing functions in the order below; each calculation is a pure TypeScript function and has a nearby independent test. Units are `ℏ=k_B=m=1`.
+This is the mathematical reading companion to [M4b](../RELEASES.md#euclidean-qm). Follow the implementing functions in the order below; each calculation is a pure TypeScript function and has a nearby independent test. Units are `ℏ=k_B=m=1`.
 
 ## Time slicing and the Gaussian action
 

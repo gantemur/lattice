@@ -1,6 +1,6 @@
 # Classical XY site spins and lattice vortices
 
-M5e uses one XY family on small physical graphs and bounded square lattices. These are **site** angles, not independent compact U(1) link connections. The mathematical functions below have no React dependencies. See [implementation evidence](../M5E_REVIEW.md) and [source guide](../SOURCE_GUIDE.md).
+M5e uses one XY family on small physical graphs and bounded square lattices. These are **site** angles, not independent compact U(1) link connections. The mathematical functions below have no React dependencies. See [validation summary](../RELEASES.md#xy-spins) and [source guide](../SOURCE_GUIDE.md).
 
 ## Measure, action and geometry
 
@@ -111,7 +111,7 @@ Compatible Apply preserves angles/RNG and starts an isolated measurement segment
 
 ## Experiments, limitations and exercises
 
-Local algorithms may mix slowly near the expected BKT regime and in ordered finite lattices. Acceptance and vortex suppression do not certify equilibration or determine a critical temperature. This laboratory implements neither cluster XY updates, HMC, helicity modulus, critical exponent fitting nor physical-time dynamics. The review declares multiseed budgets and empirical regression gates without treating correlated records as independent draws.
+Local algorithms may mix slowly near the expected BKT regime and in ordered finite lattices. Acceptance and vortex suppression do not certify equilibration or determine a critical temperature. This laboratory implements neither cluster XY updates, HMC, helicity modulus, critical exponent fitting nor physical-time dynamics. The [validation summary](../RELEASES.md#xy-spins) links multiseed budgets and empirical regression gates without treating correlated records as independent draws.
 
 Suggested exercises:
 

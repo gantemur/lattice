@@ -185,7 +185,7 @@ integrate Bessel coefficients on 64/128 periodic grids for K=0,±0.7,±2,±4.
 Torus tests use 24³/48³ midpoint grids for K=−0.7,0.7,4 on
 $\exp[K(\cos a+\cos b+\cos c+\cos(a+b+c))]$, inserting cos a and cos(a+b).
 They call neither production Bessel nor production Wilson functions in the
-oracle. The [review](../M5B_REVIEW.md) records actual comparison errors.
+oracle. The [validation summary](../RELEASES.md#u1-gauge) links the independent comparison tests and their error gates.
 
 ## Sampling and bounded measurement ownership
 

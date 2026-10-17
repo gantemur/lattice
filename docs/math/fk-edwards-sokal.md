@@ -87,7 +87,7 @@ No independent-sample error bars are assigned to correlated SW data. Fixed warm-
 
 ## Independent checks and reading exercises
 
-Read [fk.test.ts](../../src/models/fk.test.ts), [test-only BFS/joint oracle](../../src/test/fkOracle.ts), [complete SW matrices](../../src/algorithms/pottsClusterSampler.test.ts), [worker tests](../../src/engine/fkRun.test.ts), [client tests](../../src/engine/fkClient.test.ts), [released replay fixtures](../../src/engine/pottsReplay.test.ts), and [fixed multiseed comparisons](../../src/engine/fkBenchmark.test.ts). The [review](../M5D_REVIEW.md) records actual results, budgets and limits.
+Read [fk.test.ts](../../src/models/fk.test.ts), [test-only BFS/joint oracle](../../src/test/fkOracle.ts), [complete SW matrices](../../src/algorithms/pottsClusterSampler.test.ts), [worker tests](../../src/engine/fkRun.test.ts), [client tests](../../src/engine/fkClient.test.ts), [released replay fixtures](../../src/engine/pottsReplay.test.ts), and [fixed multiseed comparisons](../../src/engine/fkBenchmark.test.ts). The [validation summary](../RELEASES.md#fk-clusters) links the reproducible benchmarks, budgets and limits.
 
 1. Sum either variable out of w_ES and derive the partition constant, keeping a self-link.
 2. Reproduce the rational q=3 dimer values without running code.

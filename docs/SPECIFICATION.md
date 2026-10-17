@@ -1,13 +1,13 @@
 # Lattice Lab — Living Product and Technical Specification
 
-**Version:** 0.29 (classical XY and lattice vortices, 2026-10-14)
+**Version:** 0.30 (product documentation, 2026-10-17; numerical contract unchanged)
 
-**Status:** M0–M4d2, the architecture audit and model-page Stages A–E are released. M5a–M5e are released, with XY implementation `0ffa034` passing hosted validation, Pages deployment and desktop/phone live checks. Its review records numerical evidence, release provenance and final documentation-head verification.
+**Status:** The implemented scientific core runs through M5e. See [release provenance and regression references](RELEASES.md). Model-specific limitations below remain part of the contract.
 
-**Audience:** researcher/instructor, students, contributors, coding agents  
-**Related:** [Roadmap](ROADMAP.md), [Decisions](DECISIONS.md), [`AGENTS.md`](../AGENTS.md)
+**Audience:** researcher/instructor, students, contributors
+**Related:** [Capability overview](ROADMAP.md), [source guide and scientific contribution standards](SOURCE_GUIDE.md), [release summary](RELEASES.md)
 
-> **How to use this document.** This specifies intended behavior and key mathematical invariants. A feature is not implemented just because it appears here. The roadmap identifies what belongs in the next milestone. Change the specification in the same pull request as an intentional behavior change, and record consequential architectural decisions in the decision log. Do not freeze incidental visual details or library choices prematurely.
+> **How to use this document.** This is the functional and mathematical contract. Historical milestone names identify the introducing feature, not a request to implement more features. Current availability is summarized in the capability overview; model-specific bounds and unavailable references are explicit below. Intentional behavior changes should update this contract and their independent regression tests together.
 
 ### Implemented scope through M1b
 
@@ -17,7 +17,7 @@ Stage D1 gives Gaussian, single-spin and binomial pages an exact-distribution fe
 
 Apply starts separate measurements for changed parameters/algorithm/warm-up, retaining compatible configuration, RNG, previous segments and stable axes. Topology/model-family changes explicitly create new sessions. Reset clears/reseeds/refits; **Refit axes** affects only plotting on the migrated Small Systems pages. Eight recent segments keep separate statistics, exact references, logarithmic checkpoints and up to 1000 exact transitions. Graph segments additionally accumulate full configuration counts and per-observable moments/checkpoints; plotting never reconstructs evicted trajectories or consumes RNG. Every post-warm-up state enters statistics, including rejected/stay states. Only direct Gaussian segments have known-variance uncertainty bands.
 
-M2 adds a separate Lattice Systems workspace for rectangular 2D Ising systems up to 64×64. A typed-spin worker, indexed oriented bonds, incremental H/M, sweep-scheduled measurements, bounded segment histories, Canvas configuration and zero-to-six measurement plots leave Small Systems behavior intact. HMC, gauge dynamics and M3 experiment management remain out of scope. Mathematical conventions are detailed in D-021–D-030 and sections 3–6 below.
+M2 adds a separate Lattice Systems workspace for rectangular 2D Ising systems up to 64×64. A typed-spin worker, indexed oriented bonds, incremental H/M, sweep-scheduled measurements, bounded segment histories, Canvas configuration and zero-to-six measurement plots leave Small Systems behavior intact. Subsequent sections describe the separately implemented HMC, gauge and experiment capabilities. Mathematical conventions are detailed in sections 3–6 below.
 
 ## 1. Mission and positioning
 
@@ -210,14 +210,9 @@ Scalar trajectories follow the latest 100 global algorithmic updates by default,
 
 A version-1 shareable URL contains only scalar model/domain parameters, sampler and seed. A noncatalog configuration remains usable and is labeled customized or loaded; no example ID is serialized. Validation rejects unsupported schema versions, invalid geometry and nonnormalizable/incompatible settings. It restores a new seeded session, never a Monte Carlo history.
 
-### 4.3 Next models (not initial release)
+### 4.3 Lattice fields, paths, gauge and additional spin models
 
-- M4a1: merged massive Gaussian fields in 1D/2D with dense finite-volume covariance and exact Gaussian sampling. M4a2 adds periodic Fourier sampling and constrained massless zero-mode handling below.
-- M4b harmonic Euclidean oscillator paths, the separate M4c1 interacting double-well path family and its M4c2 HMC sampler are implemented below.
-- M4d1 implements spatial `φ⁴` in 1D/2D with local Metropolis and supported finite-volume references below. M4d2 adds spatial HMC below; general mass/critical diagnostics are not implemented.
-- Potts and XY/`O(2)` site-spin models; discrete Potts updates, angular Metropolis/cluster methods when justified, vortices and BKT-related observables.
-- Random-cluster/FK representation for comparison with Ising/Potts.
-- M5a implements the tiny `Z₂` gauge slice below. M5b adds compact `U(1)` below; M5c adds Potts below; M5d adds eligible FK/SW below; M5e adds XY below; gauge models must not inherit unsupported Ising criticality claims.
+The following are implemented families with model-specific references and bounds.
 
 #### M4a1 massive Gaussian field (merged)
 
@@ -233,7 +228,7 @@ The optional measure discriminator defaults to ordinary, preserving M4a1 configu
 
 For row-major sites and modes `x+Lx y`, the forward DFT is `F(k)=Σx φ(x)exp(−ik·x)`, the inverse divides by `N`, and `k·x=2π(kx x/Lx+ky y/Ly)`. The periodic precision eigenvalues are `λ(k)=r+4κx sin²(πkx/Lx)+4κy sin²(πky/Ly)`, omitting the y term for chains. Ordinary mean is `j/r`, covariance is the Fourier sum of `1/λ`, and log Z uses the spectral determinant and `N j²/(2r)`. The constrained model removes only the constant mode, has covariance `Q⁺`, and `log Z=(N−1)log(2π)/2−Σk≠0 log λ(k)/2` under the induced measure. This is not the delta-constraint normalization against product Lebesgue measure. Open/mixed massive references remain dense; DFT is never applied to their precision.
 
-Spectral draws transform N real Box–Muller white-noise values, divide paired Fourier coefficients by `√λ`, remove the constant coefficient for mean-zero fields, inverse-transform and remove roundoff residual mean. Each draw consumes exactly `2N` uniforms. Mode-power inspection displays `P(k)=E[|F(φ−μ)(k)|²]/N` from full-segment pair products and site means against exact `1/λ`, with the removed zero mode explicitly marked. It provides no confidence band or autocorrelation correction. The constrained selected-site panel omits the ordinary fixed-neighbor conditional: fixing every other site determines the selected coordinate. The profile/heatmap scale remains user-controlled. See [Fourier mathematics](math/gaussian-fourier.md) and [M4a2 review](M4A2_REVIEW.md).
+Spectral draws transform N real Box–Muller white-noise values, divide paired Fourier coefficients by `√λ`, remove the constant coefficient for mean-zero fields, inverse-transform and remove roundoff residual mean. Each draw consumes exactly `2N` uniforms. Mode-power inspection displays `P(k)=E[|F(φ−μ)(k)|²]/N` from full-segment pair products and site means against exact `1/λ`, with the removed zero mode explicitly marked. It provides no confidence band or autocorrelation correction. The constrained selected-site panel omits the ordinary fixed-neighbor conditional: fixing every other site determines the selected coordinate. The profile/heatmap scale remains user-controlled. See [Fourier mathematics](math/gaussian-fourier.md) and [validation summary](RELEASES.md#gaussian-fields).
 
 #### M4b periodic Euclidean harmonic oscillator (merged)
 
@@ -241,7 +236,7 @@ Use ℏ=kB=m=1, `H=p²/2+ω²x²/2`, integer `4≤N≤64`, `2≤β≤16`, `0.25�
 
 The finite precision modes are `λ_k=aω²+4sin²(πk/N)/a`; exact `C_a(ℓ)=N⁻¹Σ_k cos(2πkℓ/N)/λ_k` equals `a cosh[Ω_a(β/2−ℓa)]/[2sinh(aΩ_a)sinh(βΩ_a/2)]`, where `Ω_a=2 asinh(aω/2)/a`. The continuum thermal reference is `C_β(t)=cosh[ω(β/2−t)]/[2ω sinh(βω/2)]`, with gap ω. The constant path-average variance is `1/(βω²)`; individual paths must not be mean-centered. Each retained whole path contributes `N⁻¹Σ_j x_jx_{j+ℓ}` through full-segment pair aggregates, distinct from the latest 256 displayed vectors. The unconnected equilibrium two-point is connected by exact symmetry; finite-segment sampling need not be centered. Display the sampled cosh effective gap only after 64 retained paths in the current segment and only when its empirical ratio has a valid real acosh value. Before then show N/A and the count while retaining the raw correlator. Thereafter label the gap provisional and uncorrected, with local-chain autocorrelation and warm-up caveats; no nonlinear uncertainty is claimed.
 
-The symmetric Trotter kernel is `T_a(x,y)=(2πa)^(-1/2) exp[−(x−y)²/(2a)−a(V(x)+V(y))/2]`. Its leading levels are `(n+1/2)Ω_a`. The physical trace includes the kinetic factor: `Z_QM=(2πa)^(-N/2) Z_raw=1/[2sinh(βΩ_a/2)]`. A bounded positive-weight Nyström quadrature gives an approximate two-level gap with disclosed coordinate cutoff; analytic Ω_a remains authoritative. Classify the fixed-grid result as usable, under-resolved (over 5% relative gap discrepancy or a violated leading-eigenvalue bound), or unavailable, showing the reason and discrepancy without replacing its numerical value. Exact `G_ij=C_a(i+j)` at selected positive half-circle indices illustrates reflection positivity up to roundoff, not a proof of all Osterwalder–Schrader axioms. One spectral path consumes `2N` uniforms and is independent; random-site heat bath and Metropolis reuse the same quadratic action, with N elementary updates per nominal sweep and segment-local warm-up/stride. Run/Step share kernels; Euclidean time is never an algorithmic update count. See [the mathematical walkthrough](math/euclidean-oscillator.md) and [M4b review](M4B_REVIEW.md).
+The symmetric Trotter kernel is `T_a(x,y)=(2πa)^(-1/2) exp[−(x−y)²/(2a)−a(V(x)+V(y))/2]`. Its leading levels are `(n+1/2)Ω_a`. The physical trace includes the kinetic factor: `Z_QM=(2πa)^(-N/2) Z_raw=1/[2sinh(βΩ_a/2)]`. A bounded positive-weight Nyström quadrature gives an approximate two-level gap with disclosed coordinate cutoff; analytic Ω_a remains authoritative. Classify the fixed-grid result as usable, under-resolved (over 5% relative gap discrepancy or a violated leading-eigenvalue bound), or unavailable, showing the reason and discrepancy without replacing its numerical value. Exact `G_ij=C_a(i+j)` at selected positive half-circle indices illustrates reflection positivity up to roundoff, not a proof of all Osterwalder–Schrader axioms. One spectral path consumes `2N` uniforms and is independent; random-site heat bath and Metropolis reuse the same quadratic action, with N elementary updates per nominal sweep and segment-local warm-up/stride. Run/Step share kernels; Euclidean time is never an algorithmic update count. See [the mathematical walkthrough](math/euclidean-oscillator.md) and [validation summary](RELEASES.md#euclidean-qm).
 
 #### M4c1 interacting Euclidean oscillator (released)
 
@@ -249,13 +244,13 @@ Lattice QM separately selects a quartic path with `V(x)=r x²/2+λ x⁴/4−h x`
 
 All retained paths in a segment contribute translation-averaged raw pair products `C_raw(ℓ)=N⁻¹Σ_j〈x_jx_(j+ℓ)〉`, even when only 256 recent full paths remain. At h=0, exact reflection symmetry makes raw C the connected equilibrium quantity; no per-path or sample-mean subtraction is applied. For h≠0, the separately labeled connected plug-in estimate subtracts the square of the full-segment translational sample mean. A local cosh effective-energy indicator appears after 64 retained paths only if its real positive ratio is numerically usable; neither that threshold nor warm-up certifies mixing. Symmetric-well whole-path-average sign counts and sign changes are sampling-algorithm metastability diagnostics, not physical tunneling rates.
 
-The optional independent transfer tool uses the symmetric Trotter kernel with physical V, internally shifted by its global minimum. A positive-weight symmetric Nyström matrix is solved on 49, 97 and enlarged-cutoff 121-node grids, with eigenpair residuals, coordinate and cutoff refinement, near-degeneracy and shifted-leading-eigenvalue checks. Only a well-resolved leading ratio is a headline approximate finite-a excitation gap; under-resolved values remain diagnostic. The finite-β thermal transfer correlator sums all numerical eigenpairs and is separately checked at representative lags. These are **numerical finite-spacing transfer references**, distinct from analytic λ=0 expressions, the continuum Hamiltonian and the Monte Carlo update spectrum. The transfer analysis runs lazily in a separate worker without RNG. See [interacting-oscillator mathematics](math/interacting-oscillator.md) and [M4c1 review](M4C1_REVIEW.md).
+The optional independent transfer tool uses the symmetric Trotter kernel with physical V, internally shifted by its global minimum. A positive-weight symmetric Nyström matrix is solved on 49, 97 and enlarged-cutoff 121-node grids, with eigenpair residuals, coordinate and cutoff refinement, near-degeneracy and shifted-leading-eigenvalue checks. Only a well-resolved leading ratio is a headline approximate finite-a excitation gap; under-resolved values remain diagnostic. The finite-β thermal transfer correlator sums all numerical eigenpairs and is separately checked at representative lags. These are **numerical finite-spacing transfer references**, distinct from analytic λ=0 expressions, the continuum Hamiltonian and the Monte Carlo update spectrum. The transfer analysis runs lazily in a separate worker without RNG. See [interacting-oscillator mathematics](math/interacting-oscillator.md) and [validation summary](RELEASES.md#euclidean-qm).
 
 #### M4c2 HMC for the interacting Euclidean oscillator (released)
 
 The quartic path alone may select local Metropolis or identity-mass Hamiltonian Monte Carlo. HMC refreshes N independent standard-normal auxiliary momenta and proposes a whole-path move using L kick-drift-kick leapfrog steps at ε, followed by a momentum flip and Metropolis correction with `H_HMC=S_a(x)+Σp_j²/2`. The full force is `(2x_j−x_(j−1)−x_(j+1))/a+a(r x_j+λx_j³−h)`. Supported teaching controls are `0.002≤ε≤0.25`, integer `1≤L≤32`, warm-up 0–1000 complete trajectories and measurement stride 1–100 complete trajectories. The initial defaults are ε=0.1, L=12. One HMC attempt consumes exactly `2N+1` seeded uniforms even when rejected or numerically divergent; a divergence preserves the old path. No intermediate MD configuration is measured. Auxiliary trajectory duration `Lε` is neither Euclidean coordinate time nor Monte Carlo time.
 
-One HMC Step is one complete trajectory; Run batches at most 16 and a direct worker advance at most 32. Existing local Metropolis cadence remains in nominal sweeps of N site attempts. Fixed-N physical, sampler, tuning or cadence changes preserve path/RNG while starting isolated segments with their own warm-up. N/model changes and Reset seed a fresh session. Segment metadata retains physical parameters, algorithm, tuning, cadence, session seed and update boundaries. The global transition index is monotone but its units differ across algorithms. Full-segment moments and pair-product correlations retain their previous physical meaning, with at most 256 recent paths per segment. HMC adds full-segment accepted/rejected/divergence and finite-ΔH mean/RMS/max plus gradient-work counts, with at most 256 individual recent defects; acceptance includes warm-up. The selectable HMC and latest-transition tools display these worker-owned results without advancing the RNG. Small `|ΔH|` is an integration-quality check, not an equilibrium or physical-energy assertion. See [HMC mathematics](math/hmc-euclidean-qm.md) and [M4c2 review](M4C2_REVIEW.md).
+One HMC Step is one complete trajectory; Run batches at most 16 and a direct worker advance at most 32. Existing local Metropolis cadence remains in nominal sweeps of N site attempts. Fixed-N physical, sampler, tuning or cadence changes preserve path/RNG while starting isolated segments with their own warm-up. N/model changes and Reset seed a fresh session. Segment metadata retains physical parameters, algorithm, tuning, cadence, session seed and update boundaries. The global transition index is monotone but its units differ across algorithms. Full-segment moments and pair-product correlations retain their previous physical meaning, with at most 256 recent paths per segment. HMC adds full-segment accepted/rejected/divergence and finite-ΔH mean/RMS/max plus gradient-work counts, with at most 256 individual recent defects; acceptance includes warm-up. The selectable HMC and latest-transition tools display these worker-owned results without advancing the RNG. Small `|ΔH|` is an integration-quality check, not an equilibrium or physical-energy assertion. See [HMC mathematics](math/hmc-euclidean-qm.md) and [validation summary](RELEASES.md#euclidean-qm).
 
 #### M4d1 interacting spatial φ⁴ (implemented)
 
@@ -267,7 +262,7 @@ Each retained field contributes full-segment site moments, m, m², m⁴, S/V and
 
 Interacting segments have `reference=null`. Only λ=0 uses the exact dense Gaussian reference after explicit reduction. Zero stiffness uses controlled cached single-site quadrature when its tool is open. Periodic 1D positive-κ fields map exactly to QM using `a=1/κ`, `β=N a`, `(rQM,λQM,hQM)=(r,λ,j)/a`; only converted parameters within existing QM validation may use the unchanged independent lazy transfer worker. Three-grid, cutoff, eigenpair and near-degeneracy gates are unchanged. Finite-ring means/raw/connected correlations have their own resolution status. A resolved leading ratio gives bulk 1D `ξ_sites=−1/log(t₁/t₀)=1/(aΔQM)`, explicitly distinct from finite-ring data, quantum energy, 2D mass and sampling time. Unsupported or under-resolved references are disclosed; spatial parameters are never changed to force availability.
 
-A dedicated φ⁴ view isolates existing Gaussian-only renderers. Its sidebar has six editable teaching presets, applied coefficients and a collapsible draft. The featured controlled `FieldVisual`, selected-site conditional/incident-bond tools, spatial correlators, scalar moments, recent history, actual proposal inspection and optional references use the existing six-card ToolDeck and phone modes. Display operations and lazy references never sample. M4d1 introduced no spatial HMC, archive/sweep format or mathematical dependency; M4d2 extends its tested gradient below. See [spatial φ⁴ mathematics](math/spatial-phi4.md) and [review](M4D1_REVIEW.md).
+A dedicated φ⁴ view isolates existing Gaussian-only renderers. Its sidebar has six editable teaching presets, applied coefficients and a collapsible draft. The featured controlled `FieldVisual`, selected-site conditional/incident-bond tools, spatial correlators, scalar moments, recent history, actual proposal inspection and optional references use the existing six-card ToolDeck and phone modes. Display operations and lazy references never sample. M4d1 introduced no spatial HMC, archive/sweep format or mathematical dependency; M4d2 extends its tested gradient below. See [spatial φ⁴ mathematics](math/spatial-phi4.md) and [validation summary](RELEASES.md#spatial-fields).
 
 #### M4d2 HMC for spatial φ⁴ (released)
 
@@ -275,7 +270,7 @@ The existing ordinary spatial action and full gradient also supply identity-mass
 
 Spatial local Metropolis remains the initial default. HMC draft defaults are ε=0.06, L=12, warm-up 20 trajectories and stride 1. Valid ranges are ε=0.002–0.25, integer L=1–32, warm-up 0–1000 and stride 1–100 trajectories. Applied settings carry only their active cadence system. One HMC Step completes one whole-field trajectory, with no intermediate MD measurements and repeated rejected states eligible for retention. Same-geometry physics, sampler, tuning and cadence changes preserve field/RNG and start isolated segments; geometry/family changes and Reset begin seeded sessions. Spatial HMC Run batches contain eight trajectories; direct advances permit at most 32. QM/local batching is unchanged, and parameter changes wait for in-flight acknowledgments.
 
-All existing spatial observables and reference gates remain unchanged. Full-segment measurements survive the 256-vector bound; eight segments remain available. HMC adds acceptance including warm-up, divergence counts, scaled finite signed-ΔH mean/RMS/max, force/step work and at most 256 recent defects. Spatial force counts include failed overflow calls. Latest inspection reports actual start/proposed S,K,H, ε,L,Lε, α,u, outcome and bounded completed-step defects, never local-site fields. The selectable HMC tool is a read-only projection; the featured field and existing tools remain available. Global update indices are monotone across sampler segments but represent different work. Auxiliary time, spatial distance, Markov updates and QM Euclidean time are distinct. No automatic tuning, unsupported uncertainty, physical tunneling rate, generic 2D mass fit or archive changes are introduced. See [mathematics](math/hmc-spatial-phi4.md) and [review](M4D2_REVIEW.md).
+All existing spatial observables and reference gates remain unchanged. Full-segment measurements survive the 256-vector bound; eight segments remain available. HMC adds acceptance including warm-up, divergence counts, scaled finite signed-ΔH mean/RMS/max, force/step work and at most 256 recent defects. Spatial force counts include failed overflow calls. Latest inspection reports actual start/proposed S,K,H, ε,L,Lε, α,u, outcome and bounded completed-step defects, never local-site fields. The selectable HMC tool is a read-only projection; the featured field and existing tools remain available. Global update indices are monotone across sampler segments but represent different work. Auxiliary time, spatial distance, Markov updates and QM Euclidean time are distinct. No automatic tuning, unsupported uncertainty, physical tunneling rate, generic 2D mass fit or archive changes are introduced. See [mathematics](math/hmc-spatial-phi4.md) and [validation summary](RELEASES.md#spatial-fields).
 
 #### M5a tiny Z₂ gauge theory (released)
 
@@ -285,7 +280,7 @@ A dedicated gauge worker owns links, RNG, counters, full invariant moments and e
 
 Gauge transformations are explicit preview/apply commands at a paused acknowledged boundary, checked against run ID/version. They change authoritative links and snapshot version but not RNG, MC counters, measurements, target or segments. Selected vertices/links/faces/loops and ToolDeck assignments are presentation-only. The default feature shows all oriented links, wraps and plaquettes; up to six optional tools show action, loops, exact references, symmetry, history, winding and transition inspection. Phones retain detail/overview modes. Gauge and legacy Small Systems sessions stay independently mounted after first use; switching presentation does not silently stop or restart a hidden run.
 
-Open exact Z is `16 cosh K`. Torus Z is `256 cosh⁴K(1+tanh⁴K)`; four plaquettes have even parity, and each allowed pattern has 32 link states. Gauge orbits have eight states; plaquette pattern and fixed representatives `Wx=e0 e2`, `Wy=e1 e5` label 32 torus orbits. Their four joint winding probabilities are 1/4. The two-face contractible projected walk retains a repeated connector, since the reduced boundary of this wrapped face union has two components. Gauge transformations preserve winding products; local Monte Carlo updates need not. See [mathematics](math/z2-gauge.md) for the exact walks, independent formulas and scientific limits, and [review](M5A_REVIEW.md) for evidence. U(1), larger gauge lattices, quantum dynamics, new archive/export/sweep schemas and navigation redesign are excluded.
+Open exact Z is `16 cosh K`. Torus Z is `256 cosh⁴K(1+tanh⁴K)`; four plaquettes have even parity, and each allowed pattern has 32 link states. Gauge orbits have eight states; plaquette pattern and fixed representatives `Wx=e0 e2`, `Wy=e1 e5` label 32 torus orbits. Their four joint winding probabilities are 1/4. The two-face contractible projected walk retains a repeated connector, since the reduced boundary of this wrapped face union has two components. Gauge transformations preserve winding products; local Monte Carlo updates need not. See [mathematics](math/z2-gauge.md) for the exact walks, independent formulas and scientific limits, and [validation summary](RELEASES.md#z2-gauge) for evidence. U(1), larger gauge lattices, quantum dynamics, new archive/export/sweep schemas and navigation redesign are excluded.
 
 #### M5b compact U(1) gauge theory (released)
 
@@ -295,7 +290,7 @@ A separate U1GaugeRun/client/worker owns angles, seeded RNG and measurements. An
 
 Eight segments retain full complex plaquette and predefined-loop moments, mean real plaquette, total action, fixed 24-bin invariant-angle histograms and at most 256 recent **measured** configurations each. The latest attempted transition is separate. Full statistics survive eviction; no arithmetic angle means or independent-sample MCMC errors are shown. A paused acknowledged vertex-phase command changes only angles, event and snapshot version, never RNG, counters, measurements or segments. Invalid/stale commands are atomic.
 
-The independent open reference is I0 and I1/I0. Torus Z=Σ_n I_n(K)^4, face numerator Σ_n I_(n+1) I_n³ and two-face numerator Σ_n I_(n+1)² I_n² use all integer character modes with bounded tails. The default 10⁻¹² gate covers relative Z and absolute loop errors including floating-point allowances; cutoff exhaustion and unsupported precision withhold trusted values. All exact imaginary expectations and winding means are zero. Open density applies only to a face; torus winding densities are Haar. Plaquette agreement alone does not certify flat-holonomy mixing. The UI reuses ToolDeck and phone modes for geometry, complex inspection, loops, transformation, references, histograms, history and transitions. See [mathematics](math/u1-gauge.md) and [review](M5B_REVIEW.md). No larger geometry, gauge HMC, matter, topological-sector estimator, navigation redesign or gauge archive is added.
+The independent open reference is I0 and I1/I0. Torus Z=Σ_n I_n(K)^4, face numerator Σ_n I_(n+1) I_n³ and two-face numerator Σ_n I_(n+1)² I_n² use all integer character modes with bounded tails. The default 10⁻¹² gate covers relative Z and absolute loop errors including floating-point allowances; cutoff exhaustion and unsupported precision withhold trusted values. All exact imaginary expectations and winding means are zero. Open density applies only to a face; torus winding densities are Haar. Plaquette agreement alone does not certify flat-holonomy mixing. The UI reuses ToolDeck and phone modes for geometry, complex inspection, loops, transformation, references, histograms, history and transitions. See [mathematics](math/u1-gauge.md) and [validation summary](RELEASES.md#u1-gauge). No larger geometry, gauge HMC, matter, topological-sector estimator, navigation redesign or gauge archive is added.
 
 #### M2 indexed 2D Ising
 
@@ -343,7 +338,7 @@ Both placements use the same pure Potts model, algorithms and PottsRun, with ind
 
 Full-segment moments, color occupancies, physical-bond agreement and raw axial equality correlations are independent of rendering; at most eight segments and 256 recent records per segment are kept, with color vectors only for tiny systems. Large rectangles have no NxN pair storage. Featured tools plus a maximum six-tool gallery expose categorical configuration, conditionals, exact references, occupation, action/order/agreement, histories, raw x/y correlations, actual update traces and the q=2 Ising correspondence. `m0=(q p0−1)/(q−1)` and `majority=(q max p−1)/(q−1)` remain distinct; majority has positive finite-volume bias. `Gq=(q C−1)/(q−1)` is normalized raw equality, not connected covariance. No correlated-chain error bar or mixing claim is inferred.
 
-At q=2, J=K/2 and b=h/2 on the same physical bonds, `S_P=S_I−C` and `log Z_P=log Z_I+C`, `C=(ΣK+Vh)/2`. Tiny references use stable counting enumeration and independent site/dimer/triangle formulas. Existing Ising models, gauge kernels, scalar/field/QM samplers and archive schemas remain untouched. See [mathematics](math/potts-model.md) and [review](M5C_REVIEW.md) for exact counting, transition matrices, multiseed benchmarks and release evidence. M5c excludes cluster algorithms; M5d extends it below. Clock/XY, Potts persistence and automatic criticality detection remain excluded.
+At q=2, J=K/2 and b=h/2 on the same physical bonds, `S_P=S_I−C` and `log Z_P=log Z_I+C`, `C=(ΣK+Vh)/2`. Tiny references use stable counting enumeration and independent site/dimer/triangle formulas. Existing Ising models, gauge kernels, scalar/field/QM samplers and archive schemas remain untouched. See [mathematics](math/potts-model.md) and [validation summary](RELEASES.md#potts) for exact counting, transition matrices, multiseed benchmarks and release evidence. M5c excludes cluster algorithms; M5d extends it below. Clock/XY, Potts persistence and automatic criticality detection remain excluded.
 
 #### M5d FK / Edwards–Sokal and Swendsen–Wang
 
@@ -355,7 +350,7 @@ Exact enumeration caps at V≤4,E≤8 independently of the Potts spin-state cap.
 
 Both workspaces retain independent clients backed by PottsRun. Fixed-support changes create segments and clear the current auxiliary image; support changes and Reset reseed. Spin and genuine FK aggregates share the same measurement boundary. Eight segments and 256 scalar records remain the limits. Per-bond counts, size histograms and full moments survive recent eviction; large boxes store only the latest full auxiliary image and no NxN connectivity. Cluster requests cap at 32 trajectories and Run batches at eight, without altering local batch sizes.
 
-One optional FK launcher and three tools extend the existing ToolDeck: bond/component versus spin-color view, exact FK/ES reference, and sampled cluster statistics. Actual transition inspection and selectable cluster histories use worker-owned data. Numeric selectors, keyboard bonds, keyed display settings, featured/gallery exchange and mobile detail/overview remain. Negative-K/nonzero-h explanations leave old Potts algorithms available. The equal-negative-triangle degeneracy formula requires equal couplings. No new persistence, routes, ghost fields, noninteger q, XY or general simulation framework is introduced. See [mathematics](math/fk-edwards-sokal.md) and [review](M5D_REVIEW.md).
+One optional FK launcher and three tools extend the existing ToolDeck: bond/component versus spin-color view, exact FK/ES reference, and sampled cluster statistics. Actual transition inspection and selectable cluster histories use worker-owned data. Numeric selectors, keyboard bonds, keyed display settings, featured/gallery exchange and mobile detail/overview remain. Negative-K/nonzero-h explanations leave old Potts algorithms available. The equal-negative-triangle degeneracy formula requires equal couplings. No new persistence, routes, ghost fields, noninteger q, XY or general simulation framework is introduced. See [mathematics](math/fk-edwards-sokal.md) and [validation summary](RELEASES.md#fk-clusters).
 
 #### M5e classical XY site spins and lattice vortices (released)
 
@@ -369,48 +364,11 @@ Plaquettes use bottom/right/top/left signed physical walks. Principal bond lifts
 
 Separate acknowledged XY worker clients preserve Small/Lattice sessions. Same-support Apply preserves state/RNG and begins an isolated segment; topology/boundary/initialization changes reset the seeded session. Reset uses applied settings/edited seed. At most eight segments and 256 recent records per segment accompany full moments. Tiny records may hold ≤4 angles, angular histograms and pair moments; large histories hold no full angle/vortex images. Ordinary statistics include mₓ,mᵧ,|m|,S,S/V,bond cosines and raw axial correlations through lag8. No independent-sample error bars or automatic mixing certification are supplied.
 
-At h=0, an acknowledged paused global rotation preserves prior statistics, updates, RNG and segments, records a deterministic event, and advances version; source-biased commands fail before mutation. Read-only preview, arrows/Canvas, numeric site/bond/face selection, vortex overlay and keyed ToolDeck options never advance sampling. The existing five routes, archives and older kernels remain unchanged. No XY archive, cluster sampler, HMC, helicity modulus, BKT fit or new navigation architecture is included. See [mathematical conventions](math/xy-model.md) and [review](M5E_REVIEW.md).
+At h=0, an acknowledged paused global rotation preserves prior statistics, updates, RNG and segments, records a deterministic event, and advances version; source-biased commands fail before mutation. Read-only preview, arrows/Canvas, numeric site/bond/face selection, vortex overlay and keyed ToolDeck options never advance sampling. The existing five routes, archives and older kernels remain unchanged. No XY archive, cluster sampler, HMC, helicity modulus, BKT fit or new navigation architecture is included. See [mathematical conventions](math/xy-model.md) and [validation summary](RELEASES.md#xy-spins).
 
-### 4.4 Model extensibility
+### 4.4 Model and presentation boundaries
 
-Proposed TypeScript interfaces below express relationships, not final package APIs:
-
-```ts
-type Vertex = { id: string; x?: number; y?: number };
-type Edge = {
-  id: string; tail: string; head: string;
-  axis?: number; wraps?: boolean;
-};
-type SignedEdge = { edgeId: string; sign: 1 | -1 };
-type Face = { id: string; boundary: SignedEdge[] };
-
-type Domain = {
-  vertices: Vertex[];
-  edges: Edge[];
-  faces?: Face[];
-  lattice?: {
-    dimension: 1 | 2;
-    lengths: number[];
-    boundary: ("periodic" | "open" | "fixed")[];
-  };
-};
-
-type DofDescriptor = {
-  id: string; carrier: "vertex" | "edge" | "face";
-  carrierId: string;
-  kind: "ising" | "real" | "angle" | "group";
-};
-
-interface Model<State, Parameters> {
-  id: string;
-  validate(domain: Domain, params: Parameters): ValidationResult;
-  initialize(domain: Domain, params: Parameters, rng: Rng): State;
-  action(state: State, domain: Domain, params: Parameters): number;
-  observables: ObservableDefinition<State, Parameters>[];
-}
-```
-
-Do not force a generic user-defined formula parser into the first version. Reusable standard model templates are safer to validate and easier to teach.
+The domain, probability law, sampler, measurement recorder and presentation have separate responsibilities. Model families may share geometry or a tested numerical primitive without sharing state ownership. Named examples supply parameters and teaching-tool defaults; they do not require separate mathematical kernels. A family has no fixed workspace identity. See [the source guide](SOURCE_GUIDE.md) for the concrete modules; there is no universal simulation/plugin interface or formula parser.
 
 ## 5. Sampling engines and execution semantics
 
@@ -448,32 +406,13 @@ A minimal worker API can include `initialize`, `runBatch`, `step`, `pause`, `res
 
 M0.5 implements `initialize`, `advance(count)`, `changeSettings`, and read-only `snapshot`. Initialize creates a fresh run with an increasing run ID. Version counts completed updates plus accepted setting changes. Step advances once, Run schedules batches of 128 for prior field samplers (protocol limit 1024) or 16 complete QM HMC / 8 spatial HMC trajectories (direct HMC limit 32), and Pause stops further scheduling and waits for any in-flight acknowledgment. Apply is ordered after the pending batch and before another is scheduled; Run then continues. Repeated queued settings edits use the latest requested values. Unchanged settings are a no-op. The worker has no autonomous timer. Reset uses Initialize; stale commands and stale/regressing replies are rejected or ignored. Rendering and snapshot reads consume no RNG draws. Worker failures stop scheduling and label displayed state as last confirmed; Reset can recreate the worker.
 
-One possible trace payload is:
-
-```ts
-type UpdateTrace = {
-  runId: string;
-  updateIndex: number;
-  targetDof: string;
-  oldValue: unknown;
-  proposedValue?: unknown;
-  oldAction: number;
-  deltaAction: number;
-  acceptanceProbability?: number;
-  uniformDraw?: number;
-  accepted: boolean;
-  newAction: number;
-  algorithm: string;
-};
-```
-
 The worker owns the authoritative evolving configuration. React/UI component state controls rendering and input, not the Monte Carlo transition sequence. Parameter edits start a separate measurement segment with fresh estimators while preserving prior segments for comparison. Carry the configuration and RNG stream where appropriate; never pool different target measures. Direct and single-spin heat-bath draws require no warm-up; Metropolis applies the segment’s configured discarded warm-up after physical or algorithm changes. Retained measurements never mix segments.
 
 ## 6. Observables, estimators, and plots
 
 ### 6.1 Plot library
 
-In M3, introduce a shared registry of plot types, each declaring applicable data and observables: scalar time series; histogram/density; parameter comparison; two-point correlations; structure factor; autocorrelation; joint scatter/density; matrix heatmap; effective gap; Wilson-loop observables; finite-size comparison.
+Model-specific tool definitions expose applicable histories, histograms/densities, parameter comparisons, correlations, diagnostics, scatter, covariance, gap and gauge views. A selectable view must distinguish supported references from unavailable analyses; the implemented tool catalog is described in the source guide.
 
 Plots require titles, axes and units/conventions, legends for overlays, run identification, and labeling of exact/reference vs sampled data. Hide incompatible plots rather than present empty nonsense.
 
@@ -516,9 +455,9 @@ M1a refinement: zero-field odd expectations are exactly zero by global spin reve
 
 Absolute-error plots show each segment's current retained N and numerical `|mean−exact|`. The logarithmic floor is `max(σ,0.1)/(125 sqrt(max(2,N)))`, minimized across retained segments; the upper bound includes all positive errors and `1.25 max(σ,0.1)`. Here σ is the exact observable standard deviation; the 0.1 fallback gives constant observables a usable display. This is a **display resolution policy, not a confidence or mixing estimate**. Accidental tiny checkpoints never set the floor. Zero and below-range positive checkpoints are omitted with separate counts; paths break at omissions. All-zero histories have an explicit message. Axes expand only automatically; Refit axes on migrated Small Systems pages refits retained segments with the same floor policy, and may omit exceptionally small errors rather than stretch the log range to them. Reset retains its clear/reseed/refit semantics.
 
-Observed error against an exact finite-volume reference differs from estimator uncertainty. Correlated MCMC updates can have far fewer effective independent samples than N. A small observed error proves neither equilibration nor adequate mixing. Graph heat bath and Metropolis receive no independent-sample uncertainty bands. The future exact tiny-chain spectral benchmarks are planned in the roadmap, not implemented here.
+Observed error against an exact finite-volume reference differs from estimator uncertainty. Correlated MCMC updates can have far fewer effective independent samples than N. A small observed error proves neither equilibration nor adequate mixing. Graph heat bath and Metropolis receive no independent-sample uncertainty bands. The implemented M3a exact tiny-chain spectral benchmarks are described in §4.3; their stationary results do not certify mixing of a particular run.
 
-Later measurement capabilities:
+Measurement requirements:
 
 - Maintain separate warm-up and measurement counters, with configurable measurement stride.
 - Use numerically stable online moments; keep bounded history buffers for long runs, and export aggregated/decimated histories with disclosed sampling rules.
@@ -600,19 +539,17 @@ Recommended first examples:
 
 Each model may link to relevant graduate lecture notes, but these are optional resources and must not block using the laboratory offline.
 
-## 9. Suggested implementation architecture
+## 9. Implementation architecture
 
 ### 9.1 Deployment and dependencies
 
-Recommended initial stack (changeable after prototype): TypeScript + Vite; React or equivalent component UI; Canvas 2D for high-frequency lattice rendering; SVG for tiny graph selection/inspection; maintained charting library for plots; Web Worker for simulation. Unit tests with Vitest; smoke/responsiveness tests with Playwright or equivalent.
-
-M0 adopts TypeScript/Vite/React, native accessible controls, small SVG density/convergence plots, local KaTeX HTML + MathML, Vitest, Playwright (Chromium and WebKit), and Prettier. No charting/component framework is needed for the one-dimensional density, and no graph/lattice framework is implemented ahead of M1. KaTeX renders authored formulas only, with trust disabled and bundled fonts; no CDN or formula editor. M0.5 and M1a add no runtime dependencies. M1a reuses SVG for its graph selection view and existing scalar plotting components through read-only observable projections. See D-013/D-014 and D-016–D-024 for the accepted implementation choices.
+The application uses TypeScript, Vite and React, Canvas for large configurations, SVG for small graphs and plots, and browser workers for simulation. Vitest covers numerical modules and Playwright covers production desktop/phone browser flows. Locally bundled KaTeX renders authored formulas as HTML + MathML with trust disabled; there is no CDN, formula editor, plotting framework or backend. Node 24 is used in CI. See the [README](../README.md#develop-and-validate) for exact commands.
 
 The repository is [gantemur/lattice](https://github.com/gantemur/lattice); the project name remains Lattice Lab. The site is built into static assets and deployed with GitHub Actions → GitHub Pages. For `https://gantemur.github.io/lattice/`, Vite's `base` must be `/lattice/`. Build/test should run on pull requests; deploy only from the chosen protected/default branch. Never hard-code root-relative URLs that break the project subpath.
 
 Useful authoritative deployment references: [Vite static deployment guide](https://vite.dev/guide/static-deploy.html), [GitHub Pages publishing sources](https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site).
 
-### 9.2 Proposed source decomposition
+### 9.2 Source decomposition
 
 ```text
 src/
@@ -644,7 +581,7 @@ Source code is also teaching material. Mathematical entry points should state th
 
 ### 9.4 Performance envelope
 
-Start with modest lattice sizes (illustratively 16²–128² for 2D Ising, depending on phone performance). Batch updates without freezing the main thread, render at most at a useful UI refresh rate, and measure actual performance on at least one desktop and one ordinary phone. Do not promise a particular FPS/sweep throughput before measurements. When load becomes high, preferentially reduce rendering frequency, not the integrity of updates or measurement bookkeeping.
+Use each model’s documented size bounds (2D Ising currently at most 64×64). Batch updates without freezing the main thread, render at most at a useful UI refresh rate, and measure actual performance on at least one desktop and one ordinary phone. Do not promise a particular FPS/sweep throughput before measurements. When load becomes high, preferentially reduce rendering frequency, not the integrity of updates or measurement bookkeeping.
 
 ### 9.5 Resilience
 
@@ -690,30 +627,8 @@ Correctness is a release requirement, not optional polish.
 - GitHub Pages deep link, JS chunks, worker URLs, static assets, and base-path deployment work under `/lattice/`.
 - Smoke test on a real browser before a feature is marked delivered.
 
-## 11. Stages and acceptance
+## 11. Product scope and limits
 
-See `ROADMAP.md` for implementation milestones. The following describes the initial public usable edition **after M1**, not the M0 acceptance gate. That edition need not include every model or plot in this document. It **must**:
+The [capability overview](ROADMAP.md) distinguishes shipped models from unsupported extensions. [Release provenance](RELEASES.md) links independently checkable regression tests and representative screenshots. Numerical and UI tests remain part of the product: seeded replay, topology multiplicities, old hash routes, portable archive versions and measurement semantics must stay verifiable.
 
-- Deploy as a static site on its own repository.
-- Show a working small-system model with a configurable collection of up to six inspection plots and touch-friendly collapsible controls.
-- Support accurate graph/lattice presets including periodic 1×4 and periodic 2×2, not falsely conflated with an open square.
-- Implement at least one validated exact finite-volume benchmark and one step-inspectable MCMC algorithm.
-- Distinguish warm-up from measurement and show which values are sampled versus exact.
-- Pass numerical tests and a phone browser smoke test.
-
-Later milestones cover further lattice models, spatial interacting fields and their HMC extension, and gauge models.
-
-## 12. Open questions / design flexibility
-
-These should not block a small vertical slice but should be resolved deliberately:
-
-1. Phone plots: single-detail default plus compact overview; continue reviewing legibility with multiple segment overlays.
-2. Relative priority of exact tiny-graph enumeration versus interactive continuous 0D quadrature; both are in the early roadmap.
-3. Whether a later milestone should expose topology/face editing beyond M1a’s preset selection and numerical weights.
-4. M0.5 overlays retained parameter/algorithm distributions and mean trajectories; recent sample trajectories use a bounded browseable update window; determine how explicit saved-run selection should work in M3.
-5. Which maintained charting library gives adequate performance/accessibility with the smallest complexity burden.
-6. Whether student exercise presets should be in JSON with a simple schema, or in typed TS modules for safer model references.
-7. Which numerical tolerance and quadrature algorithm to use for quartic integrals after a validation study.
-8. What licensing scheme to use for software and pedagogical text.
-
-**Revision discipline:** Retain the design's scientific invariants as the implementation evolves. If an assumption proves inconvenient, revise the relevant requirement and its tests together. A living specification is most valuable when it records what the software actually promises, not when it becomes a wish list that nobody checks.
+The static browser laboratory does not establish equilibration, thermodynamic or continuum limits from one run. Phone emulation validates layout and interactions, not a physical-device performance guarantee. No software or documentation license has yet been selected.

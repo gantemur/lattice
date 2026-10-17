@@ -134,7 +134,7 @@ have no React dependency. Exhaustive [model tests](../../src/models/z2Gauge.test
 independent [transition-matrix tests](../../src/algorithms/z2GaugeSampler.test.ts),
 [worker tests](../../src/engine/z2GaugeRun.test.ts) and
 [ensemble tests](../../src/engine/z2GaugeBenchmark.test.ts) connect the equations
-to code. The [review](../M5A_REVIEW.md) records browser evidence and limits.
+to code. The [validation summary](../RELEASES.md#z2-gauge) links browser evidence and scientific limits.
 
 1. Enumerate the eight open-square words with positive plaquette. Relate them
    by vertex transformations; explain why four independent vertex signs yield

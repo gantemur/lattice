@@ -71,7 +71,7 @@ The controls and tools distinguish spatial coordinates, fictitious MD duration, 
 
 For a periodic chain with κ>0, set `a=1/κ`, `β=N/κ` and `(rQM,λQM,hQM)=κ(r,λ,j)`. The spatial and QM actions, gradients and identity-mass HMC proposals then agree up to summation roundoff. The required N=16, κ=2, r=−1, λ=0.5, j=0 maps to QM β=8, rQM=−2, λQM=1, hQM=0. Its separately resolved finite-ring transfer C(0),C(1) benchmark the HMC ensemble. The transfer gap ≈0.329211319864 gives spatial ξ≈6.07512 sites; it predicts neither HMC acceptance nor mixing time. Existing transfer resolution gates remain unchanged.
 
-Spatial observables retain M4d1 meanings: zero-source raw correlations are connected in equilibrium by reflection symmetry; nonzero-source plug-in centering uses full-segment **site-specific** means. No per-configuration demeaning or unsupported independent-sample error bars are added. Fixed budgets and a few seeded comparisons do not prove stationarity, interwell mixing, continuum limits or critical behavior. See [the review](../M4D2_REVIEW.md) for actual figures and browser measurements.
+Spatial observables retain M4d1 meanings: zero-source raw correlations are connected in equilibrium by reflection symmetry; nonzero-source plug-in centering uses full-segment **site-specific** means. No per-configuration demeaning or unsupported independent-sample error bars are added. Fixed budgets and a few seeded comparisons do not prove stationarity, interwell mixing, continuum limits or critical behavior. See [validation summary](../RELEASES.md#spatial-fields) for regression references and browser evidence.
 
 ## Exercises
 
