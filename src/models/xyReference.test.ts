@@ -40,6 +40,54 @@ it('hand-checked rotor, signed triangle and eight-bond torus anchors', () => {
     expect(r.values?.Z).toBeCloseTo(Z, 10);
   }
 });
+it('periodic 2×2 with zero horizontal coupling retains two independent vertical pairs', () => {
+  const ky = 0.7;
+  const model = xyModel({
+    h: 0,
+    geometry: {
+      kind: 'lattice',
+      shape: { lx: 2, ly: 2, periodicX: true, periodicY: true },
+      kx: 0,
+      ky,
+    },
+  });
+  expect(model.size).toBe(4);
+  expect(model.bonds).toHaveLength(8);
+  expect(model.bonds.filter((bond) => bond.axis === 0)).toHaveLength(4);
+  expect(model.bonds.filter((bond) => bond.axis === 1)).toHaveLength(4);
+
+  // Each vertical pair has two physical bonds, hence argument 2*ky.
+  // Midpoint averages independently integrate the normalized angular measure.
+  const quadraturePoints = 2048;
+  let i0 = 0,
+    i1 = 0;
+  for (let j = 0; j < quadraturePoints; j++) {
+    const angle = (2 * Math.PI * (j + 0.5)) / quadraturePoints;
+    const cosine = Math.cos(angle);
+    const weight = Math.exp(2 * ky * cosine);
+    i0 += weight;
+    i1 += weight * cosine;
+  }
+  i0 /= quadraturePoints;
+  i1 /= quadraturePoints;
+  const cosineMean = i1 / i0;
+
+  const reference = xyReference(model);
+  expect(['character-sum', 'analytical']).toContain(reference.status);
+  expect(reference.values).not.toBeNull();
+  expect(Math.abs(reference.values!.Z - i0 ** 2)).toBeLessThan(1e-10);
+  expect(reference.values!.bonds).toHaveLength(model.bonds.length);
+  model.bonds.forEach((bond, index) => {
+    // Independent column rotations make every horizontal cosine mean zero.
+    const expected = bond.axis === 1 ? cosineMean : 0;
+    expect(Math.abs(reference.values!.bonds[index]! - expected)).toBeLessThan(
+      1e-10,
+    );
+  });
+  expect(Math.abs(reference.values!.action + 4 * ky * cosineMean)).toBeLessThan(
+    1e-10,
+  );
+});
 for (const geometry of [
   'site',
   'dimer',
